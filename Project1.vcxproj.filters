@@ -1,0 +1,3024 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Исходные файлы">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Файлы заголовков">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Файлы ресурсов">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="glad.c">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\include\glm\detail\glm.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\include\glm\glm.cppm">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="dependencies\include\GLFW\glfw3.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\GLFW\glfw3native.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glad\glad.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\KHR\khrplatform.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\detail\_fixes.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\detail\_noise.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\detail\_swizzle.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\detail\_swizzle_func.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\detail\_vectorize.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\detail\compute_common.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\detail\compute_vector_decl.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\detail\compute_vector_relational.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\detail\qualifier.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\detail\setup.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\detail\type_float.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\detail\type_half.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\detail\type_mat2x2.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\detail\type_mat2x3.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\detail\type_mat2x4.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\detail\type_mat3x2.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\detail\type_mat3x3.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\detail\type_mat3x4.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\detail\type_mat4x2.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\detail\type_mat4x3.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\detail\type_mat4x4.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\detail\type_quat.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\detail\type_vec1.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\detail\type_vec2.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\detail\type_vec3.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\detail\type_vec4.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\_matrix_vectorize.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_clip_space.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_common.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_double2x2.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_double2x2_precision.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_double2x3.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_double2x3_precision.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_double2x4.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_double2x4_precision.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_double3x2.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_double3x2_precision.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_double3x3.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_double3x3_precision.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_double3x4.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_double3x4_precision.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_double4x2.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_double4x2_precision.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_double4x3.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_double4x3_precision.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_double4x4.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_double4x4_precision.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_float2x2.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_float2x2_precision.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_float2x3.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_float2x3_precision.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_float2x4.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_float2x4_precision.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_float3x2.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_float3x2_precision.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_float3x3.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_float3x3_precision.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_float3x4.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_float3x4_precision.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_float4x2.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_float4x2_precision.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_float4x3.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_float4x3_precision.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_float4x4.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_float4x4_precision.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_int2x2.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_int2x2_sized.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_int2x3.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_int2x3_sized.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_int2x4.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_int2x4_sized.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_int3x2.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_int3x2_sized.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_int3x3.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_int3x3_sized.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_int3x4.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_int3x4_sized.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_int4x2.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_int4x2_sized.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_int4x3.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_int4x3_sized.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_int4x4.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_int4x4_sized.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_integer.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_projection.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_relational.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_transform.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_uint2x2.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_uint2x2_sized.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_uint2x3.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_uint2x3_sized.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_uint2x4.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_uint2x4_sized.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_uint3x2.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_uint3x2_sized.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_uint3x3.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_uint3x3_sized.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_uint3x4.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_uint3x4_sized.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_uint4x2.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_uint4x2_sized.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_uint4x3.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_uint4x3_sized.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_uint4x4.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\matrix_uint4x4_sized.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\quaternion_common.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\quaternion_double.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\quaternion_double_precision.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\quaternion_exponential.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\quaternion_float.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\quaternion_float_precision.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\quaternion_geometric.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\quaternion_relational.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\quaternion_transform.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\quaternion_trigonometric.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\scalar_common.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\scalar_constants.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\scalar_int_sized.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\scalar_integer.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\scalar_packing.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\scalar_reciprocal.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\scalar_relational.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\scalar_uint_sized.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\scalar_ulp.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_bool1.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_bool1_precision.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_bool2.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_bool2_precision.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_bool3.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_bool3_precision.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_bool4.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_bool4_precision.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_common.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_double1.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_double1_precision.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_double2.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_double2_precision.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_double3.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_double3_precision.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_double4.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_double4_precision.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_float1.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_float1_precision.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_float2.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_float2_precision.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_float3.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_float3_precision.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_float4.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_float4_precision.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_int1.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_int1_sized.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_int2.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_int2_sized.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_int3.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_int3_sized.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_int4.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_int4_sized.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_integer.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_packing.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_reciprocal.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_relational.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_uint1.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_uint1_sized.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_uint2.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_uint2_sized.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_uint3.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_uint3_sized.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_uint4.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_uint4_sized.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext\vector_ulp.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtc\bitfield.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtc\color_space.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtc\constants.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtc\epsilon.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtc\integer.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtc\matrix_access.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtc\matrix_integer.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtc\matrix_inverse.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtc\matrix_transform.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtc\noise.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtc\packing.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtc\quaternion.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtc\random.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtc\reciprocal.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtc\round.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtc\type_aligned.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtc\type_precision.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtc\type_ptr.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtc\ulp.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtc\vec1.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\associated_min_max.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\bit.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\closest_point.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\color_encoding.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\color_space.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\color_space_YCoCg.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\common.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\compatibility.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\component_wise.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\dual_quaternion.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\easing.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\euler_angles.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\extend.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\extended_min_max.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\exterior_product.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\fast_exponential.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\fast_square_root.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\fast_trigonometry.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\functions.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\gradient_paint.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\handed_coordinate_space.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\hash.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\integer.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\intersect.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\io.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\iteration.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\log_base.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\matrix_cross_product.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\matrix_decompose.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\matrix_factorisation.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\matrix_interpolation.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\matrix_major_storage.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\matrix_operation.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\matrix_query.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\matrix_transform_2d.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\mixed_product.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\norm.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\normal.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\normalize_dot.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\number_precision.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\optimum_pow.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\orthonormalize.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\pca.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\perpendicular.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\polar_coordinates.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\projection.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\quaternion.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\range.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\raw_data.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\rotate_normalized_axis.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\rotate_vector.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\scalar_multiplication.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\scalar_relational.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\spline.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\std_based_type.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\string_cast.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\structured_bindings.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\texture.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\transform.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\transform2.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\type_aligned.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\type_trait.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\vec_swizzle.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\vector_angle.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\vector_query.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\gtx\wrap.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\simd\common.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\simd\exponential.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\simd\geometric.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\simd\integer.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\simd\matrix.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\simd\neon.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\simd\packing.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\simd\platform.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\simd\trigonometric.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\simd\vector_relational.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\common.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\exponential.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\ext.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\fwd.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\geometric.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\glm.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\integer.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\mat2x2.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\mat2x3.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\mat2x4.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\mat3x2.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\mat3x3.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\mat3x4.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\mat4x2.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\mat4x3.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\mat4x4.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\matrix.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\packing.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\trigonometric.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\vec2.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\vec3.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\vec4.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\include\glm\vector_relational.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="stb_image.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="Settings.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="Modelloader.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="Player.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="Input.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="AnimatedModel.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="AABB.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="Triangle.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="dependencies\lib\glfw3.lib" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="dependencies\include\glm\detail\func_common.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\detail\func_common_simd.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\detail\func_exponential.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\detail\func_exponential_simd.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\detail\func_geometric.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\detail\func_geometric_simd.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\detail\func_integer.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\detail\func_integer_simd.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\detail\func_matrix.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\detail\func_matrix_simd.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\detail\func_packing.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\detail\func_packing_simd.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\detail\func_trigonometric.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\detail\func_trigonometric_simd.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\detail\func_vector_relational.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\detail\func_vector_relational_simd.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\detail\type_half.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\detail\type_mat2x2.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\detail\type_mat2x3.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\detail\type_mat2x4.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\detail\type_mat3x2.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\detail\type_mat3x3.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\detail\type_mat3x4.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\detail\type_mat4x2.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\detail\type_mat4x3.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\detail\type_mat4x4.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\detail\type_mat4x4_simd.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\detail\type_quat.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\detail\type_quat_simd.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\detail\type_vec_simd.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\detail\type_vec1.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\detail\type_vec2.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\detail\type_vec3.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\detail\type_vec4.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\ext\matrix_clip_space.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\ext\matrix_common.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\ext\matrix_integer.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\ext\matrix_projection.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\ext\matrix_relational.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\ext\matrix_transform.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\ext\quaternion_common.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\ext\quaternion_common_simd.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\ext\quaternion_exponential.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\ext\quaternion_geometric.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\ext\quaternion_relational.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\ext\quaternion_transform.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\ext\quaternion_trigonometric.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\ext\scalar_common.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\ext\scalar_constants.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\ext\scalar_integer.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\ext\scalar_packing.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\ext\scalar_reciprocal.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\ext\scalar_relational.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\ext\scalar_ulp.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\ext\vector_common.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\ext\vector_integer.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\ext\vector_packing.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\ext\vector_reciprocal.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\ext\vector_relational.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\ext\vector_ulp.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtc\bitfield.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtc\color_space.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtc\constants.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtc\epsilon.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtc\integer.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtc\matrix_access.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtc\matrix_inverse.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtc\matrix_transform.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtc\noise.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtc\packing.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtc\quaternion.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtc\quaternion_simd.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtc\random.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtc\round.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtc\type_precision.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtc\type_ptr.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtc\ulp.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\associated_min_max.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\bit.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\closest_point.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\color_encoding.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\color_space.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\color_space_YCoCg.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\common.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\compatibility.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\component_wise.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\dual_quaternion.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\easing.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\euler_angles.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\extend.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\extended_min_max.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\exterior_product.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\fast_exponential.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\fast_square_root.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\fast_trigonometry.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\float_normalize.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\functions.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\gradient_paint.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\handed_coordinate_space.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\hash.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\integer.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\intersect.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\io.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\iteration.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\log_base.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\matrix_cross_product.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\matrix_decompose.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\matrix_factorisation.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\matrix_interpolation.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\matrix_major_storage.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\matrix_operation.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\matrix_query.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\matrix_transform_2d.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\mixed_product.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\norm.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\normal.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\normalize_dot.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\optimum_pow.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\orthonormalize.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\pca.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\perpendicular.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\polar_coordinates.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\projection.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\quaternion.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\raw_data.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\rotate_normalized_axis.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\rotate_vector.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\scalar_relational.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\spline.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\std_based_type.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\string_cast.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\structured_bindings.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\texture.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\transform.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\transform2.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\type_aligned.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\type_trait.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\vector_angle.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\vector_query.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="dependencies\include\glm\gtx\wrap.inl">
+      <Filter>Файлы заголовков</Filter>
+    </None>
+    <None Include="Project1.slnx" />
+    <None Include="models\maps\de_meat\mrmeat.fbx" />
+    <None Include="models\maps\forest\forest.fbx" />
+    <None Include="models\pistol\ak74\ak74.fbx" />
+    <None Include="models\pistol\mak\mak.fbx" />
+    <None Include="models\pistol\glock\glock.fbx" />
+    <None Include="models\maps\dm\dm.glb" />
+    <None Include="models\maps\dust2\Generic_Item.mesh" />
+    <None Include="models\maps\dust2\Generic_Item.mtl" />
+    <None Include="models\maps\dust2\xps.xps" />
+    <None Include="models\maps\dust\de_dust2.mtl" />
+    <None Include="models\maps\dust3\dust3.glb" />
+    <None Include="models\maps\123\123.glb" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="dependencies\include\glm\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="models\textures\armAO.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\textures\armColor.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\textures\armNormal.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\textures\armRoughness.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\textures\for_texturing_None.001_Diffuse.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\textures\for_texturing_None.001_Glossiness.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\textures\for_texturing_None.001_Normal.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\textures\for_texturing_None.001_Specular.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\textures\hw_dixing.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\textures\hw_dixing_02.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\textures\hw_peijing_01.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\textures\hw_peijing_02.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\textures\hw_dixing.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\textures\hw_dixing_02.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\textures\hw_peijing_01.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\textures\hw_peijing_02.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\textures\armAO.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\textures\armColor.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\textures\armNormal.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\textures\armRoughness.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\textures\for_texturing_None.001_Diffuse.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\textures\for_texturing_None.001_Glossiness.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\textures\for_texturing_None.001_Normal.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\textures\for_texturing_None.001_Specular.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\Agua.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\Arbol_Nieve.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\Azulejos-1.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\Azulejos-2.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\Cartucho.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\Celeste.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\Cemento.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\Comoda_Con_Vidrio.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\Dry_Bark.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\Escopeta.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\Fluorecente.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\Lab_Pig_Phases_01.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\Madera_Conjunto_1.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\Madera_Conjunto_2.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\Madera_Conjunto_3.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\Madera_Lisa.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\Madera_Rustica_1.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\Madera_Rustica_3.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\Madera_Rustica_5.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\Madera_Suelo.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\Martillo.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\Metal_Oxidado.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\MM_Camion.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\MM_Fachada.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\MM_FemaleScientist_01.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\mm_fondo.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\mm_fotos_familia.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\MM_Garaje.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\MM_ItemsActualizacion.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\MM_Muebles01.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\MM_Muebles02.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\MM_Muebles03.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\MM_Muebles04.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\MM_Muebles05.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\MM_Nieve_CajasPaja.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\MM_Revelado_Taller.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\mm_textura_fotos.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\mm_textura_fuera.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\mm_textura_piernas.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\OS_suv01.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\Palmera.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\Pared_Clara.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\Pared_Hospital.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\Pared_Humeda.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\Pared_Ladrillos.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\Pared_Sucia.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\Pared_Sucia_Tiled.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\Pared_Tapial_Exterior.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\Pared_Tapizada.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\Piso_Madera.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\Techo_Cemento_Claro.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\Techo_Cemento_Oscuro.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\Telaraña.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\Tenaza.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\Tv_Sin_Señal.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\de_meat\textures\Vidrio_Claro.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\forest\textures\realistic_medieval_landscape_with_colorful_vegetat.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\ak74\textures\ak74m_AlbedoTransparency.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\ak74\textures\ak74m_AO.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\ak74\textures\ak74m_Metallic.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\ak74\textures\ak74m_Normal.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\ak74\textures\ak74m_Roughness.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\ak74\textures\armColor.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\ak74\textures\armNormal.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\ak74\textures\armRoughness.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\mak\textures\armCcolor.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\mak\textures\armCNormal.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\mak\textures\armcRoughness.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\mak\textures\makarov_attachments_Base_Color-makarov_att.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\mak\textures\makarov_attachments_Emissive.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\mak\textures\makarov_attachments_Metallic-makarov_attac.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\mak\textures\makarov_attachments_Normal_OpenGL.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\mak\textures\Makarov_main_Base_Color.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\mak\textures\Makarov_main_Metallic_png-Makarov_main_Rou.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\mak\textures\Makarov_main_Normal_OpenGL.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\glock\textures\for_texturing_None.001_Specular.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\glock\textures\armAO.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\glock\textures\armColor.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\glock\textures\armNormal.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\glock\textures\armRoughness.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\glock\textures\for_texturing_None.001_Diffuse.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\glock\textures\for_texturing_None.001_Glossiness.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\glock\textures\for_texturing_None.001_Normal.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_0.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_0.tga" />
+    <Image Include="models\maps\dust2\dust2_material_1.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_1.tga" />
+    <Image Include="models\maps\dust2\dust2_material_2.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_2.tga" />
+    <Image Include="models\maps\dust2\dust2_material_3.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_3.tga" />
+    <Image Include="models\maps\dust2\dust2_material_4.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_4.tga" />
+    <Image Include="models\maps\dust2\dust2_material_5.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_5.tga" />
+    <Image Include="models\maps\dust2\dust2_material_6.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_6.tga" />
+    <Image Include="models\maps\dust2\dust2_material_7.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_7.tga" />
+    <Image Include="models\maps\dust2\dust2_material_8.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_8.tga" />
+    <Image Include="models\maps\dust2\dust2_material_9.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_9.tga" />
+    <Image Include="models\maps\dust2\dust2_material_10.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_10.tga" />
+    <Image Include="models\maps\dust2\dust2_material_11.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_11.tga" />
+    <Image Include="models\maps\dust2\dust2_material_12.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_12.tga" />
+    <Image Include="models\maps\dust2\dust2_material_13.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_13.tga" />
+    <Image Include="models\maps\dust2\dust2_material_14.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_14.tga" />
+    <Image Include="models\maps\dust2\dust2_material_15.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_15.tga" />
+    <Image Include="models\maps\dust2\dust2_material_16.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_16.tga" />
+    <Image Include="models\maps\dust2\dust2_material_17.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_17.tga" />
+    <Image Include="models\maps\dust2\dust2_material_18.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_18.tga" />
+    <Image Include="models\maps\dust2\dust2_material_19.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_19.tga" />
+    <Image Include="models\maps\dust2\dust2_material_20.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_20.tga" />
+    <Image Include="models\maps\dust2\dust2_material_21.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_21.tga" />
+    <Image Include="models\maps\dust2\dust2_material_22.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_22.tga" />
+    <Image Include="models\maps\dust2\dust2_material_23.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_23.tga" />
+    <Image Include="models\maps\dust2\dust2_material_24.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_24.tga" />
+    <Image Include="models\maps\dust2\dust2_material_25.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_25.tga" />
+    <Image Include="models\maps\dust2\dust2_material_26.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_26.tga" />
+    <Image Include="models\maps\dust2\dust2_material_27.tga" />
+    <Image Include="models\maps\dust2\dust2_material_28.tga" />
+    <Image Include="models\maps\dust2\dust2_material_29.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_29.tga" />
+    <Image Include="models\maps\dust2\dust2_material_30.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_30.tga" />
+    <Image Include="models\maps\dust2\dust2_material_31.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_31.tga" />
+    <Image Include="models\maps\dust2\dust2_material_32.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_32.tga" />
+    <Image Include="models\maps\dust2\dust2_material_33.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_33.tga" />
+    <Image Include="models\maps\dust2\dust2_material_34.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_34.tga" />
+    <Image Include="models\maps\dust2\dust2_material_35.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_35.tga" />
+    <Image Include="models\maps\dust2\dust2_material_36.tga" />
+    <Image Include="models\maps\dust2\dust2_material_37.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_37.tga" />
+    <Image Include="models\maps\dust2\dust2_material_38.tga" />
+    <Image Include="models\maps\dust2\dust2_material_39.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_39.tga" />
+    <Image Include="models\maps\dust2\dust2_material_40.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_40.tga" />
+    <Image Include="models\maps\dust2\dust2_material_41.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_41.tga" />
+    <Image Include="models\maps\dust2\dust2_material_42.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_42.tga" />
+    <Image Include="models\maps\dust2\dust2_material_43.tga" />
+    <Image Include="models\maps\dust2\dust2_material_44.tga" />
+    <Image Include="models\maps\dust2\dust2_material_45.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_45.tga" />
+    <Image Include="models\maps\dust2\dust2_material_46.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_46.tga" />
+    <Image Include="models\maps\dust2\dust2_material_47.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_47.tga" />
+    <Image Include="models\maps\dust2\dust2_material_48.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_48.tga" />
+    <Image Include="models\maps\dust2\dust2_material_49.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_49.tga" />
+    <Image Include="models\maps\dust2\dust2_material_50.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_50.tga" />
+    <Image Include="models\maps\dust2\dust2_material_51.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_51.tga" />
+    <Image Include="models\maps\dust2\dust2_material_52.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_52.tga" />
+    <Image Include="models\maps\dust2\dust2_material_53.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_53.tga" />
+    <Image Include="models\maps\dust2\dust2_material_54.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_54.tga" />
+    <Image Include="models\maps\dust2\dust2_material_55.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_55.tga" />
+    <Image Include="models\maps\dust2\dust2_material_56.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_56.tga" />
+    <Image Include="models\maps\dust2\dust2_material_57.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_57.tga" />
+    <Image Include="models\maps\dust2\dust2_material_58.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_58.tga" />
+    <Image Include="models\maps\dust2\dust2_material_59.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_59.tga" />
+    <Image Include="models\maps\dust2\dust2_material_60.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_60.tga" />
+    <Image Include="models\maps\dust2\dust2_material_61.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_61.tga" />
+    <Image Include="models\maps\dust2\dust2_material_62.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_62.tga" />
+    <Image Include="models\maps\dust2\dust2_material_63.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_63.tga" />
+    <Image Include="models\maps\dust2\dust2_material_64.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_64.tga" />
+    <Image Include="models\maps\dust2\dust2_material_65.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_65.tga" />
+    <Image Include="models\maps\dust2\dust2_material_66.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_66.tga" />
+    <Image Include="models\maps\dust2\dust2_material_67.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_67.tga" />
+    <Image Include="models\maps\dust2\dust2_material_68.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_68.tga" />
+    <Image Include="models\maps\dust2\dust2_material_69.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_69.tga" />
+    <Image Include="models\maps\dust2\dust2_material_70.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_70.tga" />
+    <Image Include="models\maps\dust2\dust2_material_71.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_71.tga" />
+    <Image Include="models\maps\dust2\dust2_material_72.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_72.tga" />
+    <Image Include="models\maps\dust2\dust2_material_73.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_73.tga" />
+    <Image Include="models\maps\dust2\dust2_material_74.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_74.tga" />
+    <Image Include="models\maps\dust2\dust2_material_75.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_75.tga" />
+    <Image Include="models\maps\dust2\dust2_material_76.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_76.tga" />
+    <Image Include="models\maps\dust2\dust2_material_77.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_77.tga" />
+    <Image Include="models\maps\dust2\dust2_material_78.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_78.tga" />
+    <Image Include="models\maps\dust2\dust2_material_79.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_79.tga" />
+    <Image Include="models\maps\dust2\dust2_material_80.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_80.tga" />
+    <Image Include="models\maps\dust2\dust2_material_81.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_81.tga" />
+    <Image Include="models\maps\dust2\dust2_material_82.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_82.tga" />
+    <Image Include="models\maps\dust2\dust2_material_83.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_83.tga" />
+    <Image Include="models\maps\dust2\dust2_material_84.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_84.tga" />
+    <Image Include="models\maps\dust2\dust2_material_85.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_85.tga" />
+    <Image Include="models\maps\dust2\dust2_material_86.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_86.tga" />
+    <Image Include="models\maps\dust2\dust2_material_87.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_87.tga" />
+    <Image Include="models\maps\dust2\dust2_material_88.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_88.tga" />
+    <Image Include="models\maps\dust2\dust2_material_89.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_89.tga" />
+    <Image Include="models\maps\dust2\dust2_material_90.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_90.tga" />
+    <Image Include="models\maps\dust2\dust2_material_91.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_91.tga" />
+    <Image Include="models\maps\dust2\dust2_material_92.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_92.tga" />
+    <Image Include="models\maps\dust2\dust2_material_93.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_93.tga" />
+    <Image Include="models\maps\dust2\dust2_material_94.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_94.tga" />
+    <Image Include="models\maps\dust2\dust2_material_95.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_95.tga" />
+    <Image Include="models\maps\dust2\dust2_material_96.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_96.tga" />
+    <Image Include="models\maps\dust2\dust2_material_97.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_97.tga" />
+    <Image Include="models\maps\dust2\dust2_material_98.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_98.tga" />
+    <Image Include="models\maps\dust2\dust2_material_99.tga" />
+    <Image Include="models\maps\dust2\dust2_material_100.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_100.tga" />
+    <Image Include="models\maps\dust2\dust2_material_101.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_101.tga" />
+    <Image Include="models\maps\dust2\dust2_material_102.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_102.tga" />
+    <Image Include="models\maps\dust2\dust2_material_103.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_103.tga" />
+    <Image Include="models\maps\dust2\dust2_material_104.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_104.tga" />
+    <Image Include="models\maps\dust2\dust2_material_105.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_105.tga" />
+    <Image Include="models\maps\dust2\dust2_material_106.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_106.tga" />
+    <Image Include="models\maps\dust2\dust2_material_107.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_107.tga" />
+    <Image Include="models\maps\dust2\dust2_material_108.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_108.tga" />
+    <Image Include="models\maps\dust2\dust2_material_109.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_109.tga" />
+    <Image Include="models\maps\dust2\dust2_material_110.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_110.tga" />
+    <Image Include="models\maps\dust2\dust2_material_111.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_111.tga" />
+    <Image Include="models\maps\dust2\dust2_material_112.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_112.tga" />
+    <Image Include="models\maps\dust2\dust2_material_113.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_113.tga" />
+    <Image Include="models\maps\dust2\dust2_material_114.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_114.tga" />
+    <Image Include="models\maps\dust2\dust2_material_115.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_115.tga" />
+    <Image Include="models\maps\dust2\dust2_material_116.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_116.tga" />
+    <Image Include="models\maps\dust2\dust2_material_117.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_117.tga" />
+    <Image Include="models\maps\dust2\dust2_material_118.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_118.tga" />
+    <Image Include="models\maps\dust2\dust2_material_119.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_119.tga" />
+    <Image Include="models\maps\dust2\dust2_material_120.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_120.tga" />
+    <Image Include="models\maps\dust2\dust2_material_121.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_121.tga" />
+    <Image Include="models\maps\dust2\dust2_material_122.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_122.tga" />
+    <Image Include="models\maps\dust2\dust2_material_123.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_123.tga" />
+    <Image Include="models\maps\dust2\dust2_material_124.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_124.tga" />
+    <Image Include="models\maps\dust2\dust2_material_125.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_125.tga" />
+    <Image Include="models\maps\dust2\dust2_material_126.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_126.tga" />
+    <Image Include="models\maps\dust2\dust2_material_127.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_127.tga" />
+    <Image Include="models\maps\dust2\dust2_material_128.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_128.tga" />
+    <Image Include="models\maps\dust2\dust2_material_129.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_129.tga" />
+    <Image Include="models\maps\dust2\dust2_material_130.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_130.tga" />
+    <Image Include="models\maps\dust2\dust2_material_131.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_131.tga" />
+    <Image Include="models\maps\dust2\dust2_material_132.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_132.tga" />
+    <Image Include="models\maps\dust2\dust2_material_133.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_133.tga" />
+    <Image Include="models\maps\dust2\dust2_material_134.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_134.tga" />
+    <Image Include="models\maps\dust2\dust2_material_135.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_135.tga" />
+    <Image Include="models\maps\dust2\dust2_material_136.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_136.tga" />
+    <Image Include="models\maps\dust2\dust2_material_137.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_137.tga" />
+    <Image Include="models\maps\dust2\dust2_material_138.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_138.tga" />
+    <Image Include="models\maps\dust2\dust2_material_139.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_139.tga" />
+    <Image Include="models\maps\dust2\dust2_material_140.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_140.tga" />
+    <Image Include="models\maps\dust2\dust2_material_141.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_141.tga" />
+    <Image Include="models\maps\dust2\dust2_material_142.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_142.tga" />
+    <Image Include="models\maps\dust2\dust2_material_143.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_143.tga" />
+    <Image Include="models\maps\dust2\dust2_material_144.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_144.tga" />
+    <Image Include="models\maps\dust2\dust2_material_145.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_145.tga" />
+    <Image Include="models\maps\dust2\dust2_material_146.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_146.tga" />
+    <Image Include="models\maps\dust2\dust2_material_147.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_147.tga" />
+    <Image Include="models\maps\dust2\dust2_material_148.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_148.tga" />
+    <Image Include="models\maps\dust2\dust2_material_149.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\dust2_material_149.tga" />
+    <Image Include="models\maps\dust2\textures\dust2_material_0.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_1.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_2.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_3.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_4.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_5.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_6.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_7.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_8.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_9.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_10.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_11.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_12.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_13.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_14.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_15.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_16.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_17.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_18.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_19.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_20.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_21.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_22.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_23.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_24.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_26.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_29.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_30.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_31.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_32.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_33.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_34.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_35.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_40.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_41.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_42.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_46.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_47.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_48.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_49.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_50.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_51.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_52.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_53.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_54.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_55.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_56.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_57.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_58.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_59.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_60.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_61.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_62.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_63.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_64.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_65.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_66.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_67.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_68.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_69.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_70.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_71.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_72.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_73.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_74.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_75.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_76.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_77.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_78.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_79.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_80.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_81.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_83.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_84.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_85.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_86.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_88.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_91.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_92.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_93.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_94.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_95.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_96.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_97.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_103.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_109.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_111.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_112.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_113.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_117.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_118.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_121.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_125.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_128.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_129.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_130.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_143.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_144.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust2\textures\dust2_material_145.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust\de_dust2_material_0.tga" />
+    <Image Include="models\maps\dust\de_dust2_material_1.tga" />
+    <Image Include="models\maps\dust\de_dust2_material_2.tga" />
+    <Image Include="models\maps\dust\de_dust2_material_3.tga" />
+    <Image Include="models\maps\dust\de_dust2_material_4.tga" />
+    <Image Include="models\maps\dust\de_dust2_material_5.tga" />
+    <Image Include="models\maps\dust\de_dust2_material_6.tga" />
+    <Image Include="models\maps\dust\de_dust2_material_7.tga" />
+    <Image Include="models\maps\dust\de_dust2_material_8.tga" />
+    <Image Include="models\maps\dust\de_dust2_material_9.tga" />
+    <Image Include="models\maps\dust\de_dust2_material_10.tga" />
+    <Image Include="models\maps\dust\de_dust2_material_11.tga" />
+    <Image Include="models\maps\dust\de_dust2_material_12.tga" />
+    <Image Include="models\maps\dust\de_dust2_material_13.tga" />
+    <Image Include="models\maps\dust\de_dust2_material_14.tga" />
+    <Image Include="models\maps\dust\de_dust2_material_15.tga" />
+    <Image Include="models\maps\dust\de_dust2_material_16.tga" />
+    <Image Include="models\maps\dust\de_dust2_material_17.tga" />
+    <Image Include="models\maps\dust\de_dust2_material_18.tga" />
+    <Image Include="models\maps\dust\de_dust2_material_19.tga" />
+    <Image Include="models\maps\dust\de_dust2_material_20.tga" />
+    <Image Include="models\maps\dust\de_dust2_material_21.tga" />
+    <Image Include="models\maps\dust\de_dust2_material_22.tga" />
+    <Image Include="models\maps\dust\de_dust2_material_23.tga" />
+    <Image Include="models\maps\dust\de_dust2_material_24.tga" />
+    <Image Include="models\maps\dust\de_dust2_material_25.tga" />
+    <Image Include="models\maps\dust\de_dust2_material_26.tga" />
+    <Image Include="models\maps\dust\de_dust2_material_27.tga" />
+    <Image Include="models\maps\dust\de_dust2_material_28.tga" />
+    <Image Include="models\maps\dust\de_dust2_material_29.tga" />
+    <Image Include="models\maps\dust\de_dust2_material_30.tga" />
+    <Image Include="models\maps\dust\de_dust2_material_31.tga" />
+    <Image Include="models\maps\dust\de_dust2_material_32.tga" />
+    <Image Include="models\maps\dust\de_dust2_material_33.tga" />
+    <Image Include="models\maps\dust\textures\de_dust2_material_0.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust\textures\de_dust2_material_1.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust\textures\de_dust2_material_2.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust\textures\de_dust2_material_3.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust\textures\de_dust2_material_4.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust\textures\de_dust2_material_5.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust\textures\de_dust2_material_6.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust\textures\de_dust2_material_7.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust\textures\de_dust2_material_8.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust\textures\de_dust2_material_9.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust\textures\de_dust2_material_10.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust\textures\de_dust2_material_11.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust\textures\de_dust2_material_12.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust\textures\de_dust2_material_13.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust\textures\de_dust2_material_14.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust\textures\de_dust2_material_15.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust\textures\de_dust2_material_16.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust\textures\de_dust2_material_17.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust\textures\de_dust2_material_18.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust\textures\de_dust2_material_19.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust\textures\de_dust2_material_20.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust\textures\de_dust2_material_21.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust\textures\de_dust2_material_22.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust\textures\de_dust2_material_23.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust\textures\de_dust2_material_24.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust\textures\de_dust2_material_25.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust\textures\de_dust2_material_26.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust\textures\de_dust2_material_27.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust\textures\de_dust2_material_28.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust\textures\de_dust2_material_29.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust\textures\de_dust2_material_30.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust\textures\de_dust2_material_31.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust\textures\de_dust2_material_32.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust\textures\de_dust2_material_33.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust3\textures\gltf_embedded_0.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust3\textures\gltf_embedded_1.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust3\textures\gltf_embedded_2.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust3\textures\gltf_embedded_3.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust3\textures\gltf_embedded_4.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust3\textures\gltf_embedded_5.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust3\textures\gltf_embedded_6.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust3\textures\gltf_embedded_7.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust3\textures\gltf_embedded_8.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust3\textures\gltf_embedded_9.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\dust3\textures\gltf_embedded_10.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungA_MAT_baseColor_1.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungA_MAT_metallic-BLD_L_gedungA_MAT_roughness_2%40cha.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungA_MAT_normal_0.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungA_part1_MAT_baseColor_4.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungA_part1_MAT_metallic-BLD_L_gedungA_part1_MAT_rou.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungA_part1_MAT_normal_3.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungA_part2_MAT_baseColor_7.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungA_part2_MAT_metallic-BLD_L_gedungA_part2_MAT_rou.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungA_part2_MAT_normal_6.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungB_MAT_baseColor_10.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungB_MAT_baseColor_13.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungB_MAT_metallic-BLD_L_gedungB_MAT_roughness_11%40ch.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungB_MAT_normal_9.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungB_MAT_normal_12.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungB_part1_MAT_metallic-BLD_L_gedungB_part1_MAT_rou.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungB_part2_MAT.001_baseColor_16.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungB_part2_MAT.001_metallic-BLD_L_gedungB_part2_MAT.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungB_part2_MAT.001_normal_15.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungC_MAT_baseColor_19.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungC_MAT_metallic-BLD_L_gedungC_MAT_roughness_20.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungC_MAT_metallic-BLD_L_gedungC_MAT_roughness_20%40ch.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungC_MAT_normal_18.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungD_MAT_baseColor_22.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungD_MAT_metallic-BLD_L_gedungD_MAT_roughness_23%40ch.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungD_MAT_normal_21.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungE_MAT_baseColor_31.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungE_MAT_metallic-BLD_L_gedungE_MAT_roughness_32%40ch.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungE_MAT_normal_30.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungF_MAT_baseColor_46.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungF_MAT_metallic-BLD_L_gedungF_MAT_roughness_47%40ch.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungF_MAT_normal_45.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungG_MAT_baseColor_49.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungG_MAT_metallic-BLD_L_gedungG_MAT_roughness_50.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungG_MAT_metallic-BLD_L_gedungG_MAT_roughness_50%40ch.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungG_MAT_normal_48.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungH_MAT_baseColor_52.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungH_MAT_metallic-BLD_L_gedungH_MAT_roughness_53%40ch.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungH_MAT_normal_51.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungI_MAT_baseColor_55.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungI_metallic-BLD_L_gedungI_roughness_56%40channels=B.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungI_metallic-BLD_L_gedungI_roughness_56%40channels=G.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungI_normal_54.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungK_atap_MAT_baseColor_58.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungK_atap_MAT_metallic-BLD_L_gedungK_atap_MAT_rough.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungK_atap_MAT_normal_57.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungK_basketballCourt_MAT_baseColor_61.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungK_basketballCourt_MAT_metallic-BLD_L_gedungK_bas.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungK_basketballCourt_MAT_normal_60.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungK_dinding_MAT_baseColor_64.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungK_dinding_MAT_metallic-BLD_L_gedungK_dinding_MAT.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungK_dinding_MAT_normal_63.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungK_gate_MAT_baseColor_67.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungK_gate_MAT_metallic-BLD_L_gedungK_gate_MAT_rough.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungK_gate_MAT_normal_66.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungK_lantai_MAT_baseColor_70.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungK_lantai_MAT_metallic-BLD_L_gedungK_lantai_MAT_r.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungK_lantai_MAT_normal_69.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungK_tanggaBatu_MAT_baseColor_73.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungK_tanggaBatu_MAT_metallic-BLD_L_gedungK_tanggaBa.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungK_tanggaBatu_MAT_normal_72.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungL_MAT_baseColor_76.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungL_MAT_metallic-BLD_L_gedungL_MAT_roughness_77%40ch.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungL_MAT_normal_75.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungM_floor_MAT_baseColor_82.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungM_floor_MAT_metallic-BLD_L_gedungM_floor_MAT_rou.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungM_floor_MAT_normal_81.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungM_MAT_baseColor_79.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungM_MAT_metallic-BLD_L_gedungM_MAT_roughness_80.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungM_MAT_metallic-BLD_L_gedungM_MAT_roughness_80%40ch.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungM_MAT_normal_78.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungM_wall_MAT_baseColor_85.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungM_wall_MAT_metallic-BLD_L_gedungM_wall_MAT_rough.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_L_gedungM_wall_MAT_normal_84.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_STR_jalanan_1_MAT_baseColor_25.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_STR_jalanan_1_MAT_metallic-BLD_STR_jalanan_1_MAT_roughne.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_STR_jalanan_1_MAT_normal_24.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_STR_jalanan_2_MAT_baseColor_28.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_STR_jalanan_2_MAT_metallic-BLD_STR_jalanan_2_MAT_roughne.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\BLD_STR_jalanan_2_MAT_normal_27.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\VHC_L_burnedCar_MAT_ID1_baseColor_40.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\VHC_L_burnedCar_MAT_ID1_metallic.jpg-VHC_L_burnedCar_MAT_ID1.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\VHC_L_burnedCar_MAT_ID1_normal_39.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\VHC_L_burnedCar_MAT_ID2_baseColor_43.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\VHC_L_burnedCar_MAT_ID2_metallic-VHC_L_burnedCar_MAT_ID2_rou.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\VHC_L_burnedCar_MAT_ID2_normal_42.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\VHC_L_mobilKusam01_MAT_baseColor_34.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\VHC_L_mobilKusam01_MAT_metallic-VHC_L_mobilKusam01_MAT_rough.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\VHC_L_mobilKusam01_MAT_normal_33.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\VHC_L_vec_MAT_baseColor_37.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\VHC_L_vec_MAT_metallic-VHC_L_vec_MAT_roughness_38%40channels=B.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\VHC_L_vec_MAT_metallic-VHC_L_vec_MAT_roughness_38%40channels=G.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\123\textures\VHC_L_vec_MAT_normal_36.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+  </ItemGroup>
+</Project>
