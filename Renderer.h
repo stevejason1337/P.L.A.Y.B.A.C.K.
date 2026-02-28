@@ -10,6 +10,7 @@
 #include "Settings.h"
 #include "AnimatedModel.h"
 #include "Player.h"
+#include "WeaponManager.h"
 
 // ──────────────────────────────────────────────
 //  Shaders
@@ -156,8 +157,8 @@ struct Renderer
     unsigned int dotVAO = 0, floorVAO = 0, floorVBO = 0;
     int   lastFireCounter = 0;
     bool  reloadStarted = false;
-    float reloadTimer = 0.f;  // сколько времени идёт перезарядка
-    float reloadDuration = 2.5f; // максимум сек — потом принудительно завершаем
+    float reloadTimer = 0.f;
+    float reloadDuration = 2.5f;
 
     void init()
     {
@@ -174,86 +175,77 @@ struct Renderer
         glBindVertexArray(floorVAO);
         glBindBuffer(GL_ARRAY_BUFFER, floorVBO);
         glBufferData(GL_ARRAY_BUFFER, sizeof(fv), fv, GL_STATIC_DRAW);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);              glEnableVertexAttribArray(0);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float))); glEnableVertexAttribArray(1);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float))); glEnableVertexAttribArray(2);
     }
 
-    // ──────────────────────────────────────────
-    //  Единая точка завершения перезарядки
-    // ──────────────────────────────────────────
-    void finishReload(AnimatedModel& gm)
+    void onWeaponSwitch()
     {
-        gun.ammo = 12;
+        reloadStarted = false;
+        reloadTimer = 0.f;
+        lastFireCounter = fireAnimCounter;
+    }
+
+    void finishReload(AnimatedModel& gm, const std::string& idleAnim)
+    {
+        gun.ammo = weaponManager.activeDef().maxAmmo;
         gun.reloading = false;
         gun.shootCooldown = 0.f;
         reloadStarted = false;
         reloadTimer = 0.f;
         gm.animDone = false;
         gm.looping = true;
-        gm.curAnim = ""; // сброс чтобы play() не пропустил переход
-        gm.play(ANIM_IDLE, true);
-        std::cout << "[RELOAD] Done. Ammo:12\n";
+        gm.curAnim = "";
+        if (!idleAnim.empty() && gm.hasAnim(idleAnim))
+            gm.play(idleAnim, true);
+        std::cout << "[RELOAD] Done. Ammo:" << gun.ammo << "\n";
     }
 
-    // ──────────────────────────────────────────
-    //  Стейт-машина анимаций
-    // ──────────────────────────────────────────
     void updateGunAnim(AnimatedModel& gm, float dt)
     {
-        // Выстрел — запускаем одну из трёх вариаций
+        const WeaponDef& def = weaponManager.activeDef();
+
         if (fireAnimCounter != lastFireCounter) {
             lastFireCounter = fireAnimCounter;
             int v = fireAnimCounter % 3;
-            const char* fa = (v == 0) ? ANIM_FIRE : (v == 1) ? ANIM_FIRE_001 : ANIM_FIRE_002;
-            if (gm.hasAnim(fa))
-                gm.playOnce(fa, ANIM_IDLE);
+            const std::string& fa = (v == 0) ? def.animFire : (v == 1) ? def.animFire001 : def.animFire002;
+            if (!fa.empty() && gm.hasAnim(fa))
+                gm.playOnce(fa, def.animIdle);
         }
 
-        // Перезарядка
         if (gun.reloading) {
             if (!reloadStarted) {
                 reloadTimer = 0.f;
-                const char* ra = gun.reloadFull ? ANIM_RELOAD_FULL : ANIM_RELOAD_EASY;
-                if (gm.hasAnim(ra)) {
-                    gm.playOnce(ra, ANIM_IDLE);
+                const std::string& ra = gun.reloadFull ? def.animReloadFull : def.animReloadEasy;
+                if (!ra.empty() && gm.hasAnim(ra)) {
+                    gm.playOnce(ra, def.animIdle);
                     std::cout << "[RELOAD] Anim: " << ra << "\n";
                 }
                 else {
-                    std::cout << "[RELOAD] Anim NOT FOUND: " << ra << " — timer fallback\n";
+                    std::cout << "[RELOAD] Anim NOT FOUND — timer fallback\n";
                 }
                 reloadStarted = true;
             }
-
             reloadTimer += dt;
-
-            // Завершаем по событию анимации ИЛИ по таймеру (фолбек)
             if (gm.isDone() || reloadTimer >= reloadDuration) {
                 if (reloadTimer >= reloadDuration)
                     std::cout << "[RELOAD] Timeout! Force finish.\n";
-                finishReload(gm);
+                finishReload(gm, def.animIdle);
             }
         }
 
-        // Idle <-> Walk (только когда не перезаряжаемся)
         if (!gun.reloading) {
-            bool moving = glm::length(glm::vec2(player.vel.x, player.vel.z)) > 0.5f
-                && player.onGround;
-            if (gm.curAnim == std::string(ANIM_IDLE) && moving && gm.hasAnim(ANIM_WALK))
-                gm.play(ANIM_WALK, true);
-            if (gm.curAnim == std::string(ANIM_WALK) && !moving && gm.hasAnim(ANIM_IDLE))
-                gm.play(ANIM_IDLE, true);
+            bool moving = glm::length(glm::vec2(player.vel.x, player.vel.z)) > 0.5f && player.onGround;
+            if (gm.curAnim == def.animIdle && moving && !def.animWalk.empty() && gm.hasAnim(def.animWalk))
+                gm.play(def.animWalk, true);
+            if (!def.animWalk.empty() && gm.curAnim == def.animWalk && !moving && gm.hasAnim(def.animIdle))
+                gm.play(def.animIdle, true);
         }
 
         gm.update(dt);
     }
 
-    // ──────────────────────────────────────────
-    //  Render
-    // ──────────────────────────────────────────
     void drawScene(
         const std::vector<GPUMesh>& mapMeshes,
         AnimatedModel& gm,
@@ -266,7 +258,6 @@ struct Renderer
         glm::mat4 proj = glm::perspective(glm::radians(FOV),
             (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.05f, 5000.f);
 
-        // Map
         glEnable(GL_DEPTH_TEST);
         glUseProgram(worldShader);
         uMat4(worldShader, "view", view);
@@ -295,7 +286,6 @@ struct Renderer
             glDrawArrays(GL_TRIANGLES, 0, 6);
         }
 
-        // Bullet holes
         glUseProgram(dotShader);
         for (auto& bh : bulletHoles) {
             glm::mat4 mvp = proj * view * glm::translate(glm::mat4(1.f), bh.pos);
@@ -305,7 +295,6 @@ struct Renderer
             glDrawArrays(GL_TRIANGLES, 0, 6);
         }
 
-        // Gun
         if (!gm.meshes.empty()) {
             glClear(GL_DEPTH_BUFFER_BIT);
             glUseProgram(gunShader);
@@ -318,19 +307,22 @@ struct Renderer
             float bobY = moving ? cosf(gun.bobTimer * 2.f) * 0.002f : 0.f;
             if (moving && player.onGround) gun.bobTimer += 0.016f * 6.f;
 
+            const WeaponDef& def = weaponManager.activeDef();
+
+            // Положение оружия — у каждого своё через offsetRight/Up/Fwd
             glm::vec3 gPos = camPos
-                + right * (0.0f + bobX)
-                + up2 * (-0.25f + bobY + gun.recoilOffset)
-                + cf * 0.0f;
+                + right * (def.offsetRight + bobX)
+                + up2 * (def.offsetUp + bobY + gun.recoilOffset)
+                + cf * def.offsetFwd;
 
             glm::mat4 gMat(1.f);
             gMat[0] = glm::vec4(right, 0.f);
             gMat[1] = glm::vec4(up2, 0.f);
             gMat[2] = glm::vec4(-cf, 0.f);
             gMat[3] = glm::vec4(gPos, 1.f);
-            gMat = glm::rotate(gMat, glm::radians(180.f), glm::vec3(0, 1, 0));
-            gMat = glm::rotate(gMat, glm::radians(0.f), glm::vec3(1, 0, 0));
-            gMat = glm::scale(gMat, glm::vec3(GUN_SCALE));
+            gMat = glm::rotate(gMat, glm::radians(def.rotY), glm::vec3(0, 1, 0));
+            gMat = glm::rotate(gMat, glm::radians(def.rotX), glm::vec3(1, 0, 0));
+            gMat = glm::scale(gMat, glm::vec3(def.scale));
 
             uMat4(gunShader, "model", gMat);
             uMat4(gunShader, "view", view);

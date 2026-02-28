@@ -3,11 +3,20 @@
 #include <iostream>
 
 #include "Settings.h"
-#include "ModelLoader.h"   // includes AnimatedModel.h, defines Triangle, texCache
+#include "ModelLoader.h"
 #include "AABB.h"
 #include "Player.h"
+#include "WeaponManager.h"
 #include "Renderer.h"
 #include "Input.h"
+
+// Нужен в Input.h для onWeaponSwitch
+Renderer* gRenderer = nullptr;
+
+void onWeaponSwitchRenderer()
+{
+    if (gRenderer) gRenderer->onWeaponSwitch();
+}
 
 int main()
 {
@@ -17,7 +26,7 @@ int main()
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT,
-        "FPS | WASD  Shift Sprint  Space Jump  Ctrl Crouch  LMB Shoot  R Reload  ESC Quit",
+        "FPS | WASD  Shift Sprint  Space Jump  Ctrl Crouch  LMB Shoot  R Reload  1/2 Weapon  ESC Quit",
         NULL, NULL);
     if (!window) { glfwTerminate(); return -1; }
 
@@ -34,6 +43,7 @@ int main()
 
     Renderer renderer;
     renderer.init();
+    gRenderer = &renderer;
 
     // Map
     glm::mat4 mapT = glm::rotate(
@@ -47,12 +57,10 @@ int main()
     bvh.build(colTris);
     autoSpawn();
 
-    // Gun
-    std::cout << "[INFO] Loading gun...\n";
-    AnimatedModel gunModel;
-    gunModel.texLoader = loadTexture; // передаём функцию загрузки текстур
-    gunModel.load(GUN_FILE, GUN_TEX_DIR);
-    if (gunModel.hasAnim(ANIM_IDLE)) gunModel.play(ANIM_IDLE, true);
+    // Загружаем все оружия
+    std::cout << "[INFO] Loading weapons...\n";
+    weaponManager.loadAll();
+    gun.ammo = weaponManager.activeDef().maxAmmo;
 
     float dt = 0.f, last = 0.f;
 
@@ -65,13 +73,13 @@ int main()
         processMovement(window);
         updatePlayer(dt);
         updateGun(dt);
-        renderer.updateGunAnim(gunModel, dt);
+        renderer.updateGunAnim(weaponManager.active(), dt);
 
         glClearColor(0.4f, 0.6f, 0.9f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glm::vec3 camPos = player.pos + glm::vec3(0, player.eyeH, 0);
-        renderer.drawScene(mapMeshes, gunModel, mapT, camPos, camFront, camUp);
+        renderer.drawScene(mapMeshes, weaponManager.active(), mapT, camPos, camFront, camUp);
 
         glfwSwapBuffers(window);
         glfwPollEvents();

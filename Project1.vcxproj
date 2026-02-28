@@ -441,6 +441,7 @@
     <ClInclude Include="Settings.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="Triangle.h" />
+    <ClInclude Include="Weaponmanager.h" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="dependencies\lib\glfw3.lib" />

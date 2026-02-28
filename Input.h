@@ -6,6 +6,7 @@
 
 #include "Settings.h"
 #include "Player.h"
+#include "WeaponManager.h"
 
 inline glm::vec3 camFront = glm::vec3(0, 0, -1);
 inline glm::vec3 camUp = glm::vec3(0, 1, 0);
@@ -53,17 +54,40 @@ inline void mouse_callback(GLFWwindow*, double xIn, double yIn)
     camFront = glm::normalize(f);
 }
 
+// forward declaration — определяется в main.cpp
+struct Renderer;
+extern Renderer* gRenderer;
+void onWeaponSwitchRenderer(); // реализация в main.cpp
+
 inline void key_callback(GLFWwindow* w, int key, int, int action, int)
 {
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) glfwSetWindowShouldClose(w, GLFW_TRUE);
-    if (key == GLFW_KEY_R && action == GLFW_PRESS) doReload();
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+        glfwSetWindowShouldClose(w, GLFW_TRUE);
+
+    if (key == GLFW_KEY_R && action == GLFW_PRESS)
+        doReload(weaponManager.activeDef().maxAmmo);
+
+    // Переключение оружия 1/2/3/4
+    if (action == GLFW_PRESS && !gun.reloading) {
+        int idx = -1;
+        if (key == GLFW_KEY_1) idx = 0;
+        if (key == GLFW_KEY_2) idx = 1;
+        if (key == GLFW_KEY_3) idx = 2;
+        if (key == GLFW_KEY_4) idx = 3;
+
+        if (idx >= 0 && idx < (int)weaponManager.models.size() && idx != weaponManager.current) {
+            weaponManager.switchTo(idx);
+            onWeaponSwitchRenderer();
+        }
+    }
 }
 
 inline void mouse_button_callback(GLFWwindow*, int button, int action, int)
 {
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
         glm::vec3 camPos = player.pos + glm::vec3(0, player.eyeH, 0);
-        doShoot(camPos, camFront);
+        const WeaponDef& def = weaponManager.activeDef();
+        doShoot(camPos, camFront, def.fireRate, def.recoilKick);
     }
 }
 
