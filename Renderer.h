@@ -154,8 +154,10 @@ struct Renderer
 {
     unsigned int worldShader = 0, gunShader = 0, dotShader = 0;
     unsigned int dotVAO = 0, floorVAO = 0, floorVBO = 0;
-    int lastFireCounter = 0;
-    bool reloadStarted = false;
+    int   lastFireCounter = 0;
+    bool  reloadStarted = false;
+    float reloadTimer = 0.f;  // сколько времени идёт перезарядка
+    float reloadDuration = 2.5f; // максимум сек — потом принудительно завершаем
 
     void init()
     {
@@ -181,6 +183,23 @@ struct Renderer
     }
 
     // ──────────────────────────────────────────
+    //  Единая точка завершения перезарядки
+    // ──────────────────────────────────────────
+    void finishReload(AnimatedModel& gm)
+    {
+        gun.ammo = 12;
+        gun.reloading = false;
+        gun.shootCooldown = 0.f;
+        reloadStarted = false;
+        reloadTimer = 0.f;
+        gm.animDone = false;
+        gm.looping = true;
+        gm.curAnim = ""; // сброс чтобы play() не пропустил переход
+        gm.play(ANIM_IDLE, true);
+        std::cout << "[RELOAD] Done. Ammo:12\n";
+    }
+
+    // ──────────────────────────────────────────
     //  Стейт-машина анимаций
     // ──────────────────────────────────────────
     void updateGunAnim(AnimatedModel& gm, float dt)
@@ -197,22 +216,29 @@ struct Renderer
         // Перезарядка
         if (gun.reloading) {
             if (!reloadStarted) {
+                reloadTimer = 0.f;
                 const char* ra = gun.reloadFull ? ANIM_RELOAD_FULL : ANIM_RELOAD_EASY;
-                if (gm.hasAnim(ra)) gm.playOnce(ra, ANIM_IDLE);
+                if (gm.hasAnim(ra)) {
+                    gm.playOnce(ra, ANIM_IDLE);
+                    std::cout << "[RELOAD] Anim: " << ra << "\n";
+                }
+                else {
+                    std::cout << "[RELOAD] Anim NOT FOUND: " << ra << " — timer fallback\n";
+                }
                 reloadStarted = true;
             }
-            if (gm.isDone()) {
-                gun.ammo = 12;
-                gun.reloading = false;
-                gun.shootCooldown = 0.f;
-                reloadStarted = false;
-                gm.animDone = false;
-                gm.play(ANIM_IDLE, true);
-                std::cout << "[RELOAD] Done. Ammo:12\n";
+
+            reloadTimer += dt;
+
+            // Завершаем по событию анимации ИЛИ по таймеру (фолбек)
+            if (gm.isDone() || reloadTimer >= reloadDuration) {
+                if (reloadTimer >= reloadDuration)
+                    std::cout << "[RELOAD] Timeout! Force finish.\n";
+                finishReload(gm);
             }
         }
 
-        // Idle <-> Walk
+        // Idle <-> Walk (только когда не перезаряжаемся)
         if (!gun.reloading) {
             bool moving = glm::length(glm::vec2(player.vel.x, player.vel.z)) > 0.5f
                 && player.onGround;
@@ -250,7 +276,6 @@ struct Renderer
         if (!mapMeshes.empty()) {
             uMat4(worldShader, "model", mapT);
             uVec3(worldShader, "baseColor", glm::vec3(.75f, .72f, .65f));
-            // drawMeshes defined in ModelLoader.h — called from main
             for (auto& m : mapMeshes) {
                 if (m.texID) {
                     glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, m.texID);
@@ -293,7 +318,6 @@ struct Renderer
             float bobY = moving ? cosf(gun.bobTimer * 2.f) * 0.002f : 0.f;
             if (moving && player.onGround) gun.bobTimer += 0.016f * 6.f;
 
-            // Позиция жёстко в осях камеры — не зависит от направления взгляда
             glm::vec3 gPos = camPos
                 + right * (0.0f + bobX)
                 + up2 * (-0.25f + bobY + gun.recoilOffset)
