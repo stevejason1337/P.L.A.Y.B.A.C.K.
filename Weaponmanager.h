@@ -25,19 +25,24 @@ struct WeaponDef
     std::string animReloadEasy;
     std::string animReloadFull;
     std::string animWalk;
-    float       rotY = 180.f;  // поворот по Y
-    float       rotX = 0.f;    // поворот по X
-    float       offsetRight = 0.0f;   // смещение вправо/влево
-    float       offsetUp = -0.25f; // смещение вверх/вниз
-    float       offsetFwd = 0.0f;   // смещение вперёд/назад
+    float       rotY = 180.f;
+    float       rotX = 0.f;
+    float       offsetRight = 0.0f;
+    float       offsetUp = -0.25f;
+    float       offsetFwd = 0.0f;
+    int         slot = 0;
 };
 
 // ──────────────────────────────────────────────
-//  Список всех оружий — меняй значения под себя
+//  Список всех оружий
+//  Клавиша 1 — листает слот 0 (Glock, P9, Sawnoff)
+//  Клавиша 2 — листает слот 1 (AK-74)
 // ──────────────────────────────────────────────
 inline std::vector<WeaponDef> weaponDefs = {
 
-    // 0: Glock
+    // ── СЛОТ 0 (клавиша 1) ───────────────────
+
+    // Glock
     {
         "models/pistol/glock/glock.fbx",
         "models/pistol/glock/textures",
@@ -49,12 +54,48 @@ inline std::vector<WeaponDef> weaponDefs = {
         "Armature|FPS_Pistol_Reload_easy",
         "Armature|FPS_Pistol_Reload_full",
         "Armature|FPS_Pistol_Walk",
-        180.f, 0.f,      // rotY, rotX
-        0.0f, -0.25f, 0.0f  // offsetRight, offsetUp, offsetFwd
+        180.f, 0.f,
+        0.0f, -0.25f, 0.0f,
+        0
     },
 
-    // 1: AK-74
-    // offsetUp — меняй чтобы опустить/поднять (-0.4 ниже, -0.1 выше)
+    // P9
+    {
+        "models/pistol/p9/p9.glb",
+        "models/pistol/p9/textures",
+        0.01f, 15, 0.13f, 0.04f,
+        "WEP_Idle",
+        "WEP_Fire",
+        "WEP_Fire.001",
+        "WEP_Fire.001",
+        "WEP_Reload_01",
+        "WEP_Reload_01",
+        "WEP_Walk",
+        180.f, 0.f,
+        0.0f, -0.25f, 0.0f,
+        0
+    },
+
+    // Sawnoff
+    {
+        "models/pistol/sawnoff/sawnoff.fbx",
+        "models/pistol/sawnoff/textures",
+        0.01f, 2, 0.8f, 0.08f,
+        "WEP_Idle",
+        "WEP_Fire",
+        "WEP_Fire.001",
+        "WEP_Fire.001",
+        "WEP_Reload_01",
+        "WEP_Reload_01.001",
+        "WEP_Walk",
+        180.f, 0.f,
+        0.0f, -0.25f, 0.08f,
+        0
+    },
+
+    // ── СЛОТ 1 (клавиша 2) ───────────────────
+
+    // AK-74
     {
         "models/pistol/ak74/ak74.fbx",
         "models/pistol/ak74/textures",
@@ -66,8 +107,9 @@ inline std::vector<WeaponDef> weaponDefs = {
         "Rig|AK_Reload",
         "Rig|AK_Reload_full",
         "Rig|AK_Run",
-        180.f, 0.f,      // rotY, rotX
-        0.0f, -0.25f, 0.0f  // offsetRight, offsetUp, offsetFwd — меняй offsetUp
+        180.f, 0.f,
+        0.0f, -0.25f, 0.0f,
+        1
     },
 };
 
@@ -121,7 +163,29 @@ struct WeaponManager
         if (!def.animIdle.empty() && gm.hasAnim(def.animIdle))
             gm.play(def.animIdle, true);
 
-        std::cout << "[WEAPON] Switched to #" << current << "\n";
+        std::cout << "[WEAPON] Switched to #" << current
+            << " slot:" << def.slot << " " << def.file << "\n";
+    }
+
+    // Нажата клавиша слота — переключить внутри слота
+    void pressSlot(int slot)
+    {
+        std::vector<int> inSlot;
+        for (int i = 0; i < (int)weaponDefs.size(); i++)
+            if (weaponDefs[i].slot == slot)
+                inSlot.push_back(i);
+
+        if (inSlot.empty()) return;
+
+        // Если уже в этом слоте — берём следующее, иначе первое
+        int next = inSlot[0];
+        for (int i = 0; i < (int)inSlot.size(); i++) {
+            if (inSlot[i] == current) {
+                next = inSlot[(i + 1) % inSlot.size()];
+                break;
+            }
+        }
+        switchTo(next);
     }
 
     AnimatedModel& active() { return *models[current]; }

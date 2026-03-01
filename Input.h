@@ -7,6 +7,7 @@
 #include "Settings.h"
 #include "Player.h"
 #include "WeaponManager.h"
+#include "Console.h"
 
 inline glm::vec3 camFront = glm::vec3(0, 0, -1);
 inline glm::vec3 camUp = glm::vec3(0, 1, 0);
@@ -16,6 +17,8 @@ inline bool  firstMouse = true;
 
 inline void processMovement(GLFWwindow* w)
 {
+    if (console.open) return; // не двигаться пока консоль открыта
+
     player.crouching = (glfwGetKey(w, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS);
     player.sprinting = (glfwGetKey(w, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
         && !player.crouching && player.onGround;
@@ -31,16 +34,27 @@ inline void processMovement(GLFWwindow* w)
     if (glfwGetKey(w, GLFW_KEY_D) == GLFW_PRESS) dir += right;
 
     if (glm::length(dir) > 0.001f) dir = glm::normalize(dir);
-    player.vel.x = dir.x * speed;
-    player.vel.z = dir.z * speed;
 
-    if (glfwGetKey(w, GLFW_KEY_SPACE) == GLFW_PRESS && player.onGround && !player.crouching) {
-        player.vel.y = JUMP_FORCE; player.onGround = false;
+    // Noclip — летаем свободно
+    if (noclip) {
+        player.vel = dir * speed * 2.f;
+        player.vel.y = 0.f;
+        if (glfwGetKey(w, GLFW_KEY_SPACE) == GLFW_PRESS)  player.vel.y = speed;
+        if (glfwGetKey(w, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) player.vel.y = -speed;
+        player.onGround = false;
+    }
+    else {
+        player.vel.x = dir.x * speed;
+        player.vel.z = dir.z * speed;
+        if (glfwGetKey(w, GLFW_KEY_SPACE) == GLFW_PRESS && player.onGround && !player.crouching) {
+            player.vel.y = JUMP_FORCE; player.onGround = false;
+        }
     }
 }
 
 inline void mouse_callback(GLFWwindow*, double xIn, double yIn)
 {
+    if (console.open) return;
     float x = (float)xIn, y = (float)yIn;
     if (firstMouse) { lastX = x; lastY = y; firstMouse = false; }
     yaw += (x - lastX) * MOUSE_SENS;
@@ -54,29 +68,51 @@ inline void mouse_callback(GLFWwindow*, double xIn, double yIn)
     camFront = glm::normalize(f);
 }
 
-// forward declaration — определяется в main.cpp
 struct Renderer;
 extern Renderer* gRenderer;
-void onWeaponSwitchRenderer(); // реализация в main.cpp
+void onWeaponSwitchRenderer();
+
+inline void char_callback(GLFWwindow*, unsigned int c)
+{
+    console.charInput(c);
+}
 
 inline void key_callback(GLFWwindow* w, int key, int, int action, int)
 {
+    // Тильда — открыть/закрыть консоль
+    if (key == GLFW_KEY_GRAVE_ACCENT && action == GLFW_PRESS) {
+        console.toggle();
+        if (console.open) {
+            glfwSetInputMode(w, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        }
+        else {
+            glfwSetInputMode(w, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            firstMouse = true;
+        }
+        return;
+    }
+
+    // Если консоль открыта — передаём клавиши ей
+    if (console.open) {
+        console.keyInput(key, action);
+        return;
+    }
+
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(w, GLFW_TRUE);
 
     if (key == GLFW_KEY_R && action == GLFW_PRESS)
         doReload(weaponManager.activeDef().maxAmmo);
 
-    // Переключение оружия 1/2/3/4
+    // Переключение оружий по слотам
     if (action == GLFW_PRESS && !gun.reloading) {
-        int idx = -1;
-        if (key == GLFW_KEY_1) idx = 0;
-        if (key == GLFW_KEY_2) idx = 1;
-        if (key == GLFW_KEY_3) idx = 2;
-        if (key == GLFW_KEY_4) idx = 3;
-
-        if (idx >= 0 && idx < (int)weaponManager.models.size() && idx != weaponManager.current) {
-            weaponManager.switchTo(idx);
+        int slot = -1;
+        if (key == GLFW_KEY_1) slot = 0;
+        if (key == GLFW_KEY_2) slot = 1;
+        if (key == GLFW_KEY_3) slot = 2;
+        if (key == GLFW_KEY_4) slot = 3;
+        if (slot >= 0) {
+            weaponManager.pressSlot(slot);
             onWeaponSwitchRenderer();
         }
     }
@@ -84,6 +120,7 @@ inline void key_callback(GLFWwindow* w, int key, int, int action, int)
 
 inline void mouse_button_callback(GLFWwindow*, int button, int action, int)
 {
+    if (console.open) return;
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
         glm::vec3 camPos = player.pos + glm::vec3(0, player.eyeH, 0);
         const WeaponDef& def = weaponManager.activeDef();

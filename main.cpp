@@ -7,10 +7,11 @@
 #include "AABB.h"
 #include "Player.h"
 #include "WeaponManager.h"
+#include "TextRenderer.h"
+#include "Console.h"
 #include "Renderer.h"
 #include "Input.h"
 
-// Нужен в Input.h для onWeaponSwitch
 Renderer* gRenderer = nullptr;
 
 void onWeaponSwitchRenderer()
@@ -26,7 +27,7 @@ int main()
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT,
-        "FPS | WASD  Shift Sprint  Space Jump  Ctrl Crouch  LMB Shoot  R Reload  1/2 Weapon  ESC Quit",
+        "FPS | WASD  Shift Sprint  Space Jump  Ctrl Crouch  LMB Shoot  R Reload  1/2 Weapon  ~ Console  ESC Quit",
         NULL, NULL);
     if (!window) { glfwTerminate(); return -1; }
 
@@ -35,15 +36,22 @@ int main()
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetKeyCallback(window, key_callback);
     glfwSetMouseButtonCallback(window, mouse_button_callback);
+    glfwSetCharCallback(window, char_callback);  // ← для ввода текста в консоль
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) return -1;
     glEnable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
 
+    // TextRenderer — инициализируем до консоли
+    textRenderer.init("C:/123321/Project1/x64/Debug/cour.ttf", 16.f, SCR_WIDTH, SCR_HEIGHT);
+
     Renderer renderer;
     renderer.init();
     gRenderer = &renderer;
+
+    // Console
+    console.init();
 
     // Map
     glm::mat4 mapT = glm::rotate(
@@ -57,7 +65,7 @@ int main()
     bvh.build(colTris);
     autoSpawn();
 
-    // Загружаем все оружия
+    // Weapons
     std::cout << "[INFO] Loading weapons...\n";
     weaponManager.loadAll();
     gun.ammo = weaponManager.activeDef().maxAmmo;
@@ -67,12 +75,23 @@ int main()
     while (!glfwWindowShouldClose(window))
     {
         float now = (float)glfwGetTime();
-        dt = now - last; last = now;
-        if (dt > 0.05f) dt = 0.05f;
+        dt = (now - last) * timeScale; last = now;
+        if (dt > 0.1f) dt = 0.1f;
 
         processMovement(window);
-        updatePlayer(dt);
+
+        // Noclip — отключаем гравитацию
+        if (!noclip) {
+            updatePlayer(dt);
+        }
+        else {
+            // В noclip просто двигаемся без физики
+            player.pos += player.vel * dt;
+            player.onGround = false;
+        }
+
         updateGun(dt);
+        console.update(dt);
         renderer.updateGunAnim(weaponManager.active(), dt);
 
         glClearColor(0.4f, 0.6f, 0.9f, 1.f);
@@ -80,6 +99,12 @@ int main()
 
         glm::vec3 camPos = player.pos + glm::vec3(0, player.eyeH, 0);
         renderer.drawScene(mapMeshes, weaponManager.active(), mapT, camPos, camFront, camUp);
+
+        // HUD и консоль (2D поверх)
+        glDisable(GL_DEPTH_TEST);
+        console.drawHUD(now - last < 0.0001f ? dt : now - last);
+        console.draw();
+        glEnable(GL_DEPTH_TEST);
 
         glfwSwapBuffers(window);
         glfwPollEvents();

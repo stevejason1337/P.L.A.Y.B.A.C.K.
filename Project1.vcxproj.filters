@@ -938,6 +938,12 @@
     <ClInclude Include="Weaponmanager.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
+    <ClInclude Include="Textrenderer.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="Console.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Library Include="dependencies\lib\glfw3.lib" />
@@ -1376,6 +1382,7 @@
     <None Include="models\maps\dust\de_dust2.mtl" />
     <None Include="models\maps\dust3\dust3.glb" />
     <None Include="models\maps\123\123.glb" />
+    <None Include="models\pistol\sawnoff\sawnoff.fbx" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="dependencies\include\glm\CMakeLists.txt" />
@@ -3021,6 +3028,36 @@
       <Filter>Файлы ресурсов</Filter>
     </Image>
     <Image Include="models\maps\123\textures\VHC_L_vec_MAT_normal_36.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\sawnoff\textures\armAO.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\sawnoff\textures\armColor.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\sawnoff\textures\armmetallic.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\sawnoff\textures\armNormal.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\sawnoff\textures\armsmoothness.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\sawnoff\textures\sawnoffAo.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\sawnoff\textures\sawnoffColor.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\sawnoff\textures\sawnoffMetallic.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\sawnoff\textures\sawnoffNormal.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\pistol\sawnoff\textures\sawnoffSmoothness.png">
       <Filter>Файлы ресурсов</Filter>
     </Image>
   </ItemGroup>
