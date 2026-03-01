@@ -9,9 +9,6 @@
 #include "TextRenderer.h"
 #include "Settings.h"
 
-// ──────────────────────────────────────────────
-//  Цвета в стиле Source
-// ──────────────────────────────────────────────
 #define CON_WHITE  glm::vec4(0.85f,0.85f,0.85f,1.f)
 #define CON_YELLOW glm::vec4(1.f,0.8f,0.2f,1.f)
 #define CON_RED    glm::vec4(1.f,0.3f,0.3f,1.f)
@@ -19,14 +16,6 @@
 #define CON_CYAN   glm::vec4(0.4f,0.9f,1.f,1.f)
 #define CON_GRAY   glm::vec4(0.55f,0.55f,0.55f,1.f)
 
-struct ConLine {
-    std::string text;
-    glm::vec4   color;
-};
-
-// ──────────────────────────────────────────────
-//  Глобальные переменные игры (для команд)
-// ──────────────────────────────────────────────
 inline bool  noclip = false;
 inline bool  godMode = false;
 inline bool  showFPS = true;
@@ -34,34 +23,49 @@ inline bool  showPos = true;
 inline bool  showHUD = true;
 inline float timeScale = 1.f;
 inline bool  wireframe = false;
-inline float fpsValue = 0.f;  // обновляется в main loop
+inline float fpsValue = 0.f;
 
-// ══════════════════════════════════════════════
-//  Console
-// ══════════════════════════════════════════════
+struct ConLine {
+    std::string text;
+    glm::vec4   color;
+};
+
+// forward declarations
+struct EnemyManager;
+extern EnemyManager enemyManager;
+struct Character;
+extern Character player;
+struct GunState;
+extern GunState gun;
+extern float playerHP;
+extern float playerMaxHP;
+
 struct Console
 {
+    // Публичные цвета для использования снаружи
+    const glm::vec4 CON_CYAN_VAL = CON_CYAN;
+    const glm::vec4 CON_WHITE_VAL = CON_WHITE;
+
     bool  open = false;
     bool  justOpened = false;
 
-    std::string         input;
-    std::vector<ConLine>lines;
+    std::string          input;
+    std::vector<ConLine> lines;
     std::vector<std::string> history;
-    int                 histIdx = -1;
-    int                 scroll = 0;
-    float               cursorBlink = 0.f;
-    bool                cursorVis = true;
+    int   histIdx = -1;
+    int   scroll = 0;
+    float cursorBlink = 0.f;
+    bool  cursorVis = true;
 
-    // Размеры консоли (Source style — верхняя половина экрана)
-    float conH()   const { return SCR_HEIGHT * 0.5f; }
-    float conW()   const { return (float)SCR_WIDTH; }
-    float lineH()  const { return 18.f; }
-    float padX()   const { return 8.f; }
+    float conH()  const { return SCR_HEIGHT * 0.5f; }
+    float conW()  const { return (float)SCR_WIDTH; }
+    float lineH() const { return 18.f; }
+    float padX()  const { return 8.f; }
 
     void init()
     {
-        print("Source-style Developer Console", CON_YELLOW);
-        print("Type 'help' for list of commands.", CON_GRAY);
+        print("=== 3D Engine Developer Console ===", CON_YELLOW);
+        print("Type 'help' for commands.", CON_GRAY);
         print("", CON_WHITE);
     }
 
@@ -69,7 +73,7 @@ struct Console
     {
         lines.push_back({ text, col });
         if ((int)lines.size() > 512) lines.erase(lines.begin());
-        scroll = 0; // scroll to bottom
+        scroll = 0;
     }
 
     void toggle()
@@ -79,44 +83,35 @@ struct Console
         if (open) { input = ""; histIdx = -1; }
     }
 
-    // ──────────────────────────────────────────
-    //  Выполнить команду
-    // ──────────────────────────────────────────
     void execute(const std::string& cmd)
     {
         if (cmd.empty()) return;
-
-        // Добавить в историю
         history.push_back(cmd);
         histIdx = -1;
-
         print("] " + cmd, CON_WHITE);
 
-        // Парсинг
         std::istringstream ss(cmd);
         std::string name; ss >> name;
-        // lowercase
         std::transform(name.begin(), name.end(), name.begin(), ::tolower);
 
-        // ── Команды ───────────────────────────
-
         if (name == "help") {
-            print("--- Commands ---", CON_YELLOW);
-            print("noclip          - toggle fly/noclip", CON_CYAN);
-            print("god             - toggle god mode", CON_CYAN);
-            print("kill            - kill yourself (respawn)", CON_CYAN);
-            print("give ammo       - refill ammo", CON_CYAN);
-            print("give weapon <N> - switch to weapon N (0,1,2...)", CON_CYAN);
-            print("setpos <x> <y> <z> - teleport", CON_CYAN);
-            print("timescale <f>   - set time scale (1.0=normal)", CON_CYAN);
-            print("fps             - toggle FPS display", CON_CYAN);
-            print("pos             - toggle position display", CON_CYAN);
-            print("hud             - toggle HUD", CON_CYAN);
-            print("wireframe       - toggle wireframe", CON_CYAN);
-            print("clear           - clear console", CON_CYAN);
-            print("quit / exit     - quit game", CON_CYAN);
-            print("map_info        - show map info", CON_CYAN);
-            print("weapon_list     - list all weapons", CON_CYAN);
+            print("--- General ---", CON_YELLOW);
+            print("noclip              - fly through walls", CON_CYAN);
+            print("god                 - god mode", CON_CYAN);
+            print("kill                - respawn", CON_CYAN);
+            print("give ammo           - refill ammo", CON_CYAN);
+            print("give weapon <N>     - switch weapon", CON_CYAN);
+            print("setpos <x> <y> <z>  - teleport", CON_CYAN);
+            print("timescale <f>       - time scale", CON_CYAN);
+            print("--- Display ---", CON_YELLOW);
+            print("fps / pos / hud     - toggle displays", CON_CYAN);
+            print("wireframe           - toggle wireframe", CON_CYAN);
+            print("--- Enemies ---", CON_YELLOW);
+            print("spawn [N]           - spawn N enemies near you", CON_CYAN);
+            print("killall             - kill all enemies", CON_CYAN);
+            print("enemies             - show enemy count", CON_CYAN);
+            print("--- Other ---", CON_YELLOW);
+            print("clear / quit        - clear / exit", CON_CYAN);
         }
         else if (name == "noclip") {
             noclip = !noclip;
@@ -124,28 +119,27 @@ struct Console
         }
         else if (name == "god") {
             godMode = !godMode;
-            print(godMode ? "God mode ON" : "God mode OFF", CON_GREEN);
+            print(godMode ? "God mode ON — you cannot die" : "God mode OFF", CON_GREEN);
         }
         else if (name == "kill") {
-            player.pos.y = -9999.f; // триггер respawn
-            print("Killed.", CON_RED);
+            player.pos.y = -9999.f;
+            playerHP = playerMaxHP;
+            print("Killed. Respawning...", CON_RED);
         }
         else if (name == "give") {
             std::string what; ss >> what;
             std::transform(what.begin(), what.end(), what.begin(), ::tolower);
             if (what == "ammo") {
+                // forward — определяется в WeaponManager.h
+                extern struct WeaponManager weaponManager;
                 gun.ammo = weaponManager.activeDef().maxAmmo;
-                print("Ammo refilled: " + std::to_string(gun.ammo), CON_GREEN);
+                print("Ammo refilled.", CON_GREEN);
             }
             else if (what == "weapon") {
-                int idx; ss >> idx;
-                if (idx >= 0 && idx < (int)weaponManager.models.size()) {
-                    weaponManager.switchTo(idx);
-                    print("Switched to weapon " + std::to_string(idx), CON_GREEN);
-                }
-                else {
-                    print("Invalid weapon index.", CON_RED);
-                }
+                int idx = 0; ss >> idx;
+                extern struct WeaponManager weaponManager;
+                weaponManager.switchTo(idx);
+                print("Switched to weapon " + std::to_string(idx), CON_GREEN);
             }
             else { print("give: unknown: " + what, CON_RED); }
         }
@@ -155,117 +149,75 @@ struct Console
                 player.pos = glm::vec3(x, y, z);
                 player.vel = glm::vec3(0);
                 std::ostringstream o;
-                o << std::fixed << std::setprecision(1)
-                    << "Teleported to (" << x << ", " << y << ", " << z << ")";
+                o << std::fixed << std::setprecision(1);
+                o << "Teleported to (" << x << ", " << y << ", " << z << ")";
                 print(o.str(), CON_GREEN);
             }
-            else { print("Usage: setpos <x> <y> <z>", CON_RED); }
+            else print("Usage: setpos <x> <y> <z>", CON_RED);
         }
         else if (name == "timescale") {
             float v; if (ss >> v) {
                 timeScale = glm::clamp(v, 0.01f, 10.f);
                 print("timescale = " + std::to_string(timeScale), CON_GREEN);
             }
-            else { print("Usage: timescale <value>", CON_RED); }
+            else print("Usage: timescale <value>", CON_RED);
         }
-        else if (name == "fps") {
-            showFPS = !showFPS;
-            print(showFPS ? "FPS display ON" : "FPS display OFF", CON_GREEN);
-        }
-        else if (name == "pos") {
-            showPos = !showPos;
-            print(showPos ? "Position display ON" : "Position display OFF", CON_GREEN);
-        }
-        else if (name == "hud") {
-            showHUD = !showHUD;
-            print(showHUD ? "HUD ON" : "HUD OFF", CON_GREEN);
-        }
+        else if (name == "fps") { showFPS = !showFPS; print(showFPS ? "FPS ON" : "FPS OFF", CON_GREEN); }
+        else if (name == "pos") { showPos = !showPos; print(showPos ? "Pos ON" : "Pos OFF", CON_GREEN); }
+        else if (name == "hud") { showHUD = !showHUD; print(showHUD ? "HUD ON" : "HUD OFF", CON_GREEN); }
         else if (name == "wireframe") {
             wireframe = !wireframe;
             glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
             print(wireframe ? "Wireframe ON" : "Wireframe OFF", CON_GREEN);
         }
-        else if (name == "clear") {
-            lines.clear();
+        else if (name == "spawn") {
+            int n = 1; ss >> n; if (n < 1)n = 1; if (n > 20)n = 20;
+            glm::vec3 spawnPos = player.pos + glm::vec3(5, 0, 0);
+            enemyManager.spawnGroup(spawnPos, n, n > 1 ? 4.f : 0.f);
+            print("Spawned " + std::to_string(n) + " enemy(s).", CON_GREEN);
         }
-        else if (name == "quit" || name == "exit") {
-            print("Goodbye.", CON_YELLOW);
-            exit(0);
-        }
-        else if (name == "map_info") {
-            std::ostringstream o;
-            o << std::fixed << std::setprecision(1);
-            o << "Map: " << MAP_FILE;
-            print(o.str(), CON_CYAN);
-            if (!bvh.nodes.empty()) {
-                o.str("");
-                o << "BVH world min: (" << bvh.worldMin.x << ", " << bvh.worldMin.y << ", " << bvh.worldMin.z << ")";
-                print(o.str(), CON_GRAY);
-                o.str("");
-                o << "BVH world max: (" << bvh.worldMax.x << ", " << bvh.worldMax.y << ", " << bvh.worldMax.z << ")";
-                print(o.str(), CON_GRAY);
+        else if (name == "killall") {
+            int cnt = 0;
+            for (auto& e : enemyManager.enemies) {
+                if (!e.isDead()) { e.takeDamage(9999.f); cnt++; }
             }
+            print("Killed " + std::to_string(cnt) + " enemies.", CON_GREEN);
         }
-        else if (name == "weapon_list") {
-            print("--- Weapons ---", CON_YELLOW);
-            for (int i = 0; i < (int)weaponDefs.size(); i++) {
-                std::string line = "[" + std::to_string(i) + "] slot:"
-                    + std::to_string(weaponDefs[i].slot) + " "
-                    + weaponDefs[i].file;
-                if (i == weaponManager.current) line += " <-- active";
-                print(line, i == weaponManager.current ? CON_GREEN : CON_GRAY);
-            }
+        else if (name == "enemies") {
+            print("Enemies alive: " + std::to_string(enemyManager.enemies.size()), CON_CYAN);
         }
-        else {
-            print("Unknown command: " + name + "  (type 'help')", CON_RED);
-        }
+        else if (name == "clear") { lines.clear(); }
+        else if (name == "quit" || name == "exit") { print("Goodbye.", CON_YELLOW); exit(0); }
+        else { print("Unknown command: " + name + "  (type 'help')", CON_RED); }
 
         input = "";
     }
 
-    // ──────────────────────────────────────────
-    //  Обработка ввода символов
-    // ──────────────────────────────────────────
     void charInput(unsigned int c)
     {
         if (!open) return;
-        if (c >= 32 && c < 127)
-            input += (char)c;
+        if (c >= 32 && c < 127) input += (char)c;
     }
 
     void keyInput(int key, int action)
     {
         if (!open) return;
-        if (action != 1 && action != 2) return; // PRESS or REPEAT
-
-        if (key == 257) { // ENTER
-            execute(input);
-        }
-        else if (key == 259) { // BACKSPACE
-            if (!input.empty()) input.pop_back();
-        }
-        else if (key == 265) { // UP — история
+        if (action != 1 && action != 2) return;
+        if (key == 257) execute(input);
+        else if (key == 259) { if (!input.empty()) input.pop_back(); }
+        else if (key == 265) {
             if (!history.empty()) {
                 histIdx = std::min((int)history.size() - 1, histIdx + 1);
                 input = history[history.size() - 1 - histIdx];
             }
         }
-        else if (key == 264) { // DOWN — история
-            if (histIdx > 0) {
-                histIdx--;
-                input = history[history.size() - 1 - histIdx];
-            }
+        else if (key == 264) {
+            if (histIdx > 0) { histIdx--; input = history[history.size() - 1 - histIdx]; }
             else { histIdx = -1; input = ""; }
         }
-        else if (key == 258) { // TAB — автодополнение
-            autoComplete();
-        }
-        else if (key == 266) { // PAGE UP
-            scroll = std::min(scroll + 5, (int)lines.size());
-        }
-        else if (key == 267) { // PAGE DOWN
-            scroll = std::max(scroll - 5, 0);
-        }
+        else if (key == 258) autoComplete();
+        else if (key == 266) scroll = std::min(scroll + 5, (int)lines.size());
+        else if (key == 267) scroll = std::max(scroll - 5, 0);
     }
 
     void autoComplete()
@@ -273,19 +225,12 @@ struct Console
         static const std::vector<std::string> cmds = {
             "help","noclip","god","kill","give ammo","give weapon",
             "setpos","timescale","fps","pos","hud","wireframe",
-            "clear","quit","exit","map_info","weapon_list"
+            "spawn","killall","enemies","clear","quit"
         };
         std::vector<std::string> matches;
-        for (auto& c : cmds)
-            if (c.substr(0, input.size()) == input) matches.push_back(c);
-
-        if (matches.size() == 1) {
-            input = matches[0];
-        }
-        else if (matches.size() > 1) {
-            print("", CON_WHITE);
-            for (auto& m : matches) print("  " + m, CON_CYAN);
-        }
+        for (auto& c : cmds) if (c.substr(0, input.size()) == input) matches.push_back(c);
+        if (matches.size() == 1) input = matches[0];
+        else if (matches.size() > 1) { print("", CON_WHITE); for (auto& m : matches) print("  " + m, CON_CYAN); }
     }
 
     void update(float dt)
@@ -294,105 +239,67 @@ struct Console
         if (cursorBlink > 0.5f) { cursorBlink = 0; cursorVis = !cursorVis; }
     }
 
-    // ──────────────────────────────────────────
-    //  Рендер консоли (Source style)
-    // ──────────────────────────────────────────
     void draw()
     {
         if (!open) return;
+        float W = conW(), H = conH(), lh = lineH(), px = padX();
 
-        float W = conW(), H = conH();
-        float lh = lineH(), px = padX();
-
-        // Фон — тёмный полупрозрачный
         textRenderer.drawRect(0, 0, W, H, glm::vec4(0.05f, 0.07f, 0.05f, 0.92f));
-
-        // Верхняя полоска — тёмно-зелёная как в Source
         textRenderer.drawRect(0, 0, W, 24.f, glm::vec4(0.1f, 0.2f, 0.1f, 1.f));
         textRenderer.drawText("DEVELOPER CONSOLE", px, 17.f, CON_YELLOW);
-
-        // Версия справа
-        std::string ver = "FPS Engine v0.1";
-        float vw = textRenderer.textWidth(ver);
-        textRenderer.drawText(ver, W - vw - px, 17.f, CON_GRAY);
-
-        // Разделитель
+        std::string ver = "3D Engine v0.1";
+        textRenderer.drawText(ver, W - textRenderer.textWidth(ver) - px, 17.f, CON_GRAY);
         textRenderer.drawRect(0, 24.f, W, 1.f, glm::vec4(0.3f, 0.5f, 0.3f, 1.f));
 
-        // Строка ввода внизу консоли
-        float inputY = H - 4.f;
         textRenderer.drawRect(0, H - 24.f, W, 24.f, glm::vec4(0.08f, 0.12f, 0.08f, 1.f));
         textRenderer.drawRect(0, H - 25.f, W, 1.f, glm::vec4(0.3f, 0.5f, 0.3f, 1.f));
-
         std::string inputLine = "] " + input;
-        textRenderer.drawText(inputLine, px, inputY, CON_WHITE);
-
-        // Курсор мигающий
+        textRenderer.drawText(inputLine, px, H - 4.f, CON_WHITE);
         if (cursorVis) {
             float cx = textRenderer.textWidth(inputLine) + px + 1.f;
             textRenderer.drawRect(cx, H - 22.f, 8.f, 16.f, glm::vec4(0.8f, 0.9f, 0.8f, 0.9f));
         }
 
-        // Лог сообщений
-        float areaH = H - 24.f - 26.f; // между заголовком и строкой ввода
+        float areaH = H - 24.f - 26.f;
         int maxLines = (int)(areaH / lh);
-
         int total = (int)lines.size();
         int startIdx = std::max(0, total - maxLines - scroll);
         int endIdx = std::max(0, total - scroll);
-
         float ty = 24.f + lh;
         for (int i = startIdx; i < endIdx; i++) {
             textRenderer.drawText(lines[i].text, px, ty, lines[i].color);
             ty += lh;
         }
-
-        // Подсказка прокрутки
         if (scroll > 0) {
-            std::string hint = "[scroll: " + std::to_string(scroll) + " lines up | PgDn to go back]";
+            std::string hint = "[" + std::to_string(scroll) + " lines up | PgDn]";
             textRenderer.drawText(hint, px, H - 42.f, CON_GRAY);
         }
     }
 
-    // ──────────────────────────────────────────
-    //  HUD — всегда поверх экрана
-    // ──────────────────────────────────────────
     void drawHUD(float dt)
     {
         float W = (float)SCR_WIDTH, H = (float)SCR_HEIGHT;
 
-        // FPS
         if (showFPS) {
-            static float fpsTimer = 0.f;
-            static int   fpsSamples = 0;
-            static float fpsSum = 0.f;
-            fpsTimer += dt; fpsSum += (dt > 0 ? 1.f / dt : 0); fpsSamples++;
-            if (fpsTimer >= 0.25f) {
-                fpsValue = fpsSum / fpsSamples;
-                fpsTimer = 0; fpsSum = 0; fpsSamples = 0;
-            }
-            glm::vec4 fpsCol = fpsValue >= 60 ? CON_GREEN : (fpsValue >= 30 ? CON_YELLOW : CON_RED);
-            std::ostringstream o;
-            o << std::fixed << std::setprecision(0) << "FPS: " << fpsValue;
-            textRenderer.drawText(o.str(), W - 90.f, 20.f, fpsCol);
+            static float ft = 0, fs = 0; static int fn = 0;
+            ft += dt; fs += (dt > 0 ? 1.f / dt : 0); fn++;
+            if (ft >= 0.25f) { fpsValue = fs / fn; ft = 0; fs = 0; fn = 0; }
+            glm::vec4 fc = fpsValue >= 60 ? CON_GREEN : (fpsValue >= 30 ? CON_YELLOW : CON_RED);
+            std::ostringstream o; o << std::fixed << std::setprecision(0) << "FPS: " << fpsValue;
+            textRenderer.drawText(o.str(), W - 90.f, 20.f, fc);
         }
 
-        // Координаты
         if (showPos) {
             std::ostringstream o;
             o << std::fixed << std::setprecision(1)
-                << "X:" << player.pos.x
-                << " Y:" << player.pos.y
-                << " Z:" << player.pos.z;
+                << "X:" << player.pos.x << " Y:" << player.pos.y << " Z:" << player.pos.z;
             textRenderer.drawText(o.str(), 8.f, 20.f, CON_CYAN);
         }
 
-        // Статус noclip / god
         float sy = 38.f;
         if (noclip) { textRenderer.drawText("[NOCLIP]", 8.f, sy, CON_YELLOW); sy += 18.f; }
         if (godMode) { textRenderer.drawText("[GOD]", 8.f, sy, CON_GREEN);  sy += 18.f; }
 
-        // HUD оружия
         if (showHUD) {
             // Прицел
             float cx = W / 2.f, cy = H / 2.f;
@@ -400,18 +307,17 @@ struct Console
             textRenderer.drawRect(cx - 8.f, cy - 1.f, 16.f, 2.f, glm::vec4(1, 1, 1, 0.8f));
 
             // Патроны
-            const WeaponDef& def = weaponManager.activeDef();
+            extern struct WeaponManager weaponManager;
+            const auto& def = weaponManager.activeDef();
             std::string ammoStr = std::to_string(gun.ammo) + " / " + std::to_string(def.maxAmmo);
-            glm::vec4 ammoCol = gun.ammo == 0 ? CON_RED : (gun.ammo <= 3 ? CON_YELLOW : CON_WHITE);
+            glm::vec4 ac = gun.ammo == 0 ? CON_RED : (gun.ammo <= 3 ? CON_YELLOW : CON_WHITE);
             float aw = textRenderer.textWidth(ammoStr);
-            textRenderer.drawText(ammoStr, W - aw - 12.f, H - 20.f, ammoCol);
+            textRenderer.drawText(ammoStr, W - aw - 12.f, H - 20.f, ac);
 
-            // Название оружия
             std::string wname = def.file.substr(def.file.rfind('/') + 1);
             wname = wname.substr(0, wname.rfind('.'));
             textRenderer.drawText(wname, W - textRenderer.textWidth(wname) - 12.f, H - 40.f, CON_GRAY);
 
-            // Перезарядка
             if (gun.reloading)
                 textRenderer.drawText("RELOADING...", cx - 40.f, cy + 30.f, CON_YELLOW);
         }

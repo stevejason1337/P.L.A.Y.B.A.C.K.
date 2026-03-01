@@ -435,6 +435,7 @@
     <ClInclude Include="dependencies\include\glm\vec4.hpp" />
     <ClInclude Include="dependencies\include\glm\vector_relational.hpp" />
     <ClInclude Include="dependencies\include\KHR\khrplatform.h" />
+    <ClInclude Include="Enemy.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="Modelloader.h" />
     <ClInclude Include="Player.h" />
@@ -589,6 +590,7 @@
     <None Include="dependencies\include\glm\gtx\vector_angle.inl" />
     <None Include="dependencies\include\glm\gtx\vector_query.inl" />
     <None Include="dependencies\include\glm\gtx\wrap.inl" />
+    <None Include="models\characters\soldier\soldier.glb" />
     <None Include="models\maps\123\123.glb" />
     <None Include="models\maps\de_meat\mrmeat.fbx" />
     <None Include="models\maps\dm\dm.glb" />
@@ -603,6 +605,10 @@
     <None Include="models\pistol\mak\mak.fbx" />
     <None Include="models\pistol\sawnoff\sawnoff.fbx" />
     <None Include="Project1.slnx" />
+    <None Include="x64\Debug\models\characters\soldier\soldier.glb" />
+    <None Include="x64\Debug\models\pistol\ak74\ak74.fbx" />
+    <None Include="x64\Debug\models\pistol\glock\glock.fbx" />
+    <None Include="x64\Debug\models\pistol\sawnoff\sawnoff.fbx" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="dependencies\include\glm\CMakeLists.txt" />
@@ -1288,6 +1294,32 @@
     <Image Include="models\textures\hw_dixing_02.png" />
     <Image Include="models\textures\hw_peijing_01.png" />
     <Image Include="models\textures\hw_peijing_02.png" />
+    <Image Include="x64\Debug\models\pistol\ak74\textures\ak74m_AlbedoTransparency.png" />
+    <Image Include="x64\Debug\models\pistol\ak74\textures\ak74m_AO.png" />
+    <Image Include="x64\Debug\models\pistol\ak74\textures\ak74m_Metallic.png" />
+    <Image Include="x64\Debug\models\pistol\ak74\textures\ak74m_Normal.png" />
+    <Image Include="x64\Debug\models\pistol\ak74\textures\ak74m_Roughness.png" />
+    <Image Include="x64\Debug\models\pistol\ak74\textures\armColor.png" />
+    <Image Include="x64\Debug\models\pistol\ak74\textures\armNormal.png" />
+    <Image Include="x64\Debug\models\pistol\ak74\textures\armRoughness.png" />
+    <Image Include="x64\Debug\models\pistol\glock\textures\armAO.png" />
+    <Image Include="x64\Debug\models\pistol\glock\textures\armColor.png" />
+    <Image Include="x64\Debug\models\pistol\glock\textures\armNormal.png" />
+    <Image Include="x64\Debug\models\pistol\glock\textures\armRoughness.png" />
+    <Image Include="x64\Debug\models\pistol\glock\textures\for_texturing_None.001_Diffuse.png" />
+    <Image Include="x64\Debug\models\pistol\glock\textures\for_texturing_None.001_Glossiness.png" />
+    <Image Include="x64\Debug\models\pistol\glock\textures\for_texturing_None.001_Normal.png" />
+    <Image Include="x64\Debug\models\pistol\glock\textures\for_texturing_None.001_Specular.png" />
+    <Image Include="x64\Debug\models\pistol\sawnoff\textures\armAO.png" />
+    <Image Include="x64\Debug\models\pistol\sawnoff\textures\armColor.png" />
+    <Image Include="x64\Debug\models\pistol\sawnoff\textures\armmetallic.png" />
+    <Image Include="x64\Debug\models\pistol\sawnoff\textures\armNormal.png" />
+    <Image Include="x64\Debug\models\pistol\sawnoff\textures\armsmoothness.png" />
+    <Image Include="x64\Debug\models\pistol\sawnoff\textures\sawnoffAo.png" />
+    <Image Include="x64\Debug\models\pistol\sawnoff\textures\sawnoffColor.png" />
+    <Image Include="x64\Debug\models\pistol\sawnoff\textures\sawnoffMetallic.png" />
+    <Image Include="x64\Debug\models\pistol\sawnoff\textures\sawnoffNormal.png" />
+    <Image Include="x64\Debug\models\pistol\sawnoff\textures\sawnoffSmoothness.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

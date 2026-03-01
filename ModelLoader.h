@@ -76,6 +76,7 @@ inline std::vector<GPUMesh> loadModel(const std::string& path,
         std::vector<float> verts;
         std::vector<unsigned int> idx;
 
+        if (!am->mVertices) continue;  // ← добавь эту строку
         for (unsigned int i=0;i<am->mNumVertices;i++) {
             verts.push_back(am->mVertices[i].x);
             verts.push_back(am->mVertices[i].y);

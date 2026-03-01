@@ -17,7 +17,7 @@ inline bool  firstMouse = true;
 
 inline void processMovement(GLFWwindow* w)
 {
-    if (console.open) return; // не двигаться пока консоль открыта
+    if (console.open) return;
 
     player.crouching = (glfwGetKey(w, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS);
     player.sprinting = (glfwGetKey(w, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
@@ -35,11 +35,10 @@ inline void processMovement(GLFWwindow* w)
 
     if (glm::length(dir) > 0.001f) dir = glm::normalize(dir);
 
-    // Noclip — летаем свободно
     if (noclip) {
         player.vel = dir * speed * 2.f;
         player.vel.y = 0.f;
-        if (glfwGetKey(w, GLFW_KEY_SPACE) == GLFW_PRESS)  player.vel.y = speed;
+        if (glfwGetKey(w, GLFW_KEY_SPACE) == GLFW_PRESS)        player.vel.y = speed;
         if (glfwGetKey(w, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) player.vel.y = -speed;
         player.onGround = false;
     }
@@ -72,6 +71,10 @@ struct Renderer;
 extern Renderer* gRenderer;
 void onWeaponSwitchRenderer();
 
+// Объявлена в main.cpp
+void shootWithEnemyCheck(const glm::vec3& camPos, const glm::vec3& camFront,
+    float fireRate, float recoilKick);
+
 inline void char_callback(GLFWwindow*, unsigned int c)
 {
     console.charInput(c);
@@ -79,24 +82,14 @@ inline void char_callback(GLFWwindow*, unsigned int c)
 
 inline void key_callback(GLFWwindow* w, int key, int, int action, int)
 {
-    // Тильда — открыть/закрыть консоль
     if (key == GLFW_KEY_GRAVE_ACCENT && action == GLFW_PRESS) {
         console.toggle();
-        if (console.open) {
-            glfwSetInputMode(w, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        }
-        else {
-            glfwSetInputMode(w, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-            firstMouse = true;
-        }
+        if (console.open) glfwSetInputMode(w, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        else { glfwSetInputMode(w, GLFW_CURSOR, GLFW_CURSOR_DISABLED); firstMouse = true; }
         return;
     }
 
-    // Если консоль открыта — передаём клавиши ей
-    if (console.open) {
-        console.keyInput(key, action);
-        return;
-    }
+    if (console.open) { console.keyInput(key, action); return; }
 
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(w, GLFW_TRUE);
@@ -104,17 +97,13 @@ inline void key_callback(GLFWwindow* w, int key, int, int action, int)
     if (key == GLFW_KEY_R && action == GLFW_PRESS)
         doReload(weaponManager.activeDef().maxAmmo);
 
-    // Переключение оружий по слотам
     if (action == GLFW_PRESS && !gun.reloading) {
         int slot = -1;
         if (key == GLFW_KEY_1) slot = 0;
         if (key == GLFW_KEY_2) slot = 1;
         if (key == GLFW_KEY_3) slot = 2;
         if (key == GLFW_KEY_4) slot = 3;
-        if (slot >= 0) {
-            weaponManager.pressSlot(slot);
-            onWeaponSwitchRenderer();
-        }
+        if (slot >= 0) { weaponManager.pressSlot(slot); onWeaponSwitchRenderer(); }
     }
 }
 
@@ -124,7 +113,7 @@ inline void mouse_button_callback(GLFWwindow*, int button, int action, int)
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
         glm::vec3 camPos = player.pos + glm::vec3(0, player.eyeH, 0);
         const WeaponDef& def = weaponManager.activeDef();
-        doShoot(camPos, camFront, def.fireRate, def.recoilKick);
+        shootWithEnemyCheck(camPos, camFront, def.fireRate, def.recoilKick);
     }
 }
 

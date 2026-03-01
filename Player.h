@@ -41,6 +41,12 @@ struct BulletHole { glm::vec3 pos; float life; };
 inline std::vector<BulletHole> bulletHoles;
 
 // ──────────────────────────────────────────────
+//  HP игрока
+// ──────────────────────────────────────────────
+inline float playerHP = 100.f;
+inline float playerMaxHP = 100.f;
+
+// ──────────────────────────────────────────────
 //  Auto spawn
 // ──────────────────────────────────────────────
 inline void autoSpawn()
@@ -52,12 +58,11 @@ inline void autoSpawn()
     float hitDist;
     if (bvh.raycast(o, { 0,-1,0 }, searchY - bvh.worldMin.y + 10.f, hitDist)) {
         player.pos = glm::vec3(center.x, o.y - hitDist + 0.1f, center.z);
-        std::cout << "[SPAWN] (" << player.pos.x << "," << player.pos.y << "," << player.pos.z << ")\n";
     }
     else {
         player.pos = glm::vec3(center.x, bvh.worldMax.y + 5.f, center.z);
-        std::cout << "[SPAWN] Fallback\n";
     }
+    std::cout << "[SPAWN] (" << player.pos.x << "," << player.pos.y << "," << player.pos.z << ")\n";
 }
 
 // ──────────────────────────────────────────────
@@ -87,7 +92,6 @@ inline void updatePlayer(float dt)
     float killY = bvh.nodes.empty() ? -300.f : bvh.worldMin.y - 50.f;
     if (player.pos.y < killY) {
         autoSpawn(); player.vel = glm::vec3(0);
-        std::cout << "[RESET] Respawned\n";
     }
 
     float th = player.crouching ? CROUCH_H : STAND_H;
@@ -116,8 +120,15 @@ inline void updateGun(float dt)
 }
 
 // ──────────────────────────────────────────────
-//  Shoot — принимает параметры текущего оружия
+//  Shoot — вызывается из main.cpp где уже есть Enemy.h
 // ──────────────────────────────────────────────
+inline void doShootWorld(const glm::vec3& camPos, const glm::vec3& camFront)
+{
+    glm::vec3 hitPos;
+    if (shootRay(camPos, camFront, hitPos))
+        bulletHoles.push_back({ hitPos, 5.f });
+}
+
 inline void doShoot(const glm::vec3& camPos, const glm::vec3& camFront,
     float fireRate, float recoilKick)
 {
@@ -127,14 +138,12 @@ inline void doShoot(const glm::vec3& camPos, const glm::vec3& camFront,
     gun.recoilTimer = 0.1f;
     flashTimer = 0.06f;
     fireAnimCounter++;
-    glm::vec3 hitPos;
-    if (shootRay(camPos, camFront, hitPos)) bulletHoles.push_back({ hitPos, 5.f });
     std::cout << "[SHOOT] Ammo:" << gun.ammo << "\n";
     if (gun.ammo <= 0) std::cout << "[SHOOT] Empty! R to reload.\n";
 }
 
 // ──────────────────────────────────────────────
-//  Reload — maxAmmo передаётся снаружи
+//  Reload
 // ──────────────────────────────────────────────
 inline void doReload(int maxAmmo)
 {
