@@ -26,6 +26,13 @@ struct WeaponDef
     float       rotY = 180.f;
     float       rotX = 0.f;
     int         slot = 0;
+
+    // ── Поправка позиции для каждого оружия ──
+    // Прибавляется к глобальным GUN_OFFSET_* из Settings.h
+    // Меняй эти значения если конкретное оружие стоит не там
+    float       posRight = 0.f;   // влево/вправо
+    float       posUp = 0.f;   // вверх/вниз
+    float       posFwd = 0.f;   // вперёд/назад
 };
 
 inline std::vector<WeaponDef> weaponDefs = {
@@ -42,7 +49,8 @@ inline std::vector<WeaponDef> weaponDefs = {
         "Armature|FPS_Pistol_Reload_easy",
         "Armature|FPS_Pistol_Reload_full",
         "Armature|FPS_Pistol_Walk",
-        180.f, 0.f, 0
+        180.f, 0.f, 0,
+        0.f, 0.f, 0.f   // posRight, posUp, posFwd
     },
 
     // 1: Sawnoff (слот 0)
@@ -57,14 +65,15 @@ inline std::vector<WeaponDef> weaponDefs = {
         "WEP_Reload_01",
         "WEP_Reload_01.001",
         "WEP_Walk",
-        180.f, 0.f, 0
+        180.f, 0.f, 0,
+        0.f, 0.f, 0.f   // posRight, posUp, posFwd
     },
 
     // 2: AK-74 (слот 1)
     {
         "models/pistol/ak74/ak74.fbx",
         "models/pistol/ak74/textures",
-        1.0f, 30, 0.1f, 0.06f,
+        0.01f, 30, 0.1f, 0.06f,
         "Rig|AK_Idle",
         "Rig|AK_Shot",
         "Rig|AK_Shot",
@@ -72,7 +81,8 @@ inline std::vector<WeaponDef> weaponDefs = {
         "Rig|AK_Reload",
         "Rig|AK_Reload_full",
         "Rig|AK_Run",
-        180.f, 0.f, 1
+        180.f, 0.f, 1,
+        0.f, 0.f, 0.f   // posRight, posUp, posFwd
     },
 };
 
