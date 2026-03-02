@@ -23,7 +23,9 @@ inline void processMovement(GLFWwindow* w)
     player.sprinting = (glfwGetKey(w, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
         && !player.crouching && player.onGround;
 
-    float speed = player.sprinting ? SPRINT_SPEED : player.crouching ? CROUCH_SPEED : WALK_SPEED;
+    float speed = player.sprinting ? SPRINT_SPEED
+        : player.crouching ? CROUCH_SPEED : WALK_SPEED;
+
     glm::vec3 flat = glm::normalize(glm::vec3(camFront.x, 0, camFront.z));
     glm::vec3 right = glm::normalize(glm::cross(flat, camUp));
     glm::vec3 dir(0);
@@ -45,7 +47,9 @@ inline void processMovement(GLFWwindow* w)
     else {
         player.vel.x = dir.x * speed;
         player.vel.z = dir.z * speed;
-        if (glfwGetKey(w, GLFW_KEY_SPACE) == GLFW_PRESS && player.onGround && !player.crouching) {
+        if (glfwGetKey(w, GLFW_KEY_SPACE) == GLFW_PRESS
+            && player.onGround && !player.crouching)
+        {
             player.vel.y = JUMP_FORCE; player.onGround = false;
         }
     }
@@ -57,9 +61,8 @@ inline void mouse_callback(GLFWwindow*, double xIn, double yIn)
     float x = (float)xIn, y = (float)yIn;
     if (firstMouse) { lastX = x; lastY = y; firstMouse = false; }
     yaw += (x - lastX) * MOUSE_SENS;
-    pitch += (lastY - y) * MOUSE_SENS;
+    pitch = glm::clamp(pitch + (lastY - y) * MOUSE_SENS, -PITCH_LIM, PITCH_LIM);
     lastX = x; lastY = y;
-    pitch = glm::clamp(pitch, -PITCH_LIM, PITCH_LIM);
     glm::vec3 f;
     f.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
     f.y = sin(glm::radians(pitch));
@@ -70,10 +73,7 @@ inline void mouse_callback(GLFWwindow*, double xIn, double yIn)
 struct Renderer;
 extern Renderer* gRenderer;
 void onWeaponSwitchRenderer();
-
-// Объявлена в main.cpp
-void shootWithEnemyCheck(const glm::vec3& camPos, const glm::vec3& camFront,
-    float fireRate, float recoilKick);
+void shootWithEnemyCheck(const glm::vec3&, const glm::vec3&, float, float);
 
 inline void char_callback(GLFWwindow*, unsigned int c)
 {
@@ -82,6 +82,7 @@ inline void char_callback(GLFWwindow*, unsigned int c)
 
 inline void key_callback(GLFWwindow* w, int key, int, int action, int)
 {
+    // ` = toggle console
     if (key == GLFW_KEY_GRAVE_ACCENT && action == GLFW_PRESS) {
         console.toggle();
         if (console.open) glfwSetInputMode(w, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
@@ -91,8 +92,7 @@ inline void key_callback(GLFWwindow* w, int key, int, int action, int)
 
     if (console.open) { console.keyInput(key, action); return; }
 
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-        glfwSetWindowShouldClose(w, GLFW_TRUE);
+    // ESC removed — use console "quit" command to exit
 
     if (key == GLFW_KEY_R && action == GLFW_PRESS)
         doReload(weaponManager.activeDef().maxAmmo);
@@ -111,9 +111,9 @@ inline void mouse_button_callback(GLFWwindow*, int button, int action, int)
 {
     if (console.open) return;
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-        glm::vec3 camPos = player.pos + glm::vec3(0, player.eyeH, 0);
+        glm::vec3 cp = player.pos + glm::vec3(0, player.eyeH, 0);
         const WeaponDef& def = weaponManager.activeDef();
-        shootWithEnemyCheck(camPos, camFront, def.fireRate, def.recoilKick);
+        shootWithEnemyCheck(cp, camFront, def.fireRate, def.recoilKick);
     }
 }
 

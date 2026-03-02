@@ -12,9 +12,6 @@
 #include "Player.h"
 #include "WeaponManager.h"
 
-// ──────────────────────────────────────────────
-//  Shaders
-// ──────────────────────────────────────────────
 const char* WORLD_VERT = R"(
 #version 330 core
 layout(location=0) in vec3 aPos;
@@ -95,9 +92,6 @@ out vec4 FragColor;
 uniform vec4 color;
 void main(){FragColor=color;})";
 
-// ──────────────────────────────────────────────
-//  Helpers
-// ──────────────────────────────────────────────
 inline unsigned int buildShader(const char* v, const char* f)
 {
     auto compile = [](unsigned int t, const char* s) {
@@ -113,31 +107,15 @@ inline unsigned int buildShader(const char* v, const char* f)
     glDeleteShader(vs); glDeleteShader(fs);
     return p;
 }
-inline void uMat4(unsigned int p, const char* n, const glm::mat4& m)
-{
-    glUniformMatrix4fv(glGetUniformLocation(p, n), 1, GL_FALSE, glm::value_ptr(m));
-}
-inline void uVec3(unsigned int p, const char* n, const glm::vec3& v)
-{
-    glUniform3fv(glGetUniformLocation(p, n), 1, glm::value_ptr(v));
-}
-inline void uVec4(unsigned int p, const char* n, const glm::vec4& v)
-{
-    glUniform4fv(glGetUniformLocation(p, n), 1, glm::value_ptr(v));
-}
-inline void uFloat(unsigned int p, const char* n, float v)
-{
-    glUniform1f(glGetUniformLocation(p, n), v);
-}
-inline void uBool(unsigned int p, const char* n, bool v)
-{
-    glUniform1i(glGetUniformLocation(p, n), (int)v);
-}
+inline void uMat4(unsigned int p, const char* n, const glm::mat4& m) { glUniformMatrix4fv(glGetUniformLocation(p, n), 1, GL_FALSE, glm::value_ptr(m)); }
+inline void uVec3(unsigned int p, const char* n, const glm::vec3& v) { glUniform3fv(glGetUniformLocation(p, n), 1, glm::value_ptr(v)); }
+inline void uVec4(unsigned int p, const char* n, const glm::vec4& v) { glUniform4fv(glGetUniformLocation(p, n), 1, glm::value_ptr(v)); }
+inline void uFloat(unsigned int p, const char* n, float v) { glUniform1f(glGetUniformLocation(p, n), v); }
+inline void uBool(unsigned int p, const char* n, bool v) { glUniform1i(glGetUniformLocation(p, n), (int)v); }
 
 inline unsigned int makeDotVAO()
 {
-    float v[] = { -.05f,-.05f,0,.05f,-.05f,0,.05f,.05f,0,
-               -.05f,-.05f,0,.05f,.05f,0,-.05f,.05f,0 };
+    float v[] = { -.05f,-.05f,0,.05f,-.05f,0,.05f,.05f,0,-.05f,-.05f,0,.05f,.05f,0,-.05f,.05f,0 };
     unsigned int VAO, VBO;
     glGenVertexArrays(1, &VAO); glGenBuffers(1, &VBO);
     glBindVertexArray(VAO);
@@ -148,9 +126,6 @@ inline unsigned int makeDotVAO()
     return VAO;
 }
 
-// ══════════════════════════════════════════════
-//  Renderer
-// ══════════════════════════════════════════════
 struct Renderer
 {
     unsigned int worldShader = 0, gunShader = 0, dotShader = 0;
@@ -182,23 +157,17 @@ struct Renderer
 
     void onWeaponSwitch()
     {
-        reloadStarted = false;
-        reloadTimer = 0.f;
+        reloadStarted = false; reloadTimer = 0.f;
         lastFireCounter = fireAnimCounter;
     }
 
     void finishReload(AnimatedModel& gm, const std::string& idleAnim)
     {
         gun.ammo = weaponManager.activeDef().maxAmmo;
-        gun.reloading = false;
-        gun.shootCooldown = 0.f;
-        reloadStarted = false;
-        reloadTimer = 0.f;
-        gm.animDone = false;
-        gm.looping = true;
-        gm.curAnim = "";
-        if (!idleAnim.empty() && gm.hasAnim(idleAnim))
-            gm.play(idleAnim, true);
+        gun.reloading = false; gun.shootCooldown = 0.f;
+        reloadStarted = false; reloadTimer = 0.f;
+        gm.animDone = false; gm.looping = true; gm.curAnim = "";
+        if (!idleAnim.empty() && gm.hasAnim(idleAnim)) gm.play(idleAnim, true);
         std::cout << "[RELOAD] Done. Ammo:" << gun.ammo << "\n";
     }
 
@@ -210,8 +179,7 @@ struct Renderer
             lastFireCounter = fireAnimCounter;
             int v = fireAnimCounter % 3;
             const std::string& fa = (v == 0) ? def.animFire : (v == 1) ? def.animFire001 : def.animFire002;
-            if (!fa.empty() && gm.hasAnim(fa))
-                gm.playOnce(fa, def.animIdle);
+            if (!fa.empty() && gm.hasAnim(fa)) gm.playOnce(fa, def.animIdle);
         }
 
         if (gun.reloading) {
@@ -222,15 +190,12 @@ struct Renderer
                     gm.playOnce(ra, def.animIdle);
                     std::cout << "[RELOAD] Anim: " << ra << "\n";
                 }
-                else {
-                    std::cout << "[RELOAD] Anim NOT FOUND — timer fallback\n";
-                }
+                else std::cout << "[RELOAD] Anim NOT FOUND — timer fallback\n";
                 reloadStarted = true;
             }
             reloadTimer += dt;
             if (gm.isDone() || reloadTimer >= reloadDuration) {
-                if (reloadTimer >= reloadDuration)
-                    std::cout << "[RELOAD] Timeout! Force finish.\n";
+                if (reloadTimer >= reloadDuration) std::cout << "[RELOAD] Timeout!\n";
                 finishReload(gm, def.animIdle);
             }
         }
@@ -309,11 +274,11 @@ struct Renderer
 
             const WeaponDef& def = weaponManager.activeDef();
 
-            // Положение оружия — у каждого своё через offsetRight/Up/Fwd
+            // Универсальное положение — меняй GUN_OFFSET_* в Settings.h
             glm::vec3 gPos = camPos
-                + right * (def.offsetRight + bobX)
-                + up2 * (def.offsetUp + bobY + gun.recoilOffset)
-                + cf * def.offsetFwd;
+                + right * (GUN_OFFSET_RIGHT + bobX)
+                + up2 * (GUN_OFFSET_UP + bobY + gun.recoilOffset)
+                + cf * GUN_OFFSET_FWD;
 
             glm::mat4 gMat(1.f);
             gMat[0] = glm::vec4(right, 0.f);

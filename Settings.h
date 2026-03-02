@@ -24,13 +24,22 @@ const float CROUCH_SPEED = 2.5f;
 const float STAND_H = 1.7f;
 const float CROUCH_H = 0.9f;
 
-// NOTE: Настройки оружий теперь в WeaponManager.h (weaponDefs)
-// Эти константы используются как дефолт для совместимости
+// ──────────────────────────────────────────────
+//  Универсальное положение рук (все оружия)
+//  Меняй эти значения — двигаются ВСЕ оружия сразу
+// ──────────────────────────────────────────────
+const float GUN_OFFSET_RIGHT = 0.0f;   // влево/вправо
+const float GUN_OFFSET_UP = -0.25f; // вверх/вниз
+const float GUN_OFFSET_FWD = 0.0f;   // вперёд/назад
+
+// Recoil
+const float RECOIL_KICK = 0.04f;
+
+// Дефолтные значения (для совместимости)
 const float GUN_SCALE = 0.01f;
 const char* GUN_FILE = "models/pistol/glock/glock.fbx";
 const char* GUN_TEX_DIR = "models/pistol/glock/textures";
 const float FIRE_RATE = 0.15f;
-const float RECOIL_KICK = 0.04f;
 
 // Анимации пистолета
 const char* ANIM_IDLE = "Armature|FPS_Pistol_Idle";
