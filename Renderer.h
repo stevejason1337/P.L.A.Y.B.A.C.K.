@@ -138,6 +138,11 @@ struct Renderer
     float reloadTimer = 0.f;
     float reloadDuration = 2.5f;
 
+    // ── Кешированные uniform locations (инициализируются один раз в init) ──
+    struct WorldLocs { int model, view, proj, lightDir, baseColor, hasTex, tex; } wl{};
+    struct GunLocs { int model, view, proj, skinned, bones, hasTex, tex, gunColor, flash; } gl{};
+    struct DotLocs { int mvp, color; } dl{};
+
     void init()
     {
         worldShader = buildShader(WORLD_VERT, WORLD_FRAG);
@@ -156,6 +161,28 @@ struct Renderer
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);              glEnableVertexAttribArray(0);
         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float))); glEnableVertexAttribArray(1);
         glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float))); glEnableVertexAttribArray(2);
+
+        // Кешируем uniform locations
+        wl.model = glGetUniformLocation(worldShader, "model");
+        wl.view = glGetUniformLocation(worldShader, "view");
+        wl.proj = glGetUniformLocation(worldShader, "projection");
+        wl.lightDir = glGetUniformLocation(worldShader, "lightDir");
+        wl.baseColor = glGetUniformLocation(worldShader, "baseColor");
+        wl.hasTex = glGetUniformLocation(worldShader, "hasTexture");
+        wl.tex = glGetUniformLocation(worldShader, "tex");
+
+        gl.model = glGetUniformLocation(gunShader, "model");
+        gl.view = glGetUniformLocation(gunShader, "view");
+        gl.proj = glGetUniformLocation(gunShader, "projection");
+        gl.skinned = glGetUniformLocation(gunShader, "skinned");
+        gl.bones = glGetUniformLocation(gunShader, "bones");
+        gl.hasTex = glGetUniformLocation(gunShader, "hasTexture");
+        gl.tex = glGetUniformLocation(gunShader, "tex");
+        gl.gunColor = glGetUniformLocation(gunShader, "gunColor");
+        gl.flash = glGetUniformLocation(gunShader, "flash");
+
+        dl.mvp = glGetUniformLocation(dotShader, "mvp");
+        dl.color = glGetUniformLocation(dotShader, "color");
     }
 
     void onWeaponSwitch()
@@ -222,7 +249,6 @@ struct Renderer
         const glm::vec3& cf,
         const glm::vec3& cu)
     {
-        // ADS
         float adsTarget = isADS ? 1.f : 0.f;
         gun.adsProgress += (adsTarget - gun.adsProgress) * ADS_SPEED * (1.f / 60.f);
         if (gun.adsProgress < 0.001f) gun.adsProgress = 0.f;
@@ -233,46 +259,56 @@ struct Renderer
             (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.05f, 5000.f);
 
         glEnable(GL_DEPTH_TEST);
+        glEnable(GL_CULL_FACE);        // отсечение задних граней
+        glCullFace(GL_BACK);
         glUseProgram(worldShader);
-        uMat4(worldShader, "view", view);
-        uMat4(worldShader, "projection", proj);
-        uVec3(worldShader, "lightDir", glm::vec3(.3f, -1.f, .4f));
+        glUniformMatrix4fv(wl.view, 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(wl.proj, 1, GL_FALSE, glm::value_ptr(proj));
+        glUniform3f(wl.lightDir, .3f, -1.f, .4f);
 
         if (!mapMeshes.empty()) {
-            uMat4(worldShader, "model", mapT);
-            uVec3(worldShader, "baseColor", glm::vec3(.75f, .72f, .65f));
+            glUniformMatrix4fv(wl.model, 1, GL_FALSE, glm::value_ptr(mapT));
+            glUniform3f(wl.baseColor, .75f, .72f, .65f);
+            unsigned int lastTex = 0;
             for (auto& m : mapMeshes) {
                 if (m.texID) {
-                    glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, m.texID);
-                    glUniform1i(glGetUniformLocation(worldShader, "hasTexture"), 1);
-                    glUniform1i(glGetUniformLocation(worldShader, "tex"), 0);
+                    if (m.texID != lastTex) {   // меняем текстуру только если изменилась
+                        glActiveTexture(GL_TEXTURE0);
+                        glBindTexture(GL_TEXTURE_2D, m.texID);
+                        lastTex = m.texID;
+                    }
+                    glUniform1i(wl.hasTex, 1);
+                    glUniform1i(wl.tex, 0);
                 }
-                else glUniform1i(glGetUniformLocation(worldShader, "hasTexture"), 0);
+                else { glUniform1i(wl.hasTex, 0); lastTex = 0; }
                 glBindVertexArray(m.VAO);
                 glDrawElements(GL_TRIANGLES, m.indexCount, GL_UNSIGNED_INT, 0);
             }
         }
         else {
-            uMat4(worldShader, "model", glm::mat4(1.f));
-            uVec3(worldShader, "baseColor", glm::vec3(.3f, .55f, .3f));
-            glUniform1i(glGetUniformLocation(worldShader, "hasTexture"), 0);
+            glm::mat4 identity(1.f);
+            glUniformMatrix4fv(wl.model, 1, GL_FALSE, glm::value_ptr(identity));
+            glUniform3f(wl.baseColor, .3f, .55f, .3f);
+            glUniform1i(wl.hasTex, 0);
             glBindVertexArray(floorVAO);
             glDrawArrays(GL_TRIANGLES, 0, 6);
         }
 
-        glUseProgram(dotShader);
-        for (auto& bh : bulletHoles) {
-            glm::mat4 mvp = proj * view * glm::translate(glm::mat4(1.f), bh.pos);
-            uMat4(dotShader, "mvp", mvp);
-            uVec4(dotShader, "color", glm::vec4(.05f, .05f, .05f, bh.life / 5.f));
+        if (!bulletHoles.empty()) {
+            glUseProgram(dotShader);
             glBindVertexArray(dotVAO);
-            glDrawArrays(GL_TRIANGLES, 0, 6);
+            for (auto& bh : bulletHoles) {
+                glm::mat4 mvp = proj * view * glm::translate(glm::mat4(1.f), bh.pos);
+                glUniformMatrix4fv(dl.mvp, 1, GL_FALSE, glm::value_ptr(mvp));
+                glUniform4f(dl.color, .05f, .05f, .05f, bh.life / 5.f);
+                glDrawArrays(GL_TRIANGLES, 0, 6);
+            }
         }
 
         if (!gm.meshes.empty()) {
             glClear(GL_DEPTH_BUFFER_BIT);
+            glDisable(GL_CULL_FACE);   // оружие рисуем без culling
             glUseProgram(gunShader);
-            // Оружие всегда рендерится с фиксированным FOV — иначе при зуме оно плывёт
             glm::mat4 projGun = glm::perspective(glm::radians(FOV),
                 (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.05f, 5000.f);
 
@@ -289,12 +325,9 @@ struct Renderer
             // Универсальное положение — меняй GUN_OFFSET_* в Settings.h
             float adsP = gun.adsProgress;
             float bobMul = 1.f - adsP;
-
-            // Только X двигается при ADS, всё остальное без изменений
             float offsetR = glm::mix(GUN_OFFSET_RIGHT + def.posRight, 0.0f, adsP);
             float offsetU = GUN_OFFSET_UP + def.posUp + bobY * bobMul + gun.recoilOffset;
             float offsetF = GUN_OFFSET_FWD + def.posFwd;
-
             glm::vec3 gPos = camPos
                 + right * (offsetR + bobX * bobMul)
                 + up2 * offsetU
@@ -309,28 +342,30 @@ struct Renderer
             gMat = glm::rotate(gMat, glm::radians(def.rotX), glm::vec3(1, 0, 0));
             gMat = glm::scale(gMat, glm::vec3(def.scale));
 
-            uMat4(gunShader, "model", gMat);
-            uMat4(gunShader, "view", view);
-            uMat4(gunShader, "projection", projGun);
-            uVec3(gunShader, "gunColor", glm::vec3(.4f, .4f, .42f));
-            uFloat(gunShader, "flash", flashTimer > 0.f ? flashTimer * 4.f : 0.f);
+            glUniformMatrix4fv(gl.model, 1, GL_FALSE, glm::value_ptr(gMat));
+            glUniformMatrix4fv(gl.view, 1, GL_FALSE, glm::value_ptr(view));
+            glUniformMatrix4fv(gl.proj, 1, GL_FALSE, glm::value_ptr(projGun));
+            glUniform3f(gl.gunColor, .4f, .4f, .42f);
+            glUniform1f(gl.flash, flashTimer > 0.f ? flashTimer * 4.f : 0.f);
 
             bool hasBones = !gm.boneFinal.empty() && gm.boneCount > 0;
-            uBool(gunShader, "skinned", hasBones);
-            if (hasBones) {
-                int loc = glGetUniformLocation(gunShader, "bones");
-                if (loc >= 0)
-                    glUniformMatrix4fv(loc, (GLsizei)std::min((int)gm.boneFinal.size(), 100),
-                        GL_FALSE, glm::value_ptr(gm.boneFinal[0]));
+            glUniform1i(gl.skinned, (int)hasBones);
+            if (hasBones && gl.bones >= 0) {
+                int bc = std::min(gm.boneCount, 100);
+                glUniformMatrix4fv(gl.bones, bc, GL_FALSE, glm::value_ptr(gm.boneFinal[0]));
             }
 
+            unsigned int lastTexG = 0;
             for (auto& m : gm.meshes) {
                 if (m.texID) {
-                    glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, m.texID);
-                    glUniform1i(glGetUniformLocation(gunShader, "hasTexture"), 1);
-                    glUniform1i(glGetUniformLocation(gunShader, "tex"), 0);
+                    if (m.texID != lastTexG) {
+                        glActiveTexture(GL_TEXTURE0);
+                        glBindTexture(GL_TEXTURE_2D, m.texID);
+                        lastTexG = m.texID;
+                    }
+                    glUniform1i(gl.hasTex, 1); glUniform1i(gl.tex, 0);
                 }
-                else glUniform1i(glGetUniformLocation(gunShader, "hasTexture"), 0);
+                else { glUniform1i(gl.hasTex, 0); lastTexG = 0; }
                 glBindVertexArray(m.VAO);
                 glDrawElements(GL_TRIANGLES, m.indexCount, GL_UNSIGNED_INT, 0);
             }

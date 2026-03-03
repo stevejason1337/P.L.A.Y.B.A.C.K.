@@ -157,21 +157,35 @@ struct EnemyManager
 
     void draw(unsigned int shader, const glm::mat4& view, const glm::mat4& proj)
     {
-        if (meshes.empty()) return;
+        if (meshes.empty() || enemies.empty()) return;
         glUseProgram(shader);
+
+        // Кешируем locations один раз
+        static unsigned int cachedShader = 0;
+        static int locModel = -1, locView = -1, locProj = -1, locColor = -1, locHasTex = -1;
+        if (cachedShader != shader) {
+            cachedShader = shader;
+            locModel = glGetUniformLocation(shader, "model");
+            locView = glGetUniformLocation(shader, "view");
+            locProj = glGetUniformLocation(shader, "projection");
+            locColor = glGetUniformLocation(shader, "baseColor");
+            locHasTex = glGetUniformLocation(shader, "hasTexture");
+        }
+
+        // view/proj одинаковы для всех врагов — ставим один раз
+        glUniformMatrix4fv(locView, 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(locProj, 1, GL_FALSE, glm::value_ptr(proj));
+        glUniform1i(locHasTex, 0);
+
         for (auto& e : enemies) {
             glm::mat4 model = e.getMatrix();
-            glUniformMatrix4fv(glGetUniformLocation(shader, "model"), 1, GL_FALSE, glm::value_ptr(model));
-            glUniformMatrix4fv(glGetUniformLocation(shader, "view"), 1, GL_FALSE, glm::value_ptr(view));
-            glUniformMatrix4fv(glGetUniformLocation(shader, "projection"), 1, GL_FALSE, glm::value_ptr(proj));
+            glUniformMatrix4fv(locModel, 1, GL_FALSE, glm::value_ptr(model));
 
             glm::vec3 col = e.isDead() ? glm::vec3(0.25f, 0.2f, 0.15f)
                 : e.state == EnemyState::ATTACK ? glm::vec3(1.f, 0.2f, 0.2f)
                 : e.state == EnemyState::CHASE ? glm::vec3(0.9f, 0.6f, 0.1f)
                 : glm::vec3(0.5f, 0.45f, 0.4f);
-
-            glUniform3fv(glGetUniformLocation(shader, "baseColor"), 1, glm::value_ptr(col));
-            glUniform1i(glGetUniformLocation(shader, "hasTexture"), 0);
+            glUniform3fv(locColor, 1, glm::value_ptr(col));
 
             for (auto& m : meshes) {
                 glBindVertexArray(m.VAO);

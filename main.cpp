@@ -41,7 +41,7 @@ int main()
     if (!window) { glfwTerminate(); return -1; }
 
     glfwMakeContextCurrent(window);
-    glfwSwapInterval(1);   // vsync
+    glfwSwapInterval(0);   // vsync выключен для максимального FPS
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) return -1;
 
