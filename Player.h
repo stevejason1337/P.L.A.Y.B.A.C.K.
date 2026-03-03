@@ -24,6 +24,7 @@ struct GunState {
     bool  reloading = false;
     bool  reloadFull = false;   // нужен Renderer.h
     float bobTimer = 0.f;    // нужен Renderer.h
+    float adsProgress = 0.f;    // 0=бедро 1=прицел (ADS)
 };
 extern GunState gun;
 extern float flashTimer;

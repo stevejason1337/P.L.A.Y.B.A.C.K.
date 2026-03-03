@@ -12,7 +12,7 @@
 #include "Player.h"
 #include "WeaponManager.h"
 
-const char* WORLD_VERT = R"(
+inline const char* WORLD_VERT = R"(
 #version 330 core
 layout(location=0) in vec3 aPos;
 layout(location=1) in vec3 aNorm;
@@ -25,7 +25,7 @@ void main(){
     gl_Position=projection*view*model*vec4(aPos,1.0);
 })";
 
-const char* WORLD_FRAG = R"(
+inline const char* WORLD_FRAG = R"(
 #version 330 core
 in vec3 vNorm; in vec2 vUV;
 out vec4 FragColor;
@@ -38,7 +38,7 @@ void main(){
     FragColor=vec4((0.35+d*0.65)*col,1.0);
 })";
 
-const char* GUN_VERT = R"(
+inline const char* GUN_VERT = R"(
 #version 330 core
 layout(location=0) in vec3 aPos;
 layout(location=1) in vec3 aNorm;
@@ -66,7 +66,7 @@ void main(){
     gl_Position=projection*view*model*pos;
 })";
 
-const char* GUN_FRAG = R"(
+inline const char* GUN_FRAG = R"(
 #version 330 core
 in vec3 vNorm; in vec2 vUV;
 out vec4 FragColor;
@@ -80,13 +80,13 @@ void main(){
     FragColor=vec4((0.4+d*0.6)*col+vec3(flash),1.0);
 })";
 
-const char* DOT_VERT = R"(
+inline const char* DOT_VERT = R"(
 #version 330 core
 layout(location=0) in vec3 aPos;
 uniform mat4 mvp;
 void main(){gl_Position=mvp*vec4(aPos,1.0);})";
 
-const char* DOT_FRAG = R"(
+inline const char* DOT_FRAG = R"(
 #version 330 core
 out vec4 FragColor;
 uniform vec4 color;
@@ -125,6 +125,9 @@ inline unsigned int makeDotVAO()
     glEnableVertexAttribArray(0);
     return VAO;
 }
+
+extern bool isADS;
+inline constexpr float ADS_SPEED = 8.f;
 
 struct Renderer
 {
@@ -219,8 +222,14 @@ struct Renderer
         const glm::vec3& cf,
         const glm::vec3& cu)
     {
+        // ADS
+        float adsTarget = isADS ? 1.f : 0.f;
+        gun.adsProgress += (adsTarget - gun.adsProgress) * ADS_SPEED * (1.f / 60.f);
+        if (gun.adsProgress < 0.001f) gun.adsProgress = 0.f;
+        if (gun.adsProgress > 0.999f) gun.adsProgress = 1.f;
+        float adsFOV = glm::mix(FOV, FOV * 0.6f, gun.adsProgress);
         glm::mat4 view = glm::lookAt(camPos, camPos + cf, cu);
-        glm::mat4 proj = glm::perspective(glm::radians(FOV),
+        glm::mat4 proj = glm::perspective(glm::radians(adsFOV),
             (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.05f, 5000.f);
 
         glEnable(GL_DEPTH_TEST);
@@ -263,6 +272,9 @@ struct Renderer
         if (!gm.meshes.empty()) {
             glClear(GL_DEPTH_BUFFER_BIT);
             glUseProgram(gunShader);
+            // Оружие всегда рендерится с фиксированным FOV — иначе при зуме оно плывёт
+            glm::mat4 projGun = glm::perspective(glm::radians(FOV),
+                (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.05f, 5000.f);
 
             glm::vec3 right = glm::normalize(glm::cross(cf, cu));
             glm::vec3 up2 = glm::normalize(glm::cross(right, cf));
@@ -275,10 +287,18 @@ struct Renderer
             const WeaponDef& def = weaponManager.activeDef();
 
             // Универсальное положение — меняй GUN_OFFSET_* в Settings.h
+            float adsP = gun.adsProgress;
+            float bobMul = 1.f - adsP;
+
+            // Только X двигается при ADS, всё остальное без изменений
+            float offsetR = glm::mix(GUN_OFFSET_RIGHT + def.posRight, 0.0f, adsP);
+            float offsetU = GUN_OFFSET_UP + def.posUp + bobY * bobMul + gun.recoilOffset;
+            float offsetF = GUN_OFFSET_FWD + def.posFwd;
+
             glm::vec3 gPos = camPos
-                + right * (GUN_OFFSET_RIGHT + bobX)
-                + up2 * (GUN_OFFSET_UP + bobY + gun.recoilOffset)
-                + cf * GUN_OFFSET_FWD;
+                + right * (offsetR + bobX * bobMul)
+                + up2 * offsetU
+                + cf * offsetF;
 
             glm::mat4 gMat(1.f);
             gMat[0] = glm::vec4(right, 0.f);
@@ -291,7 +311,7 @@ struct Renderer
 
             uMat4(gunShader, "model", gMat);
             uMat4(gunShader, "view", view);
-            uMat4(gunShader, "projection", proj);
+            uMat4(gunShader, "projection", projGun);
             uVec3(gunShader, "gunColor", glm::vec3(.4f, .4f, .42f));
             uFloat(gunShader, "flash", flashTimer > 0.f ? flashTimer * 4.f : 0.f);
 

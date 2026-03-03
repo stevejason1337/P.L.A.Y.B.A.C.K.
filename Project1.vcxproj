@@ -665,6 +665,7 @@
     <None Include="dependencies\include\glm\gtx\wrap.inl" />
     <None Include="models\characters\soldier\soldier.glb" />
     <None Include="models\maps\123\123.glb" />
+    <None Include="models\maps\awp_lego\awp_lego.fbx" />
     <None Include="models\maps\de_meat\mrmeat.fbx" />
     <None Include="models\maps\dm\dm.glb" />
     <None Include="models\maps\dust2\Generic_Item.mesh" />
@@ -779,6 +780,22 @@
     <Image Include="models\maps\123\textures\VHC_L_vec_MAT_metallic-VHC_L_vec_MAT_roughness_38%40channels=B.png" />
     <Image Include="models\maps\123\textures\VHC_L_vec_MAT_metallic-VHC_L_vec_MAT_roughness_38%40channels=G.png" />
     <Image Include="models\maps\123\textures\VHC_L_vec_MAT_normal_36.png" />
+    <Image Include="models\maps\awp_lego\textures\awp_lego_3_awp_lego_mat_1_BaseColor.png" />
+    <Image Include="models\maps\awp_lego\textures\awp_lego_3_awp_lego_mat_1_Metallic.png" />
+    <Image Include="models\maps\awp_lego\textures\awp_lego_3_awp_lego_mat_1_Normal.png" />
+    <Image Include="models\maps\awp_lego\textures\awp_lego_3_awp_lego_mat_1_Roughness.png" />
+    <Image Include="models\maps\awp_lego\textures\awp_lego_3_awp_lego_mat_2_BaseColor.png" />
+    <Image Include="models\maps\awp_lego\textures\awp_lego_3_awp_lego_mat_2_Metallic.png" />
+    <Image Include="models\maps\awp_lego\textures\awp_lego_3_awp_lego_mat_2_Normal.png" />
+    <Image Include="models\maps\awp_lego\textures\awp_lego_3_awp_lego_mat_2_Roughness.png" />
+    <Image Include="models\maps\awp_lego\textures\awp_lego_3_awp_lego_mat_3_BaseColor.png" />
+    <Image Include="models\maps\awp_lego\textures\awp_lego_3_awp_lego_mat_3_Metallic.png" />
+    <Image Include="models\maps\awp_lego\textures\awp_lego_3_awp_lego_mat_3_Normal.png" />
+    <Image Include="models\maps\awp_lego\textures\awp_lego_3_awp_lego_mat_3_Roughness.png" />
+    <Image Include="models\maps\awp_lego\textures\concrete_blackred.png" />
+    <Image Include="models\maps\awp_lego\textures\concrete_black_blackred_gray_normal.png" />
+    <Image Include="models\maps\awp_lego\textures\concrete_gray.png" />
+    <Image Include="models\maps\awp_lego\textures\concrete_white.jpeg" />
     <Image Include="models\maps\de_meat\textures\Agua.png" />
     <Image Include="models\maps\de_meat\textures\Arbol_Nieve.png" />
     <Image Include="models\maps\de_meat\textures\Azulejos-1.png" />

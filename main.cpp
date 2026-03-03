@@ -110,6 +110,7 @@ int main()
 
         // ── Обновление ──
         updatePlayer(dt);
+        soundManager.playFootstep(dt, playerMoving, player.onGround);
         console.update(dt);
 
         glm::vec3 camPos = player.pos + glm::vec3(0.f, player.eyeH, 0.f);

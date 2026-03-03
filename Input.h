@@ -16,6 +16,7 @@ inline float pitch = 0.f;
 inline float lastMouseX = 640.f;
 inline float lastMouseY = 360.f;
 inline bool  firstMouse = true;
+inline bool  isADS = false;   // ПКМ зажат
 
 inline void processMovement(GLFWwindow* w)
 {
@@ -36,7 +37,21 @@ inline void processMovement(GLFWwindow* w)
         if (glfwGetKey(w, GLFW_KEY_SPACE) == GLFW_PRESS) { dir += glm::vec3(0, 1, 0); playerMoving = true; }
         if (glfwGetKey(w, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) { dir -= glm::vec3(0, 1, 0); playerMoving = true; }
     }
-    if (playerMoving) { float len = glm::length(dir); if (len > 0.f) player.pos += (dir / len) * speed * 0.016f; }
+    if (playerMoving) {
+        float len = glm::length(dir);
+        if (len > 0.f) {
+            glm::vec3 move = (dir / len) * speed;
+            player.pos += move * 0.016f;
+            // Записываем горизонтальную скорость — нужна для анимации ходьбы и bob
+            player.vel.x = move.x;
+            player.vel.z = move.z;
+        }
+    }
+    else {
+        // Нет ввода — горизонтальная скорость обнуляется
+        player.vel.x = 0.f;
+        player.vel.z = 0.f;
+    }
 }
 
 inline void mouse_callback(GLFWwindow*, double xpos, double ypos)
@@ -78,6 +93,13 @@ inline void key_callback(GLFWwindow* w, int key, int, int action, int)
 inline void mouse_button_callback(GLFWwindow*, int button, int action, int)
 {
     if (console.open) return;
+
+    // ── ПКМ — прицеливание ──
+    if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+        isADS = (action == GLFW_PRESS);
+        return;
+    }
+
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
         // Во время перезарядки — полная тишина
         if (gun.reloading) return;

@@ -1406,6 +1406,7 @@
     <None Include="x64\Debug\models\pistol\ak74\ak74.fbx" />
     <None Include="x64\Debug\models\pistol\glock\glock.fbx" />
     <None Include="x64\Debug\models\pistol\sawnoff\sawnoff.fbx" />
+    <None Include="models\maps\awp_lego\awp_lego.fbx" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="dependencies\include\glm\CMakeLists.txt" />
@@ -3159,6 +3160,54 @@
       <Filter>Файлы ресурсов</Filter>
     </Image>
     <Image Include="x64\Debug\models\pistol\sawnoff\textures\sawnoffSmoothness.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\awp_lego\textures\awp_lego_3_awp_lego_mat_1_BaseColor.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\awp_lego\textures\awp_lego_3_awp_lego_mat_1_Metallic.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\awp_lego\textures\awp_lego_3_awp_lego_mat_1_Normal.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\awp_lego\textures\awp_lego_3_awp_lego_mat_1_Roughness.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\awp_lego\textures\awp_lego_3_awp_lego_mat_2_BaseColor.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\awp_lego\textures\awp_lego_3_awp_lego_mat_2_Metallic.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\awp_lego\textures\awp_lego_3_awp_lego_mat_2_Normal.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\awp_lego\textures\awp_lego_3_awp_lego_mat_2_Roughness.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\awp_lego\textures\awp_lego_3_awp_lego_mat_3_BaseColor.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\awp_lego\textures\awp_lego_3_awp_lego_mat_3_Metallic.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\awp_lego\textures\awp_lego_3_awp_lego_mat_3_Normal.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\awp_lego\textures\awp_lego_3_awp_lego_mat_3_Roughness.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\awp_lego\textures\concrete_black_blackred_gray_normal.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\awp_lego\textures\concrete_blackred.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\awp_lego\textures\concrete_gray.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\maps\awp_lego\textures\concrete_white.jpeg">
       <Filter>Файлы ресурсов</Filter>
     </Image>
   </ItemGroup>

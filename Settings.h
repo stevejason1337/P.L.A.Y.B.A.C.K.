@@ -14,10 +14,10 @@ const float PITCH_LIM = 75.f;
 const float MOUSE_SENS = 0.1f;
 
 // Map
-const float MAP_SCALE = 0.15f;
-const float MAP_ROT_X = 0.0f;
-const char* MAP_FILE = "models/maps/forest/forest.fbx";
-const char* MAP_TEX_DIR = "models/maps/forest/textures";
+const float MAP_SCALE = 0.05f;
+const float MAP_ROT_X = -90.0f;
+const char* MAP_FILE = "models/maps/awp_lego/awp_lego.fbx";
+const char* MAP_TEX_DIR = "models/maps/awp_lego/textures";
 
 // Player
 const float GRAVITY = -25.f;
@@ -32,7 +32,7 @@ const float CROUCH_H = 0.9f;
 //  Универсальное положение рук (все оружия)
 //  Меняй эти значения — двигаются ВСЕ оружия сразу
 // ──────────────────────────────────────────────
-const float GUN_OFFSET_RIGHT = 0.0f;   // влево/вправо
+const float GUN_OFFSET_RIGHT = 0.05f;   // влево/вправо
 const float GUN_OFFSET_UP = -0.25f; // вверх/вниз
 const float GUN_OFFSET_FWD = 0.0f;   // вперёд/назад
 
