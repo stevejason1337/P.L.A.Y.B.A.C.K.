@@ -1,5 +1,9 @@
 #pragma once
 
+// Отключаем макросы min/max из Windows.h (конфликт со std::min/std::max)
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+
 // Window
 const unsigned int SCR_WIDTH = 1280;
 const unsigned int SCR_HEIGHT = 720;

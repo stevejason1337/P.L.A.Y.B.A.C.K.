@@ -507,11 +507,14 @@
     <ClInclude Include="Enemy.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="Mapeditor.h" />
+    <ClInclude Include="miniaudio.h" />
     <ClInclude Include="Modelloader.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="Settings.h" />
+    <ClInclude Include="Soundmanager.h" />
     <ClInclude Include="stb_image.h" />
+    <ClInclude Include="stb_truetype.h" />
     <ClInclude Include="Textrenderer.h" />
     <ClInclude Include="Triangle.h" />
     <ClInclude Include="Weaponmanager.h" />

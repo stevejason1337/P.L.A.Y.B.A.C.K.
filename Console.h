@@ -8,6 +8,8 @@
 #include <iomanip>
 #include "TextRenderer.h"
 #include "Settings.h"
+#include "Enemy.h"
+#include "WeaponManager.h"
 
 #define CON_WHITE  glm::vec4(0.85f,0.85f,0.85f,1.f)
 #define CON_YELLOW glm::vec4(1.f,0.8f,0.2f,1.f)
@@ -30,15 +32,11 @@ struct ConLine {
     glm::vec4   color;
 };
 
-// forward declarations
-struct EnemyManager;
-extern EnemyManager enemyManager;
-struct Character;
+// externals
 extern Character player;
-struct GunState;
-extern GunState gun;
-extern float playerHP;
-extern float playerMaxHP;
+extern GunState  gun;
+extern float     playerHP;
+extern float     playerMaxHP;
 
 struct Console
 {
@@ -130,14 +128,11 @@ struct Console
             std::string what; ss >> what;
             std::transform(what.begin(), what.end(), what.begin(), ::tolower);
             if (what == "ammo") {
-                // forward — определяется в WeaponManager.h
-                extern struct WeaponManager weaponManager;
                 gun.ammo = weaponManager.activeDef().maxAmmo;
                 print("Ammo refilled.", CON_GREEN);
             }
             else if (what == "weapon") {
                 int idx = 0; ss >> idx;
-                extern struct WeaponManager weaponManager;
                 weaponManager.switchTo(idx);
                 print("Switched to weapon " + std::to_string(idx), CON_GREEN);
             }
@@ -280,46 +275,138 @@ struct Console
     {
         float W = (float)SCR_WIDTH, H = (float)SCR_HEIGHT;
 
+        // ── FPS (правый верхний угол, с тёмной подложкой) ──
         if (showFPS) {
             static float ft = 0, fs = 0; static int fn = 0;
             ft += dt; fs += (dt > 0 ? 1.f / dt : 0); fn++;
             if (ft >= 0.25f) { fpsValue = fs / fn; ft = 0; fs = 0; fn = 0; }
             glm::vec4 fc = fpsValue >= 60 ? CON_GREEN : (fpsValue >= 30 ? CON_YELLOW : CON_RED);
             std::ostringstream o; o << std::fixed << std::setprecision(0) << "FPS: " << fpsValue;
-            textRenderer.drawText(o.str(), W - 90.f, 20.f, fc);
+            std::string fps = o.str();
+            float fw = textRenderer.textWidth(fps);
+            textRenderer.drawRect(W - fw - 18.f, 6.f, fw + 12.f, 20.f, glm::vec4(0, 0, 0, 0.45f));
+            textRenderer.drawText(fps, W - fw - 12.f, 22.f, fc);
         }
 
+        // ── Позиция (левый верхний, с подложкой) ──
         if (showPos) {
             std::ostringstream o;
             o << std::fixed << std::setprecision(1)
-                << "X:" << player.pos.x << " Y:" << player.pos.y << " Z:" << player.pos.z;
-            textRenderer.drawText(o.str(), 8.f, 20.f, CON_CYAN);
+                << "X:" << player.pos.x << "  Y:" << player.pos.y << "  Z:" << player.pos.z;
+            std::string ps = o.str();
+            float pw = textRenderer.textWidth(ps);
+            textRenderer.drawRect(4.f, 6.f, pw + 12.f, 20.f, glm::vec4(0, 0, 0, 0.45f));
+            textRenderer.drawText(ps, 10.f, 22.f, CON_CYAN);
         }
 
-        float sy = 38.f;
-        if (noclip) { textRenderer.drawText("[NOCLIP]", 8.f, sy, CON_YELLOW); sy += 18.f; }
-        if (godMode) { textRenderer.drawText("[GOD]", 8.f, sy, CON_GREEN);  sy += 18.f; }
+        // ── Статус-теги (NOCLIP / GOD) ──
+        float sy = 34.f;
+        if (noclip) {
+            float tw = textRenderer.textWidth("  NOCLIP  ");
+            textRenderer.drawRect(4.f, sy - 1.f, tw, 18.f, glm::vec4(0.8f, 0.6f, 0.f, 0.3f));
+            textRenderer.drawText("  NOCLIP  ", 4.f, sy + 14.f, CON_YELLOW);
+            sy += 22.f;
+        }
+        if (godMode) {
+            float tw = textRenderer.textWidth("  GOD MODE  ");
+            textRenderer.drawRect(4.f, sy - 1.f, tw, 18.f, glm::vec4(0.f, 0.7f, 0.f, 0.25f));
+            textRenderer.drawText("  GOD MODE  ", 4.f, sy + 14.f, CON_GREEN);
+        }
 
-        if (showHUD) {
-            // Прицел
-            float cx = W / 2.f, cy = H / 2.f;
-            textRenderer.drawRect(cx - 1.f, cy - 8.f, 2.f, 16.f, glm::vec4(1, 1, 1, 0.8f));
-            textRenderer.drawRect(cx - 8.f, cy - 1.f, 16.f, 2.f, glm::vec4(1, 1, 1, 0.8f));
+        if (!showHUD) return;
 
-            // Патроны
-            extern struct WeaponManager weaponManager;
-            const auto& def = weaponManager.activeDef();
-            std::string ammoStr = std::to_string(gun.ammo) + " / " + std::to_string(def.maxAmmo);
-            glm::vec4 ac = gun.ammo == 0 ? CON_RED : (gun.ammo <= 3 ? CON_YELLOW : CON_WHITE);
-            float aw = textRenderer.textWidth(ammoStr);
-            textRenderer.drawText(ammoStr, W - aw - 12.f, H - 20.f, ac);
+        float cx = W / 2.f, cy = H / 2.f;
 
-            std::string wname = def.file.substr(def.file.rfind('/') + 1);
-            wname = wname.substr(0, wname.rfind('.'));
-            textRenderer.drawText(wname, W - textRenderer.textWidth(wname) - 12.f, H - 40.f, CON_GRAY);
+        // ── Прицел (крест с точкой) ──
+        float cgap = 6.f, clen = 10.f, cw = 1.5f;
+        glm::vec4 cc(1, 1, 1, 0.92f);
+        // горизонталь
+        textRenderer.drawRect(cx - cgap - clen, cy - cw / 2.f, clen, cw, cc);
+        textRenderer.drawRect(cx + cgap, cy - cw / 2.f, clen, cw, cc);
+        // вертикаль
+        textRenderer.drawRect(cx - cw / 2.f, cy - cgap - clen, cw, clen, cc);
+        textRenderer.drawRect(cx - cw / 2.f, cy + cgap, cw, clen, cc);
+        // центральная точка
+        textRenderer.drawRect(cx - 2.f, cy - 2.f, 4.f, 4.f, glm::vec4(1, 1, 1, 0.7f));
 
-            if (gun.reloading)
-                textRenderer.drawText("RELOADING...", cx - 40.f, cy + 30.f, CON_YELLOW);
+        // ── Нижняя панель оружия ──
+        const auto& def = weaponManager.activeDef();
+        float panelW = 220.f, panelH = 52.f;
+        float panelX = W - panelW - 14.f, panelY = H - panelH - 14.f;
+
+        // Фоновая панель
+        textRenderer.drawRect(panelX - 4.f, panelY - 4.f, panelW + 8.f, panelH + 8.f,
+            glm::vec4(0.f, 0.f, 0.f, 0.55f));
+        // Верхняя линия акцента
+        textRenderer.drawRect(panelX - 4.f, panelY - 4.f, panelW + 8.f, 2.f,
+            glm::vec4(0.9f, 0.7f, 0.2f, 0.8f));
+
+        // Название оружия
+        std::string wname = def.file.substr(def.file.rfind('/') + 1);
+        wname = wname.substr(0, wname.rfind('.'));
+        // Привести к верхнему регистру
+        for (auto& c : wname) c = (char)toupper((unsigned char)c);
+        textRenderer.drawText(wname, panelX, panelY + 14.f, glm::vec4(0.9f, 0.7f, 0.2f, 1.f));
+
+        // Патроны: большое число / максимум
+        int am = gun.ammo, maxAm = def.maxAmmo;
+        glm::vec4 amCol = am == 0 ? CON_RED : (am <= 3 ? CON_YELLOW : glm::vec4(1, 1, 1, 1));
+        std::string amMain = std::to_string(am);
+        std::string amMax = " / " + std::to_string(maxAm);
+        float amMainW = textRenderer.textWidth(amMain);
+        textRenderer.drawText(amMain, panelX, panelY + 38.f, amCol);
+        textRenderer.drawText(amMax, panelX + amMainW, panelY + 38.f, glm::vec4(0.55f, 0.55f, 0.55f, 1));
+
+        // Полоска патронов
+        float barX = panelX, barY = panelY + panelH - 4.f, barW = panelW, barH = 3.f;
+        textRenderer.drawRect(barX, barY, barW, barH, glm::vec4(0.25f, 0.25f, 0.25f, 0.8f));
+        float ratio = (maxAm > 0) ? (float)am / maxAm : 0.f;
+        glm::vec4 barCol = am == 0 ? glm::vec4(0.7f, 0.1f, 0.1f, 0.9f) : (am <= 3 ? glm::vec4(0.9f, 0.6f, 0.1f, 0.9f) : glm::vec4(0.3f, 0.8f, 0.4f, 0.9f));
+        textRenderer.drawRect(barX, barY, barW * ratio, barH, barCol);
+
+        // ── RELOADING индикатор ──
+        if (gun.reloading) {
+            std::string rtxt = "[ RELOADING ]";
+            float rtw = textRenderer.textWidth(rtxt);
+            textRenderer.drawRect(cx - rtw / 2.f - 8.f, cy + 24.f, rtw + 16.f, 20.f,
+                glm::vec4(0.f, 0.f, 0.f, 0.6f));
+            textRenderer.drawRect(cx - rtw / 2.f - 8.f, cy + 24.f, rtw + 16.f, 2.f,
+                glm::vec4(0.9f, 0.7f, 0.2f, 0.9f));
+            textRenderer.drawText(rtxt, cx - rtw / 2.f, cy + 40.f, CON_YELLOW);
+        }
+
+        // ── NO AMMO индикатор ──
+        if (am == 0 && !gun.reloading) {
+            std::string ntxt = "[ NO AMMO — R to reload ]";
+            float ntw = textRenderer.textWidth(ntxt);
+            textRenderer.drawRect(cx - ntw / 2.f - 8.f, cy + 24.f, ntw + 16.f, 20.f,
+                glm::vec4(0.f, 0.f, 0.f, 0.6f));
+            textRenderer.drawRect(cx - ntw / 2.f - 8.f, cy + 24.f, ntw + 16.f, 2.f,
+                glm::vec4(0.8f, 0.1f, 0.1f, 0.9f));
+            textRenderer.drawText(ntxt, cx - ntw / 2.f, cy + 40.f, CON_RED);
+        }
+
+        // ── HP бар (левый нижний угол) ──
+        {
+            float hpBarW = 200.f, hpBarH = 10.f;
+            float hpX = 14.f, hpY = H - 50.f;
+            float ratio = (playerMaxHP > 0) ? playerHP / playerMaxHP : 0.f;
+            // Подложка панели
+            textRenderer.drawRect(hpX - 4.f, hpY - 20.f, hpBarW + 8.f, 38.f, glm::vec4(0, 0, 0, 0.55f));
+            textRenderer.drawRect(hpX - 4.f, hpY - 20.f, hpBarW + 8.f, 2.f, glm::vec4(0.8f, 0.2f, 0.2f, 0.8f));
+            // HP label
+            std::string hpLabel = "HP";
+            textRenderer.drawText(hpLabel, hpX, hpY - 5.f, glm::vec4(0.9f, 0.3f, 0.3f, 1.f));
+            float hlw = textRenderer.textWidth(hpLabel) + 6.f;
+            // HP число
+            std::string hpNum = std::to_string((int)playerHP);
+            textRenderer.drawText(hpNum, hpX + hlw, hpY - 5.f, glm::vec4(1, 1, 1, 1));
+            // Полоска
+            textRenderer.drawRect(hpX, hpY + 8.f, hpBarW, hpBarH, glm::vec4(0.2f, 0.1f, 0.1f, 0.9f));
+            glm::vec4 hcol = ratio > 0.5f ? glm::vec4(0.2f, 0.8f, 0.3f, 0.9f)
+                : ratio > 0.25f ? glm::vec4(0.9f, 0.6f, 0.1f, 0.9f)
+                : glm::vec4(0.85f, 0.1f, 0.1f, 0.9f);
+            textRenderer.drawRect(hpX, hpY + 8.f, hpBarW * ratio, hpBarH, hcol);
         }
     }
 };

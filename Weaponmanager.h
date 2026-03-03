@@ -27,12 +27,10 @@ struct WeaponDef
     float       rotX = 0.f;
     int         slot = 0;
 
-    // ── Поправка позиции для каждого оружия ──
-    // Прибавляется к глобальным GUN_OFFSET_* из Settings.h
-    // Меняй эти значения если конкретное оружие стоит не там
-    float       posRight = 0.f;   // влево/вправо
-    float       posUp = 0.f;   // вверх/вниз
-    float       posFwd = 0.f;   // вперёд/назад
+    // Индивидуальная поправка позиции (прибавляется к GUN_OFFSET_* из Settings.h)
+    float       posRight = 0.f;
+    float       posUp = 0.f;
+    float       posFwd = 0.f;
 };
 
 inline std::vector<WeaponDef> weaponDefs = {
@@ -50,7 +48,7 @@ inline std::vector<WeaponDef> weaponDefs = {
         "Armature|FPS_Pistol_Reload_full",
         "Armature|FPS_Pistol_Walk",
         180.f, 0.f, 0,
-        0.f, 0.f, 0.f   // posRight, posUp, posFwd
+        0.f, 0.f, 0.f
     },
 
     // 1: Sawnoff (слот 0)
@@ -66,7 +64,7 @@ inline std::vector<WeaponDef> weaponDefs = {
         "WEP_Reload_01.001",
         "WEP_Walk",
         180.f, 0.f, 0,
-        0.f, 0.f, 0.f   // posRight, posUp, posFwd
+        0.f, 0.f, 0.f
     },
 
     // 2: AK-74 (слот 1)
@@ -82,7 +80,7 @@ inline std::vector<WeaponDef> weaponDefs = {
         "Rig|AK_Reload_full",
         "Rig|AK_Run",
         180.f, 0.f, 1,
-        0.f, 0.f, 0.f   // posRight, posUp, posFwd
+        0.f, 0.f, 0.f
     },
 };
 
@@ -95,6 +93,9 @@ struct WeaponManager
 {
     std::vector<std::unique_ptr<AnimatedModel>> models;
     int current = 0;
+
+    // init() = псевдоним loadAll(), чтобы main.cpp работал в любом варианте
+    void init() { loadAll(); }
 
     void loadAll()
     {
@@ -119,6 +120,7 @@ struct WeaponManager
         auto& gm = *models[current];
         gun.ammo = def.maxAmmo;
         gun.reloading = false;
+        gun.reloadFull = false;
         gun.shootCooldown = 0.f;
         gun.recoilOffset = 0.f;
         gun.recoilTimer = 0.f;
