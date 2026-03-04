@@ -11,6 +11,7 @@
 #include "WeaponManager.h"
 #include "Enemy.h"
 #include "Console.h"
+#include "HUD.h"
 #include "Renderer.h"
 #include "Input.h"
 
@@ -120,7 +121,8 @@ int main()
         renderer.updateGunAnim(weaponManager.active(), dt);
 
         // ── Очистка ──
-        glClearColor(0.62f, 0.60f, 0.56f, 1.f);   // цвет тумана = цвет неба
+        renderer.beginFrame();
+        glClearColor(0.68f, 0.65f, 0.60f, 1.f);   // тёплое небо = цвет тумана
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // ── Сцена ──
@@ -143,7 +145,8 @@ int main()
         }
 
         // ── HUD / Консоль ──
-        console.drawHUD(rawDt);
+        drawHUD(rawDt, fpsValue, showFPS, showPos, noclip, godMode,
+            renderer.reloadTimer, renderer.reloadDuration);
         console.draw();
 
         // ── Смерть ──
@@ -167,6 +170,7 @@ int main()
             }
         }
 
+        renderer.endFrame();
         glfwSwapBuffers(window);
     }
 

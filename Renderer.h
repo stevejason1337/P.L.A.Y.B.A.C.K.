@@ -50,35 +50,39 @@ uniform float fogStart;
 uniform float fogEnd;
 
 void main(){
-    // Цвет поверхности — гамма-декод текстуры
     vec3 albedo = hasTexture ? pow(texture(tex, vUV).rgb, vec3(2.2)) : baseColor;
 
     vec3 N = normalize(vNorm);
-    vec3 L = normalize(-lightDir);  // направление к солнцу
+    vec3 L = normalize(-lightDir);
 
-    // Освещение
-    float NdotL  = max(dot(N, L), 0.0);
-    float diff   = NdotL * 0.7;
+    // Диффузный свет
+    float NdotL = max(dot(N, L), 0.0);
 
-    // Hemisphere ambient — небо сверху теплее, земля снизу холоднее
-    vec3 skyAmb  = vec3(0.35, 0.38, 0.45);  // холодный верх
-    vec3 gndAmb  = vec3(0.18, 0.16, 0.14);  // тёплый низ
-    vec3 amb     = mix(gndAmb, skyAmb, N.y * 0.5 + 0.5);
+    // Ambient — нейтральный тёплый, без синевы
+    float ambStr = 0.30;
+    vec3  ambCol = vec3(0.90, 0.85, 0.78);  // тёплый белый
 
-    // Soft shadow AO — горизонтальные грани темнее
-    float ao = 0.75 + 0.25 * clamp(N.y, 0.0, 1.0);
+    // Солнечный свет — тёплый жёлтый
+    vec3  sunCol = vec3(1.0, 0.95, 0.85);
+    float sunStr = NdotL * 0.65;
 
-    vec3 lit = albedo * (amb + vec3(diff)) * ao;
+    // Небольшой заполняющий свет снизу
+    float fillStr = max(dot(N, vec3(0.0, -1.0, 0.0)), 0.0) * 0.08;
 
-    // Тонмаппинг Reinhard — убирает пересвет
-    lit = lit / (lit + vec3(0.6));
+    // AO — вертикальные грани чуть темнее горизонтальных
+    float ao = 0.80 + 0.20 * abs(N.y);
 
-    // Туман — нейтральный серо-бежевый
+    vec3 lit = albedo * (ambCol * ambStr + sunCol * sunStr + vec3(fillStr)) * ao;
+
+    // Тонмаппинг — убирает пересвет
+    lit = lit / (lit + vec3(0.55));
+
+    // Туман
     float fogT = clamp((vFogDist - fogStart) / (fogEnd - fogStart), 0.0, 1.0);
-    fogT = fogT * fogT;  // квадратичный — туман появляется плавнее
+    fogT = fogT * fogT;
     lit = mix(lit, fogColor, fogT);
 
-    // Гамма 2.2
+    // Гамма
     lit = pow(max(lit, vec3(0.0)), vec3(1.0 / 2.2));
 
     FragColor = vec4(lit, 1.0);
@@ -127,24 +131,25 @@ void main(){
     vec3 albedo = hasTexture ? pow(texture(tex,vUV).rgb, vec3(2.2)) : gunColor;
     vec3 N = normalize(vNorm);
 
-    // Основной свет — спереди-сверху
-    vec3 L1 = normalize(vec3(0.3, 0.8, 0.5));
-    float d1 = max(dot(N, L1), 0.0);
+    // Один мягкий источник — как в помещении RE7
+    vec3 L = normalize(vec3(0.2, 0.6, 0.4));
+    float diff = max(dot(N, L), 0.0);
 
-    // Контровой свет — сзади снизу
-    vec3 L2 = normalize(vec3(-0.5, -0.3, -0.7));
-    float d2 = max(dot(N, L2), 0.0) * 0.25;
+    // Очень мягкий ambient — оружие в тени
+    float amb = 0.15;
 
-    // Rim — тонкий силуэт
-    float rim = pow(1.0 - max(dot(N, vec3(0,0,1)), 0.0), 5.0) * 0.12;
+    // Никакого rim, никакого второго источника
+    vec3 lit = albedo * (amb + diff * 0.40);
 
-    vec3 lit = albedo * (0.20 + d1*0.60 + d2) + vec3(rim) + vec3(flash * 0.4);
-
-    // Тонмаппинг
-    lit = lit / (lit + vec3(0.5));
+    // Агрессивный тонмаппинг — давит пересвет
+    lit = lit / (lit + vec3(0.8));
 
     // Гамма
     lit = pow(max(lit, vec3(0.0)), vec3(1.0/2.2));
+
+    // Вспышка выстрела
+    lit += vec3(flash * 0.15);
+
     FragColor = vec4(lit, 1.0);
 })";
 
@@ -159,6 +164,50 @@ inline const char* DOT_FRAG = R"(
 out vec4 FragColor;
 uniform vec4 color;
 void main(){FragColor=color;})";
+
+// ── Пост-процессинг (мыльность + виньетка + RE7 стиль) ──
+inline const char* POST_VERT = R"(
+#version 330 core
+layout(location=0) in vec2 aPos;
+layout(location=1) in vec2 aUV;
+out vec2 vUV;
+void main(){ vUV=aUV; gl_Position=vec4(aPos,0.0,1.0); }
+)";
+
+inline const char* POST_FRAG = R"(
+#version 330 core
+in vec2 vUV;
+out vec4 FragColor;
+uniform sampler2D screenTex;
+uniform vec2 resolution;
+void main(){
+    vec2 uv  = vUV;
+    vec2 px  = 1.0 / resolution;
+    float blurR = 1.3;
+    vec3 col = vec3(0.0);
+    col += texture(screenTex, uv+vec2(-blurR,-blurR)*px).rgb;
+    col += texture(screenTex, uv+vec2(     0,-blurR)*px).rgb*2.0;
+    col += texture(screenTex, uv+vec2( blurR,-blurR)*px).rgb;
+    col += texture(screenTex, uv+vec2(-blurR,     0)*px).rgb*2.0;
+    col += texture(screenTex, uv                      ).rgb*4.0;
+    col += texture(screenTex, uv+vec2( blurR,     0)*px).rgb*2.0;
+    col += texture(screenTex, uv+vec2(-blurR, blurR)*px).rgb;
+    col += texture(screenTex, uv+vec2(     0, blurR)*px).rgb*2.0;
+    col += texture(screenTex, uv+vec2( blurR, blurR)*px).rgb;
+    col /= 16.0;
+    // Хроматический аберрейшн по краям
+    float ab = length(uv-0.5)*0.0014;
+    vec2 adir = normalize(uv-0.5+vec2(0.001))*ab;
+    col.r = texture(screenTex, uv+adir).r;
+    col.b = texture(screenTex, uv-adir).b;
+    // Виньетка
+    float v = length(uv-0.5)*1.65;
+    col *= 1.0 - v*v*0.50;
+    // Контраст
+    col = col*1.05 - vec3(0.025);
+    FragColor = vec4(max(col,vec3(0.0)), 1.0);
+}
+)";
 
 inline unsigned int buildShader(const char* v, const char* f)
 {
@@ -200,6 +249,10 @@ inline constexpr float ADS_SPEED = 8.f;
 struct Renderer
 {
     unsigned int worldShader = 0, gunShader = 0, dotShader = 0;
+    // Пост-процессинг FBO
+    unsigned int postShader = 0;
+    unsigned int fbo = 0, fboTex = 0, fboRBO = 0;
+    unsigned int quadVAO = 0, quadVBO = 0;
     unsigned int dotVAO = 0, floorVAO = 0, floorVBO = 0;
     int   lastFireCounter = 0;
     bool  reloadStarted = false;
@@ -217,6 +270,38 @@ struct Renderer
         gunShader = buildShader(GUN_VERT, GUN_FRAG);
         dotShader = buildShader(DOT_VERT, DOT_FRAG);
         dotVAO = makeDotVAO();
+
+        // ── FBO для пост-процессинга ──
+        postShader = buildShader(POST_VERT, POST_FRAG);
+
+        // Полноэкранный квад
+        float quadV[] = {
+            -1,-1, 0,0,  1,-1, 1,0,  1,1, 1,1,
+            -1,-1, 0,0,  1, 1, 1,1, -1,1, 0,1
+        };
+        glGenVertexArrays(1, &quadVAO); glGenBuffers(1, &quadVBO);
+        glBindVertexArray(quadVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(quadV), quadV, GL_STATIC_DRAW);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+        glEnableVertexAttribArray(1);
+
+        // Создаём FBO
+        glGenFramebuffers(1, &fbo);
+        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+        glGenTextures(1, &fboTex);
+        glBindTexture(GL_TEXTURE_2D, fboTex);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fboTex, 0);
+        glGenRenderbuffers(1, &fboRBO);
+        glBindRenderbuffer(GL_RENDERBUFFER, fboRBO);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, SCR_WIDTH, SCR_HEIGHT);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, fboRBO);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         float fv[] = {
             -50,0,-50,0,1,0,0,0, 50,0,-50,0,1,0,1,0, 50,0,50,0,1,0,1,1,
@@ -315,6 +400,27 @@ struct Renderer
         gm.update(dt);
     }
 
+    // Начало кадра — рисуем в FBO
+    void beginFrame() {
+        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    }
+
+    // Конец кадра — применяем пост-процессинг и выводим на экран
+    void endFrame() {
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glDisable(GL_DEPTH_TEST);
+        glClear(GL_COLOR_BUFFER_BIT);
+        glUseProgram(postShader);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, fboTex);
+        glUniform1i(glGetUniformLocation(postShader, "screenTex"), 0);
+        glUniform2f(glGetUniformLocation(postShader, "resolution"),
+            (float)SCR_WIDTH, (float)SCR_HEIGHT);
+        glBindVertexArray(quadVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glEnable(GL_DEPTH_TEST);
+    }
+
     void drawScene(
         const std::vector<GPUMesh>& mapMeshes,
         AnimatedModel& gm,
@@ -344,9 +450,9 @@ struct Renderer
         glUniformMatrix4fv(wl.proj, 1, GL_FALSE, glm::value_ptr(proj));
         glUniform3f(wl.lightDir, .3f, -1.f, .4f);
         glUniform3fv(wl.camPos, 1, glm::value_ptr(camPos));
-        glUniform3f(wl.fogColor, 0.62f, 0.60f, 0.56f);  // бежево-серый туман
-        glUniform1f(wl.fogStart, 40.f);
-        glUniform1f(wl.fogEnd, 130.f);
+        glUniform3f(wl.fogColor, 0.68f, 0.65f, 0.60f);  // тёплый бежевый туман
+        glUniform1f(wl.fogStart, 15.f);
+        glUniform1f(wl.fogEnd, 60.f);
 
         if (!mapMeshes.empty()) {
             glUniformMatrix4fv(wl.model, 1, GL_FALSE, glm::value_ptr(mapT));
