@@ -120,8 +120,7 @@ int main()
         renderer.updateGunAnim(weaponManager.active(), dt);
 
         // ── Очистка ──
-        glClearColor(0.53f, 0.72f, 0.93f, 1.f);   // небо
-        glClearColor(0.52f, 0.58f, 0.65f, 1.f);  // цвет тумана
+        glClearColor(0.62f, 0.60f, 0.56f, 1.f);   // цвет тумана = цвет неба
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // ── Сцена ──

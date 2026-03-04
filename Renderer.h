@@ -50,35 +50,36 @@ uniform float fogStart;
 uniform float fogEnd;
 
 void main(){
-    vec3 col = hasTexture ? pow(texture(tex, vUV).rgb, vec3(2.2)) : baseColor;
+    // Цвет поверхности — гамма-декод текстуры
+    vec3 albedo = hasTexture ? pow(texture(tex, vUV).rgb, vec3(2.2)) : baseColor;
 
-    vec3  N   = normalize(vNorm);
-    vec3  L   = normalize(-lightDir);
+    vec3 N = normalize(vNorm);
+    vec3 L = normalize(-lightDir);  // направление к солнцу
 
-    float diff = max(dot(N, L), 0.0);
-    float fill = max(dot(N, -L * vec3(1,-0.3,1)), 0.0) * 0.08;
-    float amb  = 0.18;  // темнее ambient
+    // Освещение
+    float NdotL  = max(dot(N, L), 0.0);
+    float diff   = NdotL * 0.7;
 
-    // AO по Y
-    float ao = 0.65 + 0.35 * (N.y * 0.5 + 0.5);
+    // Hemisphere ambient — небо сверху теплее, земля снизу холоднее
+    vec3 skyAmb  = vec3(0.35, 0.38, 0.45);  // холодный верх
+    vec3 gndAmb  = vec3(0.18, 0.16, 0.14);  // тёплый низ
+    vec3 amb     = mix(gndAmb, skyAmb, N.y * 0.5 + 0.5);
 
-    vec3 lit = col * (amb + diff * 0.55 + fill) * ao;
+    // Soft shadow AO — горизонтальные грани темнее
+    float ao = 0.75 + 0.25 * clamp(N.y, 0.0, 1.0);
 
-    // Резкость (unsharp mask по нормали)
-    float sharp = dot(N, L);
-    sharp = sharp * sharp;
-    lit += col * sharp * 0.06;
+    vec3 lit = albedo * (amb + vec3(diff)) * ao;
 
-    // Контрастность — S-кривая
-    lit = lit * lit * (3.0 - 2.0 * lit);
-    lit = mix(col * (amb + diff * 0.55 + fill) * ao, lit, 0.35);
+    // Тонмаппинг Reinhard — убирает пересвет
+    lit = lit / (lit + vec3(0.6));
 
-    // Туман
+    // Туман — нейтральный серо-бежевый
     float fogT = clamp((vFogDist - fogStart) / (fogEnd - fogStart), 0.0, 1.0);
-    lit = mix(lit, fogColor * 0.75, fogT * 0.9);
+    fogT = fogT * fogT;  // квадратичный — туман появляется плавнее
+    lit = mix(lit, fogColor, fogT);
 
-    // Гамма 2.0 (чуть темнее чем 2.2)
-    lit = pow(max(lit, vec3(0.0)), vec3(1.0/2.0));
+    // Гамма 2.2
+    lit = pow(max(lit, vec3(0.0)), vec3(1.0 / 2.2));
 
     FragColor = vec4(lit, 1.0);
 })";
@@ -123,20 +124,27 @@ uniform sampler2D tex;
 uniform vec3  gunColor;
 uniform float flash;
 void main(){
-    vec3 col = hasTexture ? pow(texture(tex,vUV).rgb, vec3(2.2)) : gunColor;
-    vec3 N   = normalize(vNorm);
-    float d1  = max(dot(N, normalize(vec3(0.4,0.7,0.3))), 0.0);
-    float d2  = max(dot(N, normalize(vec3(-0.3,0.2,-0.5))), 0.0) * 0.18;
-    float rim = pow(1.0 - max(dot(N, vec3(0,0,1)), 0.0), 4.0) * 0.10;
+    vec3 albedo = hasTexture ? pow(texture(tex,vUV).rgb, vec3(2.2)) : gunColor;
+    vec3 N = normalize(vNorm);
 
-    vec3 lit = col * (0.22 + d1*0.52 + d2) + rim + vec3(flash*0.5);
+    // Основной свет — спереди-сверху
+    vec3 L1 = normalize(vec3(0.3, 0.8, 0.5));
+    float d1 = max(dot(N, L1), 0.0);
 
-    // Резкость — усиление краёв через производную нормали
-    float edge = pow(d1, 8.0) * 0.08;
-    lit += col * edge;
+    // Контровой свет — сзади снизу
+    vec3 L2 = normalize(vec3(-0.5, -0.3, -0.7));
+    float d2 = max(dot(N, L2), 0.0) * 0.25;
 
-    // Контраст
-    lit = pow(max(lit, vec3(0.0)), vec3(1.0/2.0));
+    // Rim — тонкий силуэт
+    float rim = pow(1.0 - max(dot(N, vec3(0,0,1)), 0.0), 5.0) * 0.12;
+
+    vec3 lit = albedo * (0.20 + d1*0.60 + d2) + vec3(rim) + vec3(flash * 0.4);
+
+    // Тонмаппинг
+    lit = lit / (lit + vec3(0.5));
+
+    // Гамма
+    lit = pow(max(lit, vec3(0.0)), vec3(1.0/2.2));
     FragColor = vec4(lit, 1.0);
 })";
 
@@ -322,19 +330,23 @@ struct Renderer
         float adsFOV = glm::mix(FOV, FOV * 0.6f, gun.adsProgress);
         glm::mat4 view = glm::lookAt(camPos, camPos + cf, cu);
         glm::mat4 proj = glm::perspective(glm::radians(adsFOV),
-            (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.05f, 5000.f);
+            (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.15f, 2000.f);
 
         glEnable(GL_DEPTH_TEST);
-        glEnable(GL_CULL_FACE);        // отсечение задних граней
+        glDepthFunc(GL_LEQUAL);
+        glEnable(GL_CULL_FACE);
+        // Polygon offset уменьшает z-fighting на параллельных поверхностях
+        glEnable(GL_POLYGON_OFFSET_FILL);
+        glPolygonOffset(1.0f, 1.0f);        // отсечение задних граней
         glCullFace(GL_BACK);
         glUseProgram(worldShader);
         glUniformMatrix4fv(wl.view, 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(wl.proj, 1, GL_FALSE, glm::value_ptr(proj));
         glUniform3f(wl.lightDir, .3f, -1.f, .4f);
         glUniform3fv(wl.camPos, 1, glm::value_ptr(camPos));
-        glUniform3f(wl.fogColor, 0.52f, 0.58f, 0.65f);
-        glUniform1f(wl.fogStart, 25.f);
-        glUniform1f(wl.fogEnd, 100.f);
+        glUniform3f(wl.fogColor, 0.62f, 0.60f, 0.56f);  // бежево-серый туман
+        glUniform1f(wl.fogStart, 40.f);
+        glUniform1f(wl.fogEnd, 130.f);
 
         if (!mapMeshes.empty()) {
             glUniformMatrix4fv(wl.model, 1, GL_FALSE, glm::value_ptr(mapT));
