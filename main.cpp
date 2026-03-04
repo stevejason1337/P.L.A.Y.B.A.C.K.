@@ -121,6 +121,7 @@ int main()
 
         // ── Очистка ──
         glClearColor(0.53f, 0.72f, 0.93f, 1.f);   // небо
+        glClearColor(0.52f, 0.58f, 0.65f, 1.f);  // цвет тумана
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // ── Сцена ──

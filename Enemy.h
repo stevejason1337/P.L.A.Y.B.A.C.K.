@@ -428,7 +428,7 @@ struct EnemyManager
 
         static unsigned int cachedShader = 0;
         static int lModel = -1, lView = -1, lProj = -1, lSkinned = -1, lBones = -1,
-            lHasTex = -1, lTex = -1, lColor = -1;
+            lHasTex = -1, lTex = -1, lColor = -1, lNormMat = -1;
         if (cachedShader != shader) {
             cachedShader = shader;
             lModel = glGetUniformLocation(shader, "model");
@@ -439,6 +439,7 @@ struct EnemyManager
             lHasTex = glGetUniformLocation(shader, "hasTexture");
             lTex = glGetUniformLocation(shader, "tex");
             lColor = glGetUniformLocation(shader, "baseColor");
+            lNormMat = glGetUniformLocation(shader, "normalMatrix");
         }
 
         glUniformMatrix4fv(lView, 1, GL_FALSE, glm::value_ptr(view));
@@ -447,9 +448,36 @@ struct EnemyManager
         // Меши общие для всех — биндим один раз снаружи цикла
         auto& meshes = sharedEnemy.proto.meshes;
 
+        // Frustum culling — вытаскиваем 6 плоскостей из viewproj
+        glm::mat4 vp = proj * view;
+        // Плоскости frustum (left, right, bottom, top, near, far)
+        glm::vec4 planes[6];
+        planes[0] = glm::vec4(vp[0][3] + vp[0][0], vp[1][3] + vp[1][0], vp[2][3] + vp[2][0], vp[3][3] + vp[3][0]); // left
+        planes[1] = glm::vec4(vp[0][3] - vp[0][0], vp[1][3] - vp[1][0], vp[2][3] - vp[2][0], vp[3][3] - vp[3][0]); // right
+        planes[2] = glm::vec4(vp[0][3] + vp[0][1], vp[1][3] + vp[1][1], vp[2][3] + vp[2][1], vp[3][3] + vp[3][1]); // bottom
+        planes[3] = glm::vec4(vp[0][3] - vp[0][1], vp[1][3] - vp[1][1], vp[2][3] - vp[2][1], vp[3][3] - vp[3][1]); // top
+        planes[4] = glm::vec4(vp[0][3] + vp[0][2], vp[1][3] + vp[1][2], vp[2][3] + vp[2][2], vp[3][3] + vp[3][2]); // near
+        planes[5] = glm::vec4(vp[0][3] - vp[0][2], vp[1][3] - vp[1][2], vp[2][3] - vp[2][2], vp[3][3] - vp[3][2]); // far
+        // Нормализуем
+        for (auto& p : planes) p /= glm::length(glm::vec3(p));
+
+        int drawn = 0;
         for (auto& e : enemies) {
+            // Sphere cull — радиус врага ~1м
+            bool visible = true;
+            for (auto& p : planes) {
+                if (glm::dot(glm::vec3(p), e.pos) + p.w < -1.2f) {
+                    visible = false; break;
+                }
+            }
+            if (!visible) continue;
+            drawn++;
             glm::mat4 model = e.getMatrix();
             glUniformMatrix4fv(lModel, 1, GL_FALSE, glm::value_ptr(model));
+            if (lNormMat >= 0) {
+                glm::mat3 nm = glm::mat3(glm::transpose(glm::inverse(model)));
+                glUniformMatrix3fv(lNormMat, 1, GL_FALSE, glm::value_ptr(nm));
+            }
 
             // Кости — уникальны для каждого врага
             bool hasBones = !e.boneFinal.empty();

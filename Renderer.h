@@ -17,25 +17,70 @@ inline const char* WORLD_VERT = R"(
 layout(location=0) in vec3 aPos;
 layout(location=1) in vec3 aNorm;
 layout(location=2) in vec2 aUV;
-out vec3 vNorm; out vec2 vUV;
-uniform mat4 model,view,projection;
+out vec3 vNorm;
+out vec2 vUV;
+out vec3 vWorldPos;
+out float vFogDist;
+uniform mat4 model, view, projection;
+uniform mat3 normalMatrix;   // передаём снаружи — не считаем в шейдере
+uniform vec3 camPos;
 void main(){
-    vNorm=mat3(transpose(inverse(model)))*aNorm;
-    vUV=aUV;
-    gl_Position=projection*view*model*vec4(aPos,1.0);
+    vec4 worldPos = model * vec4(aPos, 1.0);
+    vWorldPos = worldPos.xyz;
+    vNorm     = normalMatrix * aNorm;
+    vUV       = aUV;
+    vec4 viewPos = view * worldPos;
+    vFogDist  = -viewPos.z;
+    gl_Position = projection * viewPos;
 })";
 
 inline const char* WORLD_FRAG = R"(
 #version 330 core
-in vec3 vNorm; in vec2 vUV;
+in vec3 vNorm;
+in vec2 vUV;
+in vec3 vWorldPos;
+in float vFogDist;
 out vec4 FragColor;
-uniform vec3 lightDir,baseColor;
-uniform bool hasTexture;
+uniform vec3  lightDir;
+uniform vec3  baseColor;
+uniform bool  hasTexture;
 uniform sampler2D tex;
+uniform vec3  fogColor;
+uniform float fogStart;
+uniform float fogEnd;
+
 void main(){
-    vec3 col=hasTexture?texture(tex,vUV).rgb:baseColor;
-    float d=max(dot(normalize(vNorm),normalize(-lightDir)),0.0);
-    FragColor=vec4((0.35+d*0.65)*col,1.0);
+    vec3 col = hasTexture ? pow(texture(tex, vUV).rgb, vec3(2.2)) : baseColor;
+
+    vec3  N   = normalize(vNorm);
+    vec3  L   = normalize(-lightDir);
+
+    float diff = max(dot(N, L), 0.0);
+    float fill = max(dot(N, -L * vec3(1,-0.3,1)), 0.0) * 0.08;
+    float amb  = 0.18;  // темнее ambient
+
+    // AO по Y
+    float ao = 0.65 + 0.35 * (N.y * 0.5 + 0.5);
+
+    vec3 lit = col * (amb + diff * 0.55 + fill) * ao;
+
+    // Резкость (unsharp mask по нормали)
+    float sharp = dot(N, L);
+    sharp = sharp * sharp;
+    lit += col * sharp * 0.06;
+
+    // Контрастность — S-кривая
+    lit = lit * lit * (3.0 - 2.0 * lit);
+    lit = mix(col * (amb + diff * 0.55 + fill) * ao, lit, 0.35);
+
+    // Туман
+    float fogT = clamp((vFogDist - fogStart) / (fogEnd - fogStart), 0.0, 1.0);
+    lit = mix(lit, fogColor * 0.75, fogT * 0.9);
+
+    // Гамма 2.0 (чуть темнее чем 2.2)
+    lit = pow(max(lit, vec3(0.0)), vec3(1.0/2.0));
+
+    FragColor = vec4(lit, 1.0);
 })";
 
 inline const char* GUN_VERT = R"(
@@ -46,38 +91,53 @@ layout(location=2) in vec2 aUV;
 layout(location=3) in vec4 aBoneIDs;
 layout(location=4) in vec4 aWeights;
 out vec3 vNorm; out vec2 vUV;
-uniform mat4 model,view,projection;
+uniform mat4 model, view, projection;
+uniform mat3 normalMatrix;
 uniform bool skinned;
 uniform mat4 bones[100];
 void main(){
-    vec4 pos=vec4(aPos,1.0); vec4 nor=vec4(aNorm,0.0);
+    vec4 pos = vec4(aPos, 1.0);
+    vec3 nor = aNorm;
     if(skinned){
-        mat4 skin=mat4(0.0);
+        mat4 skin = mat4(0.0);
         for(int i=0;i<4;i++){
-            int id=int(aBoneIDs[i]);
-            if(id>=0&&aWeights[i]>0.0) skin+=bones[id]*aWeights[i];
+            int id = int(aBoneIDs[i]);
+            if(id >= 0 && aWeights[i] > 0.0) skin += bones[id] * aWeights[i];
         }
-        float ws=aWeights.x+aWeights.y+aWeights.z+aWeights.w;
-        if(ws<0.001) skin=mat4(1.0);
-        pos=skin*pos; nor=skin*nor;
+        float ws = aWeights.x+aWeights.y+aWeights.z+aWeights.w;
+        if(ws < 0.001) skin = mat4(1.0);
+        pos = skin * pos;
+        nor = mat3(skin) * nor;
     }
-    vNorm=mat3(transpose(inverse(model)))*nor.xyz;
-    vUV=aUV;
-    gl_Position=projection*view*model*pos;
+    vNorm = normalMatrix * nor;
+    vUV   = aUV;
+    gl_Position = projection * view * model * pos;
 })";
 
 inline const char* GUN_FRAG = R"(
 #version 330 core
 in vec3 vNorm; in vec2 vUV;
 out vec4 FragColor;
-uniform bool hasTexture;
+uniform bool  hasTexture;
 uniform sampler2D tex;
-uniform vec3 gunColor;
+uniform vec3  gunColor;
 uniform float flash;
 void main(){
-    vec3 col=hasTexture?texture(tex,vUV).rgb:gunColor;
-    float d=max(dot(normalize(vNorm),vec3(0.4,0.7,0.3)),0.0);
-    FragColor=vec4((0.4+d*0.6)*col+vec3(flash),1.0);
+    vec3 col = hasTexture ? pow(texture(tex,vUV).rgb, vec3(2.2)) : gunColor;
+    vec3 N   = normalize(vNorm);
+    float d1  = max(dot(N, normalize(vec3(0.4,0.7,0.3))), 0.0);
+    float d2  = max(dot(N, normalize(vec3(-0.3,0.2,-0.5))), 0.0) * 0.18;
+    float rim = pow(1.0 - max(dot(N, vec3(0,0,1)), 0.0), 4.0) * 0.10;
+
+    vec3 lit = col * (0.22 + d1*0.52 + d2) + rim + vec3(flash*0.5);
+
+    // Резкость — усиление краёв через производную нормали
+    float edge = pow(d1, 8.0) * 0.08;
+    lit += col * edge;
+
+    // Контраст
+    lit = pow(max(lit, vec3(0.0)), vec3(1.0/2.0));
+    FragColor = vec4(lit, 1.0);
 })";
 
 inline const char* DOT_VERT = R"(
@@ -139,8 +199,8 @@ struct Renderer
     float reloadDuration = 2.5f;
 
     // ── Кешированные uniform locations (инициализируются один раз в init) ──
-    struct WorldLocs { int model, view, proj, lightDir, baseColor, hasTex, tex; } wl{};
-    struct GunLocs { int model, view, proj, skinned, bones, hasTex, tex, gunColor, flash; } gl{};
+    struct WorldLocs { int model, view, proj, normalMat, lightDir, baseColor, hasTex, tex, fogColor, fogStart, fogEnd, camPos; } wl{};
+    struct GunLocs { int model, view, proj, normalMat, skinned, bones, hasTex, tex, gunColor, flash; } gl{};
     struct DotLocs { int mvp, color; } dl{};
 
     void init()
@@ -166,14 +226,20 @@ struct Renderer
         wl.model = glGetUniformLocation(worldShader, "model");
         wl.view = glGetUniformLocation(worldShader, "view");
         wl.proj = glGetUniformLocation(worldShader, "projection");
+        wl.normalMat = glGetUniformLocation(worldShader, "normalMatrix");
         wl.lightDir = glGetUniformLocation(worldShader, "lightDir");
         wl.baseColor = glGetUniformLocation(worldShader, "baseColor");
         wl.hasTex = glGetUniformLocation(worldShader, "hasTexture");
         wl.tex = glGetUniformLocation(worldShader, "tex");
+        wl.fogColor = glGetUniformLocation(worldShader, "fogColor");
+        wl.fogStart = glGetUniformLocation(worldShader, "fogStart");
+        wl.fogEnd = glGetUniformLocation(worldShader, "fogEnd");
+        wl.camPos = glGetUniformLocation(worldShader, "camPos");
 
         gl.model = glGetUniformLocation(gunShader, "model");
         gl.view = glGetUniformLocation(gunShader, "view");
         gl.proj = glGetUniformLocation(gunShader, "projection");
+        gl.normalMat = glGetUniformLocation(gunShader, "normalMatrix");
         gl.skinned = glGetUniformLocation(gunShader, "skinned");
         gl.bones = glGetUniformLocation(gunShader, "bones");
         gl.hasTex = glGetUniformLocation(gunShader, "hasTexture");
@@ -265,9 +331,15 @@ struct Renderer
         glUniformMatrix4fv(wl.view, 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(wl.proj, 1, GL_FALSE, glm::value_ptr(proj));
         glUniform3f(wl.lightDir, .3f, -1.f, .4f);
+        glUniform3fv(wl.camPos, 1, glm::value_ptr(camPos));
+        glUniform3f(wl.fogColor, 0.52f, 0.58f, 0.65f);
+        glUniform1f(wl.fogStart, 25.f);
+        glUniform1f(wl.fogEnd, 100.f);
 
         if (!mapMeshes.empty()) {
             glUniformMatrix4fv(wl.model, 1, GL_FALSE, glm::value_ptr(mapT));
+            glm::mat3 nmWorld = glm::mat3(glm::transpose(glm::inverse(mapT)));
+            glUniformMatrix3fv(wl.normalMat, 1, GL_FALSE, glm::value_ptr(nmWorld));
             glUniform3f(wl.baseColor, .75f, .72f, .65f);
             unsigned int lastTex = 0;
             for (auto& m : mapMeshes) {
@@ -346,6 +418,8 @@ struct Renderer
             glUniformMatrix4fv(gl.model, 1, GL_FALSE, glm::value_ptr(gMat));
             glUniformMatrix4fv(gl.view, 1, GL_FALSE, glm::value_ptr(view));
             glUniformMatrix4fv(gl.proj, 1, GL_FALSE, glm::value_ptr(projGun));
+            glm::mat3 nmGun = glm::mat3(glm::transpose(glm::inverse(gMat)));
+            glUniformMatrix3fv(gl.normalMat, 1, GL_FALSE, glm::value_ptr(nmGun));
             glUniform3f(gl.gunColor, .4f, .4f, .42f);
             glUniform1f(gl.flash, flashTimer > 0.f ? flashTimer * 4.f : 0.f);
 
