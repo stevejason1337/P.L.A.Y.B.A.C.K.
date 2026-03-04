@@ -130,14 +130,16 @@ int main()
             mapT,
             camPos, camFront, camUp);
 
-        // ── Враги ──
+        // ── Враги — gunShader для skinning, proj без ADS zoom ──
         {
             glm::mat4 view = glm::lookAt(camPos, camPos + camFront, camUp);
+            // Используем тот же adsFOV что и мир, чтобы враги не плыли
+            float curFOV = glm::mix(FOV, FOV * 0.6f, gun.adsProgress);
             glm::mat4 proj = glm::perspective(
-                glm::radians(FOV),
+                glm::radians(curFOV),
                 (float)SCR_WIDTH / (float)SCR_HEIGHT,
                 0.05f, 5000.f);
-            enemyManager.draw(renderer.worldShader, view, proj);
+            enemyManager.draw(renderer.gunShader, view, proj);
         }
 
         // ── HUD / Консоль ──

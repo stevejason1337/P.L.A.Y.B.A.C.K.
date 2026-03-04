@@ -9,7 +9,8 @@ const unsigned int SCR_WIDTH = 1280;
 const unsigned int SCR_HEIGHT = 720;
 
 // Camera
-const float FOV = 75.f;
+const float FOV = 90.f;   // FOV мира
+const float GUN_FOV = 68.f;   // FOV оружия (меньше = крупнее визуально)
 const float PITCH_LIM = 75.f;
 const float MOUSE_SENS = 0.1f;
 

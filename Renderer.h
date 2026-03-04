@@ -309,8 +309,9 @@ struct Renderer
             glClear(GL_DEPTH_BUFFER_BIT);
             glDisable(GL_CULL_FACE);   // оружие рисуем без culling
             glUseProgram(gunShader);
-            glm::mat4 projGun = glm::perspective(glm::radians(FOV),
-                (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.05f, 5000.f);
+            // FOV оружия отдельный — меньше = оружие крупнее визуально
+            glm::mat4 projGun = glm::perspective(glm::radians(GUN_FOV),
+                (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.01f, 100.f);
 
             glm::vec3 right = glm::normalize(glm::cross(cf, cu));
             glm::vec3 up2 = glm::normalize(glm::cross(right, cf));
