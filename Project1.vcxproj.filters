@@ -968,6 +968,9 @@
     <ClInclude Include="Threadpool.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
+    <ClInclude Include="Physics.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Library Include="dependencies\lib\glfw3.lib" />
@@ -1413,6 +1416,8 @@
     <None Include="x64\Debug\models\pistol\glock\glock.fbx" />
     <None Include="x64\Debug\models\pistol\sawnoff\sawnoff.fbx" />
     <None Include="models\maps\awp_lego\awp_lego.fbx" />
+    <None Include="models\characters\walker\walker.fbx" />
+    <None Include="models\characters\walker2\walker2.fbx.fbx" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="dependencies\include\glm\CMakeLists.txt" />
@@ -3214,6 +3219,33 @@
       <Filter>Файлы ресурсов</Filter>
     </Image>
     <Image Include="models\maps\awp_lego\textures\concrete_white.jpeg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\characters\walker2\textures\%40Diffuse.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\characters\walker2\textures\%40Diffuse_0.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\characters\walker2\textures\%40Diffuse_1.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\characters\walker2\textures\%40Diffuse_2.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\characters\walker2\textures\%40Diffuse_3.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\characters\walker2\textures\%40Normal_OpenGl.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\characters\walker2\textures\%40Normal_OpenGl_0.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\characters\walker2\textures\%40Normal_OpenGl_2.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="models\characters\walker2\textures\%40Normal_OpenGl_3.png">
       <Filter>Файлы ресурсов</Filter>
     </Image>
   </ItemGroup>

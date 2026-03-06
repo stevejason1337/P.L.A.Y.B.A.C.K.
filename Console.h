@@ -35,6 +35,7 @@ struct EnemyManager;
 extern EnemyManager enemyManager;
 struct Character;
 extern Character player;
+extern glm::vec3 camFront;
 struct GunState;
 extern GunState gun;
 extern float playerHP;
@@ -172,15 +173,30 @@ struct Console
         }
         else if (name == "spawn") {
             int n = 1; ss >> n; if (n < 1)n = 1; if (n > 20)n = 20;
-            glm::vec3 spawnPos = player.pos + glm::vec3(5, 0, 0);
+            glm::vec3 fwdDir = glm::normalize(glm::vec3(camFront.x, 0, camFront.z));
+            glm::vec3 spawnPos = player.pos + fwdDir * 5.f; spawnPos.y = player.pos.y;
             enemyManager.spawnGroup(spawnPos, n, n > 1 ? 4.f : 0.f);
             print("Spawned " + std::to_string(n) + " soldier(s).", CON_GREEN);
         }
         else if (name == "zombie") {
             int n = 1; ss >> n; if (n < 1)n = 1; if (n > 20)n = 20;
-            glm::vec3 spawnPos = player.pos + glm::vec3(5, 0, 0);
+            glm::vec3 fwdDir = glm::normalize(glm::vec3(camFront.x, 0, camFront.z));
+            glm::vec3 spawnPos = player.pos + fwdDir * 5.f; spawnPos.y = player.pos.y;
             enemyManager.spawnZombieGroup(spawnPos, n, n > 1 ? 4.f : 0.f);
             print("Spawned " + std::to_string(n) + " zombie(s).", CON_GREEN);
+        }
+        else if (name == "zombie2") {
+            int n = 1; ss >> n; if (n < 1)n = 1; if (n > 20)n = 20;
+            // Спавн прямо перед игроком с его высотой
+            glm::vec3 fwdDir = glm::normalize(glm::vec3(camFront.x, 0, camFront.z));
+            glm::vec3 spawnPos = player.pos + fwdDir * 5.f;
+            spawnPos.y = player.pos.y;
+            enemyManager.spawnZombie2Group(spawnPos, n, n > 1 ? 4.f : 0.f);
+            print("Spawned " + std::to_string(n) + " zombie2(s).", CON_GREEN);
+        }
+        else if (name == "nocull") {
+            enemyManager.debugNoCull = !enemyManager.debugNoCull;
+            print(enemyManager.debugNoCull ? "Culling OFF" : "Culling ON", CON_GREEN);
         }
         else if (name == "zscale") {
             float s = 0.01f; ss >> s;

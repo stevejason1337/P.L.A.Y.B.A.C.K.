@@ -49,41 +49,61 @@ uniform vec3  fogColor;
 uniform float fogStart;
 uniform float fogEnd;
 
+// ACESFilm tonemapping — профессиональный, даёт яркие насыщенные цвета
+vec3 ACESFilm(vec3 x) {
+    float a=2.51, b=0.03, c=2.43, d=0.59, e=0.14;
+    return clamp((x*(a*x+b))/(x*(c*x+d)+e), 0.0, 1.0);
+}
+
+// Насыщение цвета
+vec3 saturate(vec3 col, float s) {
+    float lum = dot(col, vec3(0.2126, 0.7152, 0.0722));
+    return mix(vec3(lum), col, s);
+}
+
 void main(){
     vec3 albedo = hasTexture ? pow(texture(tex, vUV).rgb, vec3(2.2)) : baseColor;
 
     vec3 N = normalize(vNorm);
     vec3 L = normalize(-lightDir);
-
-    // Диффузный свет
     float NdotL = max(dot(N, L), 0.0);
 
-    // Ambient — нейтральный тёплый, без синевы
-    float ambStr = 0.30;
-    vec3  ambCol = vec3(0.90, 0.85, 0.78);  // тёплый белый
+    // Мягкий skylight сверху (голубоватый)
+    float skyStr  = max(dot(N, vec3(0,1,0)), 0.0) * 0.25;
+    vec3  skyCol  = vec3(0.55, 0.70, 0.90);
 
-    // Солнечный свет — тёплый жёлтый
-    vec3  sunCol = vec3(1.0, 0.95, 0.85);
-    float sunStr = NdotL * 0.65;
+    // Солнечный свет — яркий тёплый
+    vec3  sunCol  = vec3(1.05, 0.95, 0.80);
+    float sunStr  = NdotL * 0.85;
 
-    // Небольшой заполняющий свет снизу
-    float fillStr = max(dot(N, vec3(0.0, -1.0, 0.0)), 0.0) * 0.08;
+    // Ambient — тёплый заполняющий
+    vec3  ambCol  = vec3(0.25, 0.22, 0.20);
 
-    // AO — вертикальные грани чуть темнее горизонтальных
-    float ao = 0.80 + 0.20 * abs(N.y);
+    // Bounce light снизу (имитация отражения от пола)
+    float bounceStr = max(dot(N, vec3(0,-1,0)), 0.0) * 0.12;
+    vec3  bounceCol = vec3(0.40, 0.35, 0.28);
 
-    vec3 lit = albedo * (ambCol * ambStr + sunCol * sunStr + vec3(fillStr)) * ao;
+    // Specular — блики на гладких поверхностях
+    vec3 V = vec3(0,0,1); // упрощённо
+    vec3 H = normalize(L + V);
+    float spec = pow(max(dot(N, H), 0.0), 32.0) * 0.15;
 
-    // Тонмаппинг — убирает пересвет
-    lit = lit / (lit + vec3(0.55));
+    vec3 lit = albedo * (ambCol + sunCol * sunStr + skyCol * skyStr + bounceCol * bounceStr);
+    lit += vec3(spec);
 
-    // Туман
+    // Насыщение +30%
+    lit = saturate(lit, 1.30);
+
+    // ACES tonemapping — профессиональный кинематографический
+    lit = ACESFilm(lit * 1.1);
+
+    // Туман — только вдали
     float fogT = clamp((vFogDist - fogStart) / (fogEnd - fogStart), 0.0, 1.0);
-    fogT = fogT * fogT;
+    fogT = fogT * fogT * fogT; // кубический — туман начинается плавнее
     lit = mix(lit, fogColor, fogT);
 
     // Гамма
-    lit = pow(max(lit, vec3(0.0)), vec3(1.0 / 2.2));
+    lit = pow(max(lit, vec3(0.0)), vec3(1.0/2.2));
 
     FragColor = vec4(lit, 1.0);
 })";
@@ -127,28 +147,39 @@ uniform bool  hasTexture;
 uniform sampler2D tex;
 uniform vec3  gunColor;
 uniform float flash;
+
+vec3 ACESFilm(vec3 x){
+    return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14),0.0,1.0);
+}
+
 void main(){
     vec3 albedo = hasTexture ? pow(texture(tex,vUV).rgb, vec3(2.2)) : gunColor;
     vec3 N = normalize(vNorm);
 
-    // Один мягкий источник — как в помещении RE7
-    vec3 L = normalize(vec3(0.2, 0.6, 0.4));
-    float diff = max(dot(N, L), 0.0);
+    // Основной свет — спереди-сверху
+    vec3 L1 = normalize(vec3(0.3, 0.8, 0.5));
+    float d1 = max(dot(N, L1), 0.0);
 
-    // Очень мягкий ambient — оружие в тени
-    float amb = 0.15;
+    // Контровой свет — сзади (металлический блик)
+    vec3 L2 = normalize(vec3(-0.5, 0.3, -0.8));
+    float d2 = max(dot(N, L2), 0.0) * 0.25;
 
-    // Никакого rim, никакого второго источника
-    vec3 lit = albedo * (amb + diff * 0.40);
+    // Rim light — подсветка краёв
+    float rim = pow(1.0 - max(dot(N, vec3(0,0,1)), 0.0), 3.0) * 0.15;
 
-    // Агрессивный тонмаппинг — давит пересвет
-    lit = lit / (lit + vec3(0.8));
+    // Specular
+    vec3 H = normalize(L1 + vec3(0,0,1));
+    float spec = pow(max(dot(N,H),0.0), 64.0) * 0.4;
 
-    // Гамма
-    lit = pow(max(lit, vec3(0.0)), vec3(1.0/2.2));
+    float amb = 0.18;
+    vec3 lit = albedo * (amb + d1*0.55 + d2 + rim) + vec3(spec)*0.6;
 
-    // Вспышка выстрела
-    lit += vec3(flash * 0.15);
+    // Вспышка выстрела — тёплая
+    lit += vec3(1.0, 0.85, 0.5) * flash * 0.3;
+
+    // ACES
+    lit = ACESFilm(lit);
+    lit = pow(max(lit,vec3(0.0)), vec3(1.0/2.2));
 
     FragColor = vec4(lit, 1.0);
 })";
@@ -180,34 +211,74 @@ in vec2 vUV;
 out vec4 FragColor;
 uniform sampler2D screenTex;
 uniform vec2 resolution;
+uniform float time;
+uniform float hp01; // HP 0..1 для красной виньетки
+
 void main(){
-    vec2 uv  = vUV;
-    vec2 px  = 1.0 / resolution;
-    float blurR = 1.3;
-    vec3 col = vec3(0.0);
-    col += texture(screenTex, uv+vec2(-blurR,-blurR)*px).rgb;
-    col += texture(screenTex, uv+vec2(     0,-blurR)*px).rgb*2.0;
-    col += texture(screenTex, uv+vec2( blurR,-blurR)*px).rgb;
-    col += texture(screenTex, uv+vec2(-blurR,     0)*px).rgb*2.0;
-    col += texture(screenTex, uv                      ).rgb*4.0;
-    col += texture(screenTex, uv+vec2( blurR,     0)*px).rgb*2.0;
-    col += texture(screenTex, uv+vec2(-blurR, blurR)*px).rgb;
-    col += texture(screenTex, uv+vec2(     0, blurR)*px).rgb*2.0;
-    col += texture(screenTex, uv+vec2( blurR, blurR)*px).rgb;
-    col /= 16.0;
-    // Хроматический аберрейшн по краям
-    float ab = length(uv-0.5)*0.0014;
-    vec2 adir = normalize(uv-0.5+vec2(0.001))*ab;
-    col.r = texture(screenTex, uv+adir).r;
-    col.b = texture(screenTex, uv-adir).b;
-    // Виньетка
-    float v = length(uv-0.5)*1.65;
-    col *= 1.0 - v*v*0.50;
-    // Контраст
-    col = col*1.05 - vec3(0.025);
-    FragColor = vec4(max(col,vec3(0.0)), 1.0);
-}
-)";
+    vec2 uv = vUV;
+    vec2 px = 1.0 / resolution;
+    vec3 col = texture(screenTex, uv).rgb;
+
+    // ── SHARPEN — убираем мыльность, добавляем чёткость ──
+    // Unsharp mask: оригинал - блюр = детали
+    vec3 blur =
+        texture(screenTex, uv + vec2(-1,-1)*px).rgb +
+        texture(screenTex, uv + vec2( 0,-1)*px).rgb * 2.0 +
+        texture(screenTex, uv + vec2( 1,-1)*px).rgb +
+        texture(screenTex, uv + vec2(-1, 0)*px).rgb * 2.0 +
+        texture(screenTex, uv + vec2( 0, 0)*px).rgb * 4.0 +
+        texture(screenTex, uv + vec2( 1, 0)*px).rgb * 2.0 +
+        texture(screenTex, uv + vec2(-1, 1)*px).rgb +
+        texture(screenTex, uv + vec2( 0, 1)*px).rgb * 2.0 +
+        texture(screenTex, uv + vec2( 1, 1)*px).rgb;
+    blur /= 16.0;
+    float sharpStr = 0.55; // сила резкости
+    col = col + (col - blur) * sharpStr;
+
+    // ── BLOOM — лёгкое свечение ярких участков ──
+    vec3 bright = max(col - vec3(0.75), vec3(0.0));
+    vec3 bloom = vec3(0.0);
+    for(int i = -2; i <= 2; i++)
+    for(int j = -2; j <= 2; j++) {
+        vec2 off = vec2(float(i), float(j)) * px * 2.0;
+        vec3 s = texture(screenTex, uv + off).rgb;
+        bloom += max(s - vec3(0.75), vec3(0.0));
+    }
+    bloom /= 25.0;
+    col += bloom * 0.35;
+
+    // ── НАСЫЩЕНИЕ — яркие цвета ──
+    float lum = dot(col, vec3(0.2126, 0.7152, 0.0722));
+    col = mix(vec3(lum), col, 1.25); // +25% насыщение
+
+    // ── КОНТРАСТ и ЯРКОСТЬ ──
+    col = (col - 0.5) * 1.12 + 0.5 + 0.03; // контраст + чуть ярче
+
+    // ── ВИНЬЕТКА — тонкая, не навязчивая ──
+    float dist = length(uv - 0.5);
+    float vign = 1.0 - dist * dist * 0.55;
+    col *= vign;
+
+    // ── КРАСНАЯ ВИНЬЕТКА при низком HP ──
+    if(hp01 < 0.35) {
+        float pulse = sin(time * 3.0) * 0.5 + 0.5;
+        float intensity = (0.35 - hp01) / 0.35 * 0.55 * (0.6 + 0.4 * pulse);
+        col = mix(col, vec3(col.r * 1.4, col.g * 0.3, col.b * 0.3), intensity * dist * 1.8);
+    }
+
+    // ── ХРОМАТИЧЕСКИЙ АБЕРРЕЙШН — только по самым краям ──
+    float ab = smoothstep(0.35, 0.7, dist) * 0.0008;
+    vec2 adir = normalize(uv - 0.5 + vec2(0.0001)) * ab;
+    col.r = texture(screenTex, uv + adir).r;
+    col.b = texture(screenTex, uv - adir).b;
+
+    // ── FILM GRAIN — лёгкий шум для кинематографичности ──
+    float noise = fract(sin(dot(uv * resolution + time * 100.0,
+                   vec2(12.9898, 78.233))) * 43758.5453);
+    col += (noise - 0.5) * 0.018;
+
+    FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
+})";
 
 inline unsigned int buildShader(const char* v, const char* f)
 {
@@ -406,7 +477,11 @@ struct Renderer
     }
 
     // Конец кадра — применяем пост-процессинг и выводим на экран
-    void endFrame() {
+    float postTime = 0.f;
+    float postHp01 = 1.f; // устанавливай из main: renderer.postHp01 = player.hp/100.f
+
+    void endFrame(float dt = 0.016f) {
+        postTime += dt;
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glDisable(GL_DEPTH_TEST);
         glClear(GL_COLOR_BUFFER_BIT);
@@ -414,8 +489,9 @@ struct Renderer
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, fboTex);
         glUniform1i(glGetUniformLocation(postShader, "screenTex"), 0);
-        glUniform2f(glGetUniformLocation(postShader, "resolution"),
-            (float)SCR_WIDTH, (float)SCR_HEIGHT);
+        glUniform2f(glGetUniformLocation(postShader, "resolution"), (float)SCR_WIDTH, (float)SCR_HEIGHT);
+        glUniform1f(glGetUniformLocation(postShader, "time"), postTime);
+        glUniform1f(glGetUniformLocation(postShader, "hp01"), postHp01);
         glBindVertexArray(quadVAO);
         glDrawArrays(GL_TRIANGLES, 0, 6);
         glEnable(GL_DEPTH_TEST);

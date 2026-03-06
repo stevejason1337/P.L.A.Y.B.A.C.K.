@@ -171,7 +171,8 @@ int main()
             }
         }
 
-        renderer.endFrame();
+        renderer.postHp01 = std::max(0.f, std::min(1.f, playerHP / playerMaxHP));
+        renderer.endFrame(dt);
         glfwSwapBuffers(window);
     }
 

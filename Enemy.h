@@ -2,6 +2,7 @@
 
 #include "Settings.h"
 #include "ThreadPool.h"
+#include "Physics.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -101,11 +102,12 @@ private:
     }
 };
 
-inline SharedEnemyModel sharedEnemy;  // солдат
-inline SharedEnemyModel sharedZombie; // зомби
+inline SharedEnemyModel gModelSoldier;
+inline SharedEnemyModel gModelZombie;
+inline SharedEnemyModel gModelZombie2;
 
 // ─── Тип врага ────────────────────────────────────────────
-enum class EnemyType { SOLDIER, ZOMBIE };
+enum class EnemyType { SOLDIER, ZOMBIE, ZOMBIE2 };
 
 // ─── Состояния ────────────────────────────────────────────
 // ZOMBIE использует только PATROL / APPROACH / MELEE / DEAD
@@ -124,8 +126,11 @@ struct Enemy
     bool       removed = false;
     float      meleeTimer = 0.f;   // кулдаун удара зомби
     float      meleeRange = 2.2f;  // дальность удара
-    AnimCache  myCache;               // персональный кеш каналов (не общий!)
-    std::string myCachedAnim;
+    AnimCache     myCache;
+    std::string   myCachedAnim;
+    DeathAnimator deathAnim;          // ragdoll при смерти
+    Hitbox        hitbox;             // точные хитбоксы
+    glm::vec3     lastShootDir = glm::vec3(0, 0, 1); // направление последнего выстрела
 
     // Кости — единственное что уникально для каждого врага
     std::vector<glm::mat4> boneFinal;
@@ -162,10 +167,14 @@ struct Enemy
 
     // Возвращает нужную SharedModel по типу
     SharedEnemyModel& sharedModel() {
-        return type == EnemyType::ZOMBIE ? sharedZombie : sharedEnemy;
+        if (type == EnemyType::ZOMBIE2) return gModelZombie2;
+        if (type == EnemyType::ZOMBIE)  return gModelZombie;
+        return gModelSoldier;
     }
     const SharedEnemyModel& sharedModel() const {
-        return type == EnemyType::ZOMBIE ? sharedZombie : sharedEnemy;
+        if (type == EnemyType::ZOMBIE2) return gModelZombie2;
+        if (type == EnemyType::ZOMBIE)  return gModelZombie;
+        return gModelSoldier;
     }
 
     void playAnim(const std::string& name, bool loop, const std::string& next = "")
@@ -292,19 +301,21 @@ struct Enemy
             _calcBonesWithCache(m, anim, t, node->mChildren[i], global, out);
     }
 
-    void takeDamage(float dmg)
+    void takeDamage(float dmg, const glm::vec3& shootDir = glm::vec3(0, 0, 1))
     {
         if (isDead()) return;
+        lastShootDir = shootDir;
         hp -= dmg;
         hitTimer = 0.25f;
         if (hp <= 0.f) {
             hp = 0.f;
             state = EnemyState::DEAD;
             playAnim(sharedModel().DEATH, false);
+            // Запускаем ragdoll смерти
+            deathAnim.trigger(pos, rotY, shootDir, 6.f);
             return;
         }
         if (state == EnemyState::PATROL) state = EnemyState::APPROACH;
-        std::cout << "[ENEMY] Hit! HP:" << hp << "\n";
     }
 
     void update(float dt, const glm::vec3& playerPos, float& playerHP)
@@ -315,9 +326,14 @@ struct Enemy
 
         if (isDead()) {
             deadTimer += dt;
-            deadAngle += dt * 80.f; if (deadAngle > 90.f) deadAngle = 90.f;
-            if (deadTimer > 4.f) removed = true;
-            updateAnim(dt);
+            deathAnim.update(dt);
+            // Падение без ragdoll — простой наклон
+            if (!deathAnim.isRagdoll()) {
+                deadAngle += dt * 90.f;
+                if (deadAngle > 90.f) deadAngle = 90.f;
+                updateAnim(dt);
+            }
+            if (deadTimer > 6.f) removed = true;
             return;
         }
 
@@ -343,7 +359,7 @@ struct Enemy
         }
 
         // ── Логика ──
-        if (type == EnemyType::ZOMBIE) {
+        if (type == EnemyType::ZOMBIE || type == EnemyType::ZOMBIE2) {
             // Зомби — только идёт и бьёт
             if (meleeTimer > 0.f) meleeTimer -= dt;
             if (dist > ENEMY_DETECT) {
@@ -352,8 +368,10 @@ struct Enemy
             }
             else {
                 state = EnemyState::APPROACH;
-                float spd = ENEMY_WALK_SPD * 1.2f; // нормальная скорость зомби
-                animSpeed = 1.0f;                   // анимация на нормальной скорости
+                float spd = (type == EnemyType::ZOMBIE2)
+                    ? ENEMY_WALK_SPD * 2.0f  // walker2 бегает
+                    : ENEMY_WALK_SPD * 1.2f; // walker1 ходит
+                animSpeed = (type == EnemyType::ZOMBIE2) ? 1.4f : 1.0f;
                 _moveTo(pos + dir * spd * dt);
                 if (dist <= meleeRange && meleeTimer <= 0.f) {
                     state = EnemyState::MELEE;
@@ -502,21 +520,29 @@ struct EnemyManager
 {
     std::vector<Enemy> enemies;
     int frameNum = 0;
+    bool debugNoCull = false; // true = рисуем всех без frustum culling
     // Солдат
     std::string modelPath = "models/characters/soldier/Ch35_nonPBR.fbx";
     std::string texDir = "models/characters/soldier";
-    // Зомби
+    // Зомби 1
     std::string zombiePath = "models/characters/walker/walker.fbx";
     std::string zombieTexDir = "models/characters/walker";
+    // Зомби 2 (walker2 - с текстурами)
+    std::string zombie2Path = "models/characters/walker2/walker2.fbx.fbx";
+    std::string zombie2TexDir = "models/characters/walker2/textures";
 
     void load()
     {
-        if (!sharedEnemy.load(modelPath, texDir))
+        if (!gModelSoldier.load(modelPath, texDir))
             std::cerr << "[ENEMY] Failed to load soldier\n";
         // Зомби загружается только если путь не пустой
         if (!zombiePath.empty()) {
-            if (!sharedZombie.load(zombiePath, zombieTexDir))
-                std::cerr << "[ENEMY] Failed to load zombie (path: " << zombiePath << ")\n";
+            if (!gModelZombie.load(zombiePath, zombieTexDir))
+                std::cerr << "[ENEMY] Failed to load zombie\n";
+        }
+        if (!zombie2Path.empty()) {
+            if (!gModelZombie2.load(zombie2Path, zombie2TexDir))
+                std::cerr << "[ENEMY] Failed to load zombie2\n";
         }
     }
 
@@ -532,15 +558,22 @@ struct EnemyManager
         _spawnEnemy(p, EnemyType::ZOMBIE);
     }
 
+    void spawnZombie2(glm::vec3 p)
+    {
+        _spawnEnemy(p, EnemyType::ZOMBIE2);
+    }
+
     void _spawnEnemy(glm::vec3 p, EnemyType t)
     {
-        auto& sm = (t == EnemyType::ZOMBIE) ? sharedZombie : sharedEnemy;
+        auto& sm = (t == EnemyType::ZOMBIE2) ? gModelZombie2 :
+            (t == EnemyType::ZOMBIE) ? gModelZombie : gModelSoldier;
         if (!sm.loaded) {
             std::cerr << "[ENEMY] Model not loaded!\n";
             return;
         }
         float gy = getGroundY(p, 200.f);
         if (gy != std::numeric_limits<float>::lowest()) p.y = gy;
+        // Если пол не найден — оставляем Y как есть (позиция игрока)
 
         Enemy e;
         e.type = t;
@@ -553,21 +586,19 @@ struct EnemyManager
         if (t == EnemyType::ZOMBIE) {
             e.hp = 180.f;
             e.meleeRange = 2.0f;
-            // Автоподбор масштаба — пробуем по размеру bounding box
-            auto& proto = sharedZombie.proto;
-            if (!proto.meshes.empty()) {
-                // Если модель в сантиметрах (Mixamo) — 0.01, если в метрах — 1.0
-                // parasiteZombie обычно ~170 единиц высотой в сантиметрах
-                e.scale = 0.01f;
-            }
-            else {
-                e.scale = 0.01f;
-            }
+            e.scale = 0.01f;
+        }
+        else if (t == EnemyType::ZOMBIE2) {
+            e.hp = 150.f;
+            e.meleeRange = 2.0f;
+            e.scale = 0.01f; // walker2 тоже Mixamo — сантиметры
         }
         e.init();
         enemies.push_back(std::move(e));
+        // Форсируем первый updateAnim чтобы boneFinal сразу заполнился
+        enemies.back().updateAnim(0.016f);
         std::cout << "[ENEMY] Spawned "
-            << (t == EnemyType::ZOMBIE ? "zombie" : "soldier")
+            << (t == EnemyType::ZOMBIE2 ? "zombie2" : t == EnemyType::ZOMBIE ? "zombie" : "soldier")
             << " at (" << p.x << "," << p.y << "," << p.z << ")\n";
     }
 
@@ -584,6 +615,14 @@ struct EnemyManager
         for (int i = 0; i < count; i++) {
             float a = (float)i / count * 6.2831f;
             spawnZombie(center + glm::vec3(cosf(a) * radius, 0.f, sinf(a) * radius));
+        }
+    }
+
+    void spawnZombie2Group(glm::vec3 center, int count, float radius = 5.f)
+    {
+        for (int i = 0; i < count; i++) {
+            float a = (float)i / count * 6.2831f;
+            spawnZombie2(center + glm::vec3(cosf(a) * radius, 0.f, sinf(a) * radius));
         }
     }
 
@@ -614,24 +653,41 @@ struct EnemyManager
             enemies.end());
     }
 
-    int rayHit(const glm::vec3& orig, const glm::vec3& dir, float maxDist = 200.f)
+    // Returns enemy index hit, -1 if miss
+    // dmgOut = actual damage (headshot=150, chest=100, belly=75, legs=50)
+    // shootDir needed for ragdoll impulse direction
+    int rayHit(const glm::vec3& orig, const glm::vec3& dir,
+        float maxDist = 200.f, float* dmgOut = nullptr,
+        const glm::vec3& shootDir = glm::vec3(0, 0, 1))
     {
-        float best = maxDist; int idx = -1;
+        float best = maxDist; int idx = -1; int bestDmg = 0;
+
         for (int i = 0; i < (int)enemies.size(); i++) {
-            if (enemies[i].isDead()) continue;
-            glm::vec3 oc = orig - enemies[i].pos;
-            float b = glm::dot(oc, dir), c = glm::dot(oc, oc) - 0.5f * 0.5f;
-            float d = b * b - c; if (d < 0.f) continue;
-            float t = -b - sqrtf(d);
-            if (t > 0.f && t < best) { best = t; idx = i; }
+            auto& e = enemies[i];
+            if (e.isDead()) continue;
+
+            // Precise hitbox test
+            int zone; glm::vec3 hp;
+            int dmg = e.hitbox.rayTest(orig, dir, e.pos, e.scale, zone, hp);
+            if (dmg <= 0) continue;
+
+            float t = glm::length(hp - orig);
+            if (t < best) {
+                best = t;
+                idx = i;
+                bestDmg = dmg;
+            }
         }
+        if (dmgOut) *dmgOut = (float)bestDmg;
+        if (idx >= 0)
+            enemies[idx].takeDamage((float)bestDmg, shootDir);
         return idx;
     }
 
     void draw(unsigned int shader, const glm::mat4& view, const glm::mat4& proj)
     {
         if (enemies.empty()) return;
-        if (!sharedEnemy.loaded && !sharedZombie.loaded) return;
+        if (!gModelSoldier.loaded && !gModelZombie.loaded) return;
         glUseProgram(shader);
 
         static unsigned int cachedShader = 0;
@@ -668,11 +724,13 @@ struct EnemyManager
 
         int drawn = 0;
         for (auto& e : enemies) {
-            // Sphere cull — радиус врага ~1м
+            // Sphere cull
             bool visible = true;
-            for (auto& p : planes) {
-                if (glm::dot(glm::vec3(p), e.pos) + p.w < -1.2f) {
-                    visible = false; break;
+            if (!debugNoCull) {
+                for (auto& p : planes) {
+                    if (glm::dot(glm::vec3(p), e.pos) + p.w < -2.5f) {
+                        visible = false; break;
+                    }
                 }
             }
             if (!visible) continue;
