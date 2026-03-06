@@ -174,7 +174,25 @@ struct Console
             int n = 1; ss >> n; if (n < 1)n = 1; if (n > 20)n = 20;
             glm::vec3 spawnPos = player.pos + glm::vec3(5, 0, 0);
             enemyManager.spawnGroup(spawnPos, n, n > 1 ? 4.f : 0.f);
-            print("Spawned " + std::to_string(n) + " enemy(s).", CON_GREEN);
+            print("Spawned " + std::to_string(n) + " soldier(s).", CON_GREEN);
+        }
+        else if (name == "zombie") {
+            int n = 1; ss >> n; if (n < 1)n = 1; if (n > 20)n = 20;
+            glm::vec3 spawnPos = player.pos + glm::vec3(5, 0, 0);
+            enemyManager.spawnZombieGroup(spawnPos, n, n > 1 ? 4.f : 0.f);
+            print("Spawned " + std::to_string(n) + " zombie(s).", CON_GREEN);
+        }
+        else if (name == "zscale") {
+            float s = 0.01f; ss >> s;
+            for (auto& e : enemyManager.enemies)
+                if (e.type == EnemyType::ZOMBIE) e.scale = s;
+            print("Zombie scale: " + std::to_string(s), CON_GREEN);
+        }
+        else if (name == "zspeed") {
+            float s = 1.0f; ss >> s;
+            for (auto& e : enemyManager.enemies)
+                if (e.type == EnemyType::ZOMBIE) e.animSpeed = s;
+            print("Zombie animSpeed: " + std::to_string(s), CON_GREEN);
         }
         else if (name == "killall") {
             int cnt = 0;
@@ -225,7 +243,7 @@ struct Console
         static const std::vector<std::string> cmds = {
             "help","noclip","god","kill","give ammo","give weapon",
             "setpos","timescale","fps","pos","hud","wireframe",
-            "spawn","killall","enemies","clear","quit"
+            "spawn","zombie","killall","enemies","clear","quit"
         };
         std::vector<std::string> matches;
         for (auto& c : cmds) if (c.substr(0, input.size()) == input) matches.push_back(c);

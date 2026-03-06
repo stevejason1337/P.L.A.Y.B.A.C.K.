@@ -55,8 +55,8 @@ private:
         for (auto& kv : proto.animIndex)
             std::cout << "[ENEMY]   '" << kv.first << "'\n";
 
-        IDLE = _find({ "rifle aiming idle","aiming idle","Idle","idle" });
-        WALK = _find({ "walking","walk forward","Walking" });
+        IDLE = _find({ "rifle aiming idle","aiming idle","Idle","idle","mixamo.com" });
+        WALK = _find({ "walking","walk forward","Walking","mixamo.com" });
         WALK_BACK = _find({ "walking backwards","Walk Back","walk back" });
         STRAFE_L = _find({ "strafe left","Strafe Left" });
         STRAFE_R = _find({ "strafe right","Strafe Right" });
@@ -100,20 +100,29 @@ private:
     }
 };
 
-inline SharedEnemyModel sharedEnemy;
+inline SharedEnemyModel sharedEnemy;  // солдат
+inline SharedEnemyModel sharedZombie; // зомби
+
+// ─── Тип врага ────────────────────────────────────────────
+enum class EnemyType { SOLDIER, ZOMBIE };
 
 // ─── Состояния ────────────────────────────────────────────
-enum class EnemyState { PATROL, APPROACH, SHOOT, STRAFE, RETREAT, DEAD };
+// ZOMBIE использует только PATROL / APPROACH / MELEE / DEAD
+enum class EnemyState { PATROL, APPROACH, SHOOT, STRAFE, RETREAT, MELEE, DEAD };
 
 // ─── Один враг — только своё состояние + свои кости ───────
 struct Enemy
 {
+    EnemyType  type = EnemyType::SOLDIER;
+    float      scale = ENEMY_SCALE;
     glm::vec3  pos = glm::vec3(0.f);
     glm::vec3  spawnPos = glm::vec3(0.f);
     float      rotY = 0.f;
     float      hp = ENEMY_HP;
     EnemyState state = EnemyState::PATROL;
     bool       removed = false;
+    float      meleeTimer = 0.f;   // кулдаун удара зомби
+    float      meleeRange = 2.2f;  // дальность удара
 
     // Кости — единственное что уникально для каждого врага
     std::vector<glm::mat4> boneFinal;
@@ -144,7 +153,16 @@ struct Enemy
     void init()
     {
         boneFinal.assign(AnimatedModel::MAX_BONES, glm::mat4(1.f));
-        playAnim(sharedEnemy.IDLE, true);
+        auto& sm = sharedModel();
+        playAnim(sm.WALK.empty() ? sm.IDLE : sm.WALK, true);
+    }
+
+    // Возвращает нужную SharedModel по типу
+    SharedEnemyModel& sharedModel() {
+        return type == EnemyType::ZOMBIE ? sharedZombie : sharedEnemy;
+    }
+    const SharedEnemyModel& sharedModel() const {
+        return type == EnemyType::ZOMBIE ? sharedZombie : sharedEnemy;
     }
 
     void playAnim(const std::string& name, bool loop, const std::string& next = "")
@@ -160,7 +178,7 @@ struct Enemy
     // Обновляем кости для этого врага
     void updateAnim(float dt)
     {
-        auto& m = sharedEnemy.proto;
+        auto& m = sharedModel().proto;
         if (curAnim.empty() || !m.scene) return;
 
         auto it = m.animIndex.find(curAnim);
@@ -198,7 +216,7 @@ struct Enemy
         if (hp <= 0.f) {
             hp = 0.f;
             state = EnemyState::DEAD;
-            playAnim(sharedEnemy.DEATH, false);
+            playAnim(sharedModel().DEATH, false);
             return;
         }
         if (state == EnemyState::PATROL) state = EnemyState::APPROACH;
@@ -208,6 +226,8 @@ struct Enemy
     void update(float dt, const glm::vec3& playerPos, float& playerHP)
     {
         if (removed) return;
+        // Не обновляем если модель не загружена
+        if (!sharedModel().loaded) return;
 
         if (isDead()) {
             deadTimer += dt;
@@ -227,36 +247,62 @@ struct Enemy
         glm::vec3 dir = dist > 0.01f ? diff / dist : glm::vec3(0, 0, 1);
 
         // Плавный поворот
-        if (state != EnemyState::PATROL) {
+        if (state != EnemyState::PATROL && dist < ENEMY_DETECT) {
             float ty = glm::degrees(atan2f(dir.x, dir.z));
             float d = ty - rotY;
             while (d > 180.f) d -= 360.f;
             while (d < -180.f) d += 360.f;
-            float smooth = dt * 7.f; if (smooth > 1.f) smooth = 1.f; rotY += d * smooth;
+            // Зомби поворачивается медленнее солдата — реалистичнее
+            float rotSpd = (type == EnemyType::ZOMBIE) ? 3.5f : 7.f;
+            float smooth = dt * rotSpd; if (smooth > 1.f) smooth = 1.f;
+            rotY += d * smooth;
         }
 
         // ── Логика ──
-        if (dist > ENEMY_DETECT) {
-            _patrol(dt);
-        }
-        else if (dist > ENEMY_SHOOT_D) {
-            state = EnemyState::APPROACH;
-            _moveTo(pos + dir * ENEMY_WALK_SPD * dt);
-            if (stateTimer > 3.f) { _switchCombat(); stateTimer = 0.f; }
-        }
-        else if (dist < ENEMY_CLOSE_D) {
-            state = EnemyState::RETREAT;
-            _moveTo(pos - dir * ENEMY_WALK_SPD * dt);
-            _tryShoot(playerHP);
+        if (type == EnemyType::ZOMBIE) {
+            // Зомби — только идёт и бьёт
+            if (meleeTimer > 0.f) meleeTimer -= dt;
+            if (dist > ENEMY_DETECT) {
+                _patrol(dt);
+                animSpeed = 0.5f;
+            }
+            else {
+                state = EnemyState::APPROACH;
+                float spd = ENEMY_WALK_SPD * 1.2f; // нормальная скорость зомби
+                animSpeed = 1.0f;                   // анимация на нормальной скорости
+                _moveTo(pos + dir * spd * dt);
+                if (dist <= meleeRange && meleeTimer <= 0.f) {
+                    state = EnemyState::MELEE;
+                    playerHP -= 12.f;
+                    if (playerHP < 0.f) playerHP = 0.f;
+                    meleeTimer = 1.5f;
+                }
+            }
         }
         else {
-            stateTimer -= dt;
-            if (stateTimer <= 0.f) _switchCombat();
-            if (state == EnemyState::STRAFE) {
-                glm::vec3 right = glm::normalize(glm::cross(dir, glm::vec3(0, 1, 0)));
-                _moveTo(pos + right * strafeDir * ENEMY_STRAFE_SPD * dt);
+            // Солдат — стреляет
+            if (dist > ENEMY_DETECT) {
+                _patrol(dt);
             }
-            _tryShoot(playerHP);
+            else if (dist > ENEMY_SHOOT_D) {
+                state = EnemyState::APPROACH;
+                _moveTo(pos + dir * ENEMY_WALK_SPD * dt);
+                if (stateTimer > 3.f) { _switchCombat(); stateTimer = 0.f; }
+            }
+            else if (dist < ENEMY_CLOSE_D) {
+                state = EnemyState::RETREAT;
+                _moveTo(pos - dir * ENEMY_WALK_SPD * dt);
+                _tryShoot(playerHP);
+            }
+            else {
+                stateTimer -= dt;
+                if (stateTimer <= 0.f) _switchCombat();
+                if (state == EnemyState::STRAFE) {
+                    glm::vec3 right = glm::normalize(glm::cross(dir, glm::vec3(0, 1, 0)));
+                    _moveTo(pos + right * strafeDir * ENEMY_STRAFE_SPD * dt);
+                }
+                _tryShoot(playerHP);
+            }
         }
 
         if (reloading) {
@@ -271,20 +317,31 @@ struct Enemy
 
     void _updateAnimState()
     {
-        auto& s = sharedEnemy;
+        auto& s = sharedModel();
         if (isDead()) return;
 
         std::string want;
-        if (hitTimer > 0.f)              want = s.HIT;
-        else if (reloading)                   want = s.RELOAD;
-        else if (state == EnemyState::SHOOT)  want = s.SHOOT;
-        else if (state == EnemyState::STRAFE) want = strafeDir > 0 ? s.STRAFE_R : s.STRAFE_L;
-        else if (state == EnemyState::RETREAT)want = s.WALK_BACK;
-        else if (state == EnemyState::PATROL ||
-            state == EnemyState::APPROACH)want = s.WALK;
-        else                                   want = s.IDLE;
+        if (type == EnemyType::ZOMBIE) {
+            // Зомби — только ходьба и удар
+            if (hitTimer > 0.f)                want = s.HIT;
+            else if (state == EnemyState::MELEE)    want = s.SHOOT; // удар рукой
+            else if (state == EnemyState::APPROACH ||
+                state == EnemyState::PATROL)   want = s.WALK;
+            else                                     want = s.IDLE;
+        }
+        else {
+            if (hitTimer > 0.f)              want = s.HIT;
+            else if (reloading)                   want = s.RELOAD;
+            else if (state == EnemyState::SHOOT)  want = s.SHOOT;
+            else if (state == EnemyState::STRAFE) want = strafeDir > 0 ? s.STRAFE_R : s.STRAFE_L;
+            else if (state == EnemyState::RETREAT)want = s.WALK_BACK;
+            else if (state == EnemyState::PATROL ||
+                state == EnemyState::APPROACH)want = s.WALK;
+            else                                   want = s.IDLE;
+        }
 
         if (want.empty()) want = s.IDLE;
+        if (want.empty()) return;
 
         bool once = (want == s.HIT || want == s.RELOAD);
         if (want != curAnim)
@@ -351,7 +408,7 @@ struct Enemy
         mat = glm::rotate(mat, glm::radians(rotY), glm::vec3(0, 1, 0));
         if (isDead())
             mat = glm::rotate(mat, glm::radians(deadAngle), glm::vec3(1, 0, 0));
-        mat = glm::scale(mat, glm::vec3(ENEMY_SCALE));
+        mat = glm::scale(mat, glm::vec3(scale));
         return mat;
     }
 };
@@ -360,33 +417,73 @@ struct Enemy
 struct EnemyManager
 {
     std::vector<Enemy> enemies;
+    // Солдат
     std::string modelPath = "models/characters/soldier/Ch35_nonPBR.fbx";
     std::string texDir = "models/characters/soldier";
+    // Зомби
+    std::string zombiePath = "models/characters/walker/walker.fbx";
+    std::string zombieTexDir = "models/characters/walker";
 
     void load()
     {
         if (!sharedEnemy.load(modelPath, texDir))
-            std::cerr << "[ENEMY] Failed to load model: " << modelPath << "\n";
+            std::cerr << "[ENEMY] Failed to load soldier\n";
+        // Зомби загружается только если путь не пустой
+        if (!zombiePath.empty()) {
+            if (!sharedZombie.load(zombiePath, zombieTexDir))
+                std::cerr << "[ENEMY] Failed to load zombie (path: " << zombiePath << ")\n";
+        }
     }
 
+    // Спавн солдата
     void spawn(glm::vec3 p)
     {
-        if (!sharedEnemy.loaded) {
-            std::cerr << "[ENEMY] Model not loaded! Call load() first.\n";
+        _spawnEnemy(p, EnemyType::SOLDIER);
+    }
+
+    // Спавн зомби
+    void spawnZombie(glm::vec3 p)
+    {
+        _spawnEnemy(p, EnemyType::ZOMBIE);
+    }
+
+    void _spawnEnemy(glm::vec3 p, EnemyType t)
+    {
+        auto& sm = (t == EnemyType::ZOMBIE) ? sharedZombie : sharedEnemy;
+        if (!sm.loaded) {
+            std::cerr << "[ENEMY] Model not loaded!\n";
             return;
         }
         float gy = getGroundY(p, 200.f);
         if (gy != std::numeric_limits<float>::lowest()) p.y = gy;
 
         Enemy e;
+        e.type = t;
         e.pos = p;
         e.spawnPos = p;
         e.rotY = (float)(rand() % 360);
         float a = (float)(rand() % 360) * 3.14159f / 180.f;
         e.patrolDir = glm::vec3(cosf(a), 0.f, sinf(a));
+        // Зомби медленнее и более живучий
+        if (t == EnemyType::ZOMBIE) {
+            e.hp = 180.f;
+            e.meleeRange = 2.0f;
+            // Автоподбор масштаба — пробуем по размеру bounding box
+            auto& proto = sharedZombie.proto;
+            if (!proto.meshes.empty()) {
+                // Если модель в сантиметрах (Mixamo) — 0.01, если в метрах — 1.0
+                // parasiteZombie обычно ~170 единиц высотой в сантиметрах
+                e.scale = 0.01f;
+            }
+            else {
+                e.scale = 0.01f;
+            }
+        }
         e.init();
         enemies.push_back(std::move(e));
-        std::cout << "[ENEMY] Spawned at (" << p.x << "," << p.y << "," << p.z << ")\n";
+        std::cout << "[ENEMY] Spawned "
+            << (t == EnemyType::ZOMBIE ? "zombie" : "soldier")
+            << " at (" << p.x << "," << p.y << "," << p.z << ")\n";
     }
 
     void spawnGroup(glm::vec3 center, int count, float radius = 5.f)
@@ -394,6 +491,14 @@ struct EnemyManager
         for (int i = 0; i < count; i++) {
             float a = (float)i / count * 6.2831f;
             spawn(center + glm::vec3(cosf(a) * radius, 0.f, sinf(a) * radius));
+        }
+    }
+
+    void spawnZombieGroup(glm::vec3 center, int count, float radius = 5.f)
+    {
+        for (int i = 0; i < count; i++) {
+            float a = (float)i / count * 6.2831f;
+            spawnZombie(center + glm::vec3(cosf(a) * radius, 0.f, sinf(a) * radius));
         }
     }
 
@@ -423,7 +528,8 @@ struct EnemyManager
 
     void draw(unsigned int shader, const glm::mat4& view, const glm::mat4& proj)
     {
-        if (!sharedEnemy.loaded || enemies.empty()) return;
+        if (enemies.empty()) return;
+        if (!sharedEnemy.loaded && !sharedZombie.loaded) return;
         glUseProgram(shader);
 
         static unsigned int cachedShader = 0;
@@ -444,9 +550,6 @@ struct EnemyManager
 
         glUniformMatrix4fv(lView, 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(lProj, 1, GL_FALSE, glm::value_ptr(proj));
-
-        // Меши общие для всех — биндим один раз снаружи цикла
-        auto& meshes = sharedEnemy.proto.meshes;
 
         // Frustum culling — вытаскиваем 6 плоскостей из viewproj
         glm::mat4 vp = proj * view;
@@ -495,8 +598,11 @@ struct EnemyManager
                 : glm::vec3(0.35f, 0.42f, 0.28f);
             glUniform3fv(lColor, 1, glm::value_ptr(col));
 
+            // Меши берём для конкретного типа врага
+            const auto& meshes = e.sharedModel().proto.meshes;
             unsigned int lastTex = 0;
-            for (auto& m : meshes) {
+            for (const auto& mesh : meshes) {
+                const auto& m = mesh;
                 if (m.texID) {
                     if (m.texID != lastTex) {
                         glActiveTexture(GL_TEXTURE0);

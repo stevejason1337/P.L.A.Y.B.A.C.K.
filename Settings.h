@@ -9,7 +9,7 @@ const unsigned int SCR_WIDTH = 1280;
 const unsigned int SCR_HEIGHT = 720;
 
 // Camera
-const float FOV = 90.f;   // FOV мира
+const float FOV = 75.f;   // FOV мира
 const float GUN_FOV = 68.f;   // FOV оружия (меньше = крупнее визуально)
 const float PITCH_LIM = 75.f;
 const float MOUSE_SENS = 0.1f;
@@ -33,7 +33,7 @@ const float CROUCH_H = 0.9f;
 //  Универсальное положение рук (все оружия)
 //  Меняй эти значения — двигаются ВСЕ оружия сразу
 // ──────────────────────────────────────────────
-const float GUN_OFFSET_RIGHT = 0.05f;   // влево/вправо
+const float GUN_OFFSET_RIGHT = 0.1f;   // влево/вправо
 const float GUN_OFFSET_UP = -0.25f; // вверх/вниз
 const float GUN_OFFSET_FWD = 0.0f;   // вперёд/назад
 
