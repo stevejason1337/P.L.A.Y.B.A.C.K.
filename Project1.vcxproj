@@ -517,6 +517,7 @@
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="stb_truetype.h" />
     <ClInclude Include="Textrenderer.h" />
+    <ClInclude Include="Threadpool.h" />
     <ClInclude Include="Triangle.h" />
     <ClInclude Include="Weaponmanager.h" />
   </ItemGroup>

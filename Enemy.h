@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Settings.h"
+#include "ThreadPool.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -312,7 +313,7 @@ struct Enemy
 
         // ── Анимация по состоянию ──
         _updateAnimState();
-        updateAnim(dt);
+        // updateAnim вызывается параллельно в EnemyManager::update()
     }
 
     void _updateAnimState()
@@ -417,6 +418,7 @@ struct Enemy
 struct EnemyManager
 {
     std::vector<Enemy> enemies;
+    int frameNum = 0;
     // Солдат
     std::string modelPath = "models/characters/soldier/Ch35_nonPBR.fbx";
     std::string texDir = "models/characters/soldier";
@@ -504,8 +506,33 @@ struct EnemyManager
 
     void update(float dt, const glm::vec3& playerPos, float& playerHP)
     {
-        for (auto& e : enemies)
+        frameNum++;
+
+        // Обновляем spatial grid
+        gSpatialGrid.clear();
+        for (int i = 0; i < (int)enemies.size(); i++)
+            gSpatialGrid.insert(i, enemies[i].pos.x, enemies[i].pos.z);
+
+        // Логика AI — в главном потоке (меняет playerHP — нет race condition)
+        for (int i = 0; i < (int)enemies.size(); i++) {
+            auto& e = enemies[i];
+            if (e.removed || !e.sharedModel().loaded) continue;
+            float dist = glm::length(e.pos - playerPos);
+            // LOD — дальние обновляются реже
+            if (!LODSystem::shouldUpdate(i, dist, frameNum)) continue;
             e.update(dt, playerPos, playerHP);
+        }
+
+        // Анимации — параллельно в нескольких потоках (только читают сцену)
+        int n = (int)enemies.size();
+        if (n > 0) {
+            gThreadPool.parallel_for(0, n, [&](int i) {
+                auto& e = enemies[i];
+                if (!e.removed && !e.isDead() && e.sharedModel().loaded)
+                    e.updateAnim(dt);
+                });
+        }
+
         enemies.erase(
             std::remove_if(enemies.begin(), enemies.end(),
                 [](const Enemy& e) {return e.removed; }),

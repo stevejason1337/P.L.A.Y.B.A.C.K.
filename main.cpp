@@ -9,6 +9,7 @@
 #include "Player.h"
 #include "Soundmanager.h"
 #include "WeaponManager.h"
+#include "ThreadPool.h"
 #include "Enemy.h"
 #include "Console.h"
 #include "HUD.h"
