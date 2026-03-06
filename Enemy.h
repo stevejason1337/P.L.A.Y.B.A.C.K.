@@ -124,6 +124,8 @@ struct Enemy
     bool       removed = false;
     float      meleeTimer = 0.f;   // кулдаун удара зомби
     float      meleeRange = 2.2f;  // дальность удара
+    AnimCache  myCache;               // персональный кеш каналов (не общий!)
+    std::string myCachedAnim;
 
     // Кости — единственное что уникально для каждого врага
     std::vector<glm::mat4> boneFinal;
@@ -174,6 +176,15 @@ struct Enemy
         animLoop = loop;
         animDone = false;
         nextAnim = next;
+        // Перестраиваем персональный кеш каналов
+        auto& m = sharedModel().proto;
+        if (m.scene) {
+            auto it = m.animIndex.find(name);
+            if (it != m.animIndex.end()) {
+                myCache.build(m.scene->mAnimations[it->second]);
+                myCachedAnim = name;
+            }
+        }
     }
 
     // Обновляем кости для этого врага
@@ -204,9 +215,81 @@ struct Enemy
             }
         }
 
-        // Считаем кости через публичный метод AnimatedModel
-        m.calcBonesExt(anim, (double)animTime, m.scene->mRootNode,
-            glm::mat4(1.f), boneFinal);
+        // Если кеш не построен — строим
+        if (myCachedAnim != curAnim) {
+            myCache.build(anim);
+            myCachedAnim = curAnim;
+        }
+        // Считаем кости используя персональный кеш врага
+        _calcBonesWithCache(m, anim, (double)animTime,
+            m.scene->mRootNode, glm::mat4(1.f), boneFinal);
+    }
+
+    // Рекурсивный расчёт костей с персональным кешем врага
+    void _calcBonesWithCache(const AnimatedModel& m, const aiAnimation* anim,
+        double t, aiNode* node, const glm::mat4& parent,
+        std::vector<glm::mat4>& out)
+    {
+        const std::string name = node->mName.C_Str();
+        glm::mat4 nodeT = ai2glm(node->mTransformation);
+
+        // O(1) поиск через персональный кеш
+        const aiNodeAnim* ch = myCache.getCh(anim, name);
+        if (ch) {
+            // Позиция
+            glm::vec3 pos;
+            if (ch->mNumPositionKeys == 1) {
+                pos = ai2vec(ch->mPositionKeys[0].mValue);
+            }
+            else {
+                unsigned int i = AnimatedModel::_findPosKeyStatic(ch, t);
+                unsigned int i1 = std::min(i + 1, ch->mNumPositionKeys - 1);
+                float f = (float)((t - ch->mPositionKeys[i].mTime) /
+                    (ch->mPositionKeys[i1].mTime - ch->mPositionKeys[i].mTime + 1e-9));
+                f = glm::clamp(f, 0.f, 1.f);
+                pos = glm::mix(ai2vec(ch->mPositionKeys[i].mValue),
+                    ai2vec(ch->mPositionKeys[i1].mValue), f);
+            }
+            // Вращение
+            glm::quat rot;
+            if (ch->mNumRotationKeys == 1) {
+                rot = ai2quat(ch->mRotationKeys[0].mValue);
+            }
+            else {
+                unsigned int i = AnimatedModel::_findRotKeyStatic(ch, t);
+                unsigned int i1 = std::min(i + 1, ch->mNumRotationKeys - 1);
+                float f = (float)((t - ch->mRotationKeys[i].mTime) /
+                    (ch->mRotationKeys[i1].mTime - ch->mRotationKeys[i].mTime + 1e-9));
+                f = glm::clamp(f, 0.f, 1.f);
+                rot = glm::normalize(glm::slerp(ai2quat(ch->mRotationKeys[i].mValue),
+                    ai2quat(ch->mRotationKeys[i1].mValue), f));
+            }
+            // Масштаб
+            glm::vec3 scl(1.f);
+            if (ch->mNumScalingKeys == 1) {
+                scl = ai2vec(ch->mScalingKeys[0].mValue);
+            }
+            else {
+                unsigned int i = AnimatedModel::_findSclKeyStatic(ch, t);
+                unsigned int i1 = std::min(i + 1, ch->mNumScalingKeys - 1);
+                float f = (float)((t - ch->mScalingKeys[i].mTime) /
+                    (ch->mScalingKeys[i1].mTime - ch->mScalingKeys[i].mTime + 1e-9));
+                f = glm::clamp(f, 0.f, 1.f);
+                scl = glm::mix(ai2vec(ch->mScalingKeys[i].mValue),
+                    ai2vec(ch->mScalingKeys[i1].mValue), f);
+            }
+            nodeT = glm::translate(glm::mat4(1.f), pos)
+                * glm::mat4_cast(rot)
+                * glm::scale(glm::mat4(1.f), scl);
+        }
+
+        glm::mat4 global = parent * nodeT;
+        auto it = m.boneMap.find(name);
+        if (it != m.boneMap.end() && it->second.id < AnimatedModel::MAX_BONES)
+            out[it->second.id] = m.globalInvT * global * it->second.offset;
+
+        for (unsigned int i = 0; i < node->mNumChildren; i++)
+            _calcBonesWithCache(m, anim, t, node->mChildren[i], global, out);
     }
 
     void takeDamage(float dmg)
@@ -313,7 +396,7 @@ struct Enemy
 
         // ── Анимация по состоянию ──
         _updateAnimState();
-        // updateAnim вызывается параллельно в EnemyManager::update()
+        updateAnim(dt);
     }
 
     void _updateAnimState()
@@ -523,15 +606,7 @@ struct EnemyManager
             e.update(dt, playerPos, playerHP);
         }
 
-        // Анимации — параллельно в нескольких потоках (только читают сцену)
-        int n = (int)enemies.size();
-        if (n > 0) {
-            gThreadPool.parallel_for(0, n, [&](int i) {
-                auto& e = enemies[i];
-                if (!e.removed && !e.isDead() && e.sharedModel().loaded)
-                    e.updateAnim(dt);
-                });
-        }
+        // (анимации обновляются внутри каждого e.update() выше)
 
         enemies.erase(
             std::remove_if(enemies.begin(), enemies.end(),
