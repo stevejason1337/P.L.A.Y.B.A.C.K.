@@ -512,6 +512,9 @@
     <ClInclude Include="Modelloader.h" />
     <ClInclude Include="Physics.h" />
     <ClInclude Include="Player.h" />
+    <ClInclude Include="Renderapi dx11.h" />
+    <ClInclude Include="Renderapi gl.h" />
+    <ClInclude Include="Renderapi.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="Settings.h" />
     <ClInclude Include="Soundmanager.h" />

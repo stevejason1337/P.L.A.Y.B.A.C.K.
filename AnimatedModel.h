@@ -26,46 +26,43 @@ inline glm::vec3 ai2vec(const aiVector3D& v) { return { v.x,v.y,v.z }; }
 inline glm::quat ai2quat(const aiQuaternion& q) { return { q.w,q.x,q.y,q.z }; }
 
 // ──────────────────────────────────────────────
-//  GPUMesh
+//  GPUMesh — содержит GL и DX11 буферы
 // ──────────────────────────────────────────────
 struct GPUMesh {
+    // OpenGL
     unsigned int VAO = 0, VBO = 0, EBO = 0;
     unsigned int indexCount = 0;
     unsigned int texID = 0;
     bool         skinned = false;
+
+    // DirectX 11 — используем void* чтобы не включать d3d11.h здесь
+    // Renderer.h заполняет их через uploadMeshesToDX11()
+    void* dxVB = nullptr;      // ID3D11Buffer*
+    void* dxIB = nullptr;      // ID3D11Buffer*
+    void* dxSRV = nullptr;     // ID3D11ShaderResourceView*
+    unsigned int dxStride = 0;
 };
 
+// ──────────────────────────────────────────────
+//  BoneInfo
+// ──────────────────────────────────────────────
 struct BoneInfo { int id; glm::mat4 offset; };
 
 // ──────────────────────────────────────────────
 //  AnimCache — кешированные каналы анимации
 //  Строится ОДИН РАЗ при смене анимации
-//  findCh() больше не делает O(N) поиск строк
+//  getCh() больше не делает O(N) поиск строк
 // ──────────────────────────────────────────────
 struct AnimCache {
-    // nodeIndex[nodeName] = индекс канала в mChannels (-1 если нет)
     std::unordered_map<std::string, int> nodeIndex;
-    // lastPosKey/RotKey/ScaleKey — подсказка для бинарного поиска
-    // (большинство кадров идут последовательно)
-    std::unordered_map<std::string, unsigned int> lastPosKey;
-    std::unordered_map<std::string, unsigned int> lastRotKey;
-    std::unordered_map<std::string, unsigned int> lastSclKey;
 
     void build(const aiAnimation* anim) {
         nodeIndex.clear();
-        lastPosKey.clear();
-        lastRotKey.clear();
-        lastSclKey.clear();
         nodeIndex.reserve(anim->mNumChannels);
-        for (unsigned int i = 0; i < anim->mNumChannels; i++) {
+        for (unsigned int i = 0; i < anim->mNumChannels; i++)
             nodeIndex[anim->mChannels[i]->mNodeName.C_Str()] = (int)i;
-            lastPosKey[anim->mChannels[i]->mNodeName.C_Str()] = 0;
-            lastRotKey[anim->mChannels[i]->mNodeName.C_Str()] = 0;
-            lastSclKey[anim->mChannels[i]->mNodeName.C_Str()] = 0;
-        }
     }
 
-    // O(1) поиск канала по имени ноды
     const aiNodeAnim* getCh(const aiAnimation* anim, const std::string& name) const {
         auto it = nodeIndex.find(name);
         if (it == nodeIndex.end()) return nullptr;
@@ -100,7 +97,7 @@ struct AnimatedModel
     const aiScene* scene = nullptr;
 
     // Кеш каналов — перестраивается только при смене анимации
-    mutable AnimCache animCache;
+    mutable AnimCache   animCache;
     mutable std::string cachedAnimName;
 
     std::function<unsigned int(const std::string&)> texLoader;
@@ -113,7 +110,7 @@ struct AnimatedModel
         if (!animIndex.count(name)) { std::cerr << "[ANIM] Not found:" << name << "\n"; return; }
         if (curAnim == name) return;
         curAnim = name; animTime = 0.f; looping = loop; animSpeed = speed; animDone = false;
-        _rebuildCache(); // перестраиваем кеш при смене анимации
+        _rebuildCache();
     }
 
     void playOnce(const std::string& name, const std::string& ret, float speed = 1.f)
@@ -128,7 +125,25 @@ struct AnimatedModel
     bool isDone()  const { return animDone; }
     bool hasAnim(const std::string& n) const { return animIndex.count(n) > 0; }
 
-    // Публичный calcBones для Enemy (пишет в внешний буфер)
+    // ── Публичные static методы — нужны Enemy.h ──
+    // Бинарный поиск ключа O(log N)
+    static unsigned int _findPosKeyStatic(const aiNodeAnim* ch, double t) {
+        unsigned int lo = 0, hi = ch->mNumPositionKeys - 1;
+        while (lo < hi) { unsigned int mid = (lo + hi) / 2; if (ch->mPositionKeys[mid + 1].mTime <= t) lo = mid + 1; else hi = mid; }
+        return lo;
+    }
+    static unsigned int _findRotKeyStatic(const aiNodeAnim* ch, double t) {
+        unsigned int lo = 0, hi = ch->mNumRotationKeys - 1;
+        while (lo < hi) { unsigned int mid = (lo + hi) / 2; if (ch->mRotationKeys[mid + 1].mTime <= t) lo = mid + 1; else hi = mid; }
+        return lo;
+    }
+    static unsigned int _findSclKeyStatic(const aiNodeAnim* ch, double t) {
+        unsigned int lo = 0, hi = ch->mNumScalingKeys - 1;
+        while (lo < hi) { unsigned int mid = (lo + hi) / 2; if (ch->mScalingKeys[mid + 1].mTime <= t) lo = mid + 1; else hi = mid; }
+        return lo;
+    }
+
+    // Публичный calcBones для Enemy
     void calcBonesExt(const aiAnimation* anim, double t,
         aiNode* node, const glm::mat4& parent,
         std::vector<glm::mat4>& out) const
@@ -148,93 +163,26 @@ private:
         cachedAnimName = curAnim;
     }
 
-public:
-    // ── Статические бинарные поиски (используются Enemy) ──
-    static unsigned int _findPosKeyStatic(const aiNodeAnim* ch, double t) {
-        if (ch->mNumPositionKeys <= 1) return 0;
-        unsigned int lo = 0, hi = ch->mNumPositionKeys - 1;
-        while (lo < hi) {
-            unsigned int mid = (lo + hi) / 2;
-            if (ch->mPositionKeys[mid + 1].mTime <= t) lo = mid + 1; else hi = mid;
-        }
-        return lo;
-    }
-    static unsigned int _findRotKeyStatic(const aiNodeAnim* ch, double t) {
-        if (ch->mNumRotationKeys <= 1) return 0;
-        unsigned int lo = 0, hi = ch->mNumRotationKeys - 1;
-        while (lo < hi) {
-            unsigned int mid = (lo + hi) / 2;
-            if (ch->mRotationKeys[mid + 1].mTime <= t) lo = mid + 1; else hi = mid;
-        }
-        return lo;
-    }
-    static unsigned int _findSclKeyStatic(const aiNodeAnim* ch, double t) {
-        if (ch->mNumScalingKeys <= 1) return 0;
-        unsigned int lo = 0, hi = ch->mNumScalingKeys - 1;
-        while (lo < hi) {
-            unsigned int mid = (lo + hi) / 2;
-            if (ch->mScalingKeys[mid + 1].mTime <= t) lo = mid + 1; else hi = mid;
-        }
-        return lo;
-    }
-
-private:
-    // ── Бинарный поиск ключа — O(log N) вместо O(N) ──
-    static unsigned int _findPosKey(const aiNodeAnim* ch, double t) {
-        unsigned int lo = 0, hi = ch->mNumPositionKeys - 1;
-        while (lo < hi) {
-            unsigned int mid = (lo + hi) / 2;
-            if (ch->mPositionKeys[mid + 1].mTime <= t) lo = mid + 1;
-            else hi = mid;
-        }
-        return lo;
-    }
-    static unsigned int _findRotKey(const aiNodeAnim* ch, double t) {
-        unsigned int lo = 0, hi = ch->mNumRotationKeys - 1;
-        while (lo < hi) {
-            unsigned int mid = (lo + hi) / 2;
-            if (ch->mRotationKeys[mid + 1].mTime <= t) lo = mid + 1;
-            else hi = mid;
-        }
-        return lo;
-    }
-    static unsigned int _findSclKey(const aiNodeAnim* ch, double t) {
-        unsigned int lo = 0, hi = ch->mNumScalingKeys - 1;
-        while (lo < hi) {
-            unsigned int mid = (lo + hi) / 2;
-            if (ch->mScalingKeys[mid + 1].mTime <= t) lo = mid + 1;
-            else hi = mid;
-        }
-        return lo;
-    }
-
     glm::vec3 _lerpPos(const aiNodeAnim* ch, double t) const {
         if (ch->mNumPositionKeys == 1) return ai2vec(ch->mPositionKeys[0].mValue);
-        unsigned int i = _findPosKey(ch, t);
+        unsigned int i = _findPosKeyStatic(ch, t);
         if (i + 1 >= ch->mNumPositionKeys) return ai2vec(ch->mPositionKeys[i].mValue);
-        float f = (float)((t - ch->mPositionKeys[i].mTime) /
-            (ch->mPositionKeys[i + 1].mTime - ch->mPositionKeys[i].mTime));
-        return glm::mix(ai2vec(ch->mPositionKeys[i].mValue),
-            ai2vec(ch->mPositionKeys[i + 1].mValue), glm::clamp(f, 0.f, 1.f));
+        float f = (float)((t - ch->mPositionKeys[i].mTime) / (ch->mPositionKeys[i + 1].mTime - ch->mPositionKeys[i].mTime));
+        return glm::mix(ai2vec(ch->mPositionKeys[i].mValue), ai2vec(ch->mPositionKeys[i + 1].mValue), glm::clamp(f, 0.f, 1.f));
     }
     glm::quat _slerpRot(const aiNodeAnim* ch, double t) const {
         if (ch->mNumRotationKeys == 1) return ai2quat(ch->mRotationKeys[0].mValue);
-        unsigned int i = _findRotKey(ch, t);
+        unsigned int i = _findRotKeyStatic(ch, t);
         if (i + 1 >= ch->mNumRotationKeys) return ai2quat(ch->mRotationKeys[i].mValue);
-        float f = (float)((t - ch->mRotationKeys[i].mTime) /
-            (ch->mRotationKeys[i + 1].mTime - ch->mRotationKeys[i].mTime));
-        return glm::normalize(glm::slerp(ai2quat(ch->mRotationKeys[i].mValue),
-            ai2quat(ch->mRotationKeys[i + 1].mValue),
-            glm::clamp(f, 0.f, 1.f)));
+        float f = (float)((t - ch->mRotationKeys[i].mTime) / (ch->mRotationKeys[i + 1].mTime - ch->mRotationKeys[i].mTime));
+        return glm::normalize(glm::slerp(ai2quat(ch->mRotationKeys[i].mValue), ai2quat(ch->mRotationKeys[i + 1].mValue), glm::clamp(f, 0.f, 1.f)));
     }
     glm::vec3 _lerpScale(const aiNodeAnim* ch, double t) const {
         if (ch->mNumScalingKeys == 1) return ai2vec(ch->mScalingKeys[0].mValue);
-        unsigned int i = _findSclKey(ch, t);
+        unsigned int i = _findSclKeyStatic(ch, t);
         if (i + 1 >= ch->mNumScalingKeys) return ai2vec(ch->mScalingKeys[i].mValue);
-        float f = (float)((t - ch->mScalingKeys[i].mTime) /
-            (ch->mScalingKeys[i + 1].mTime - ch->mScalingKeys[i].mTime));
-        return glm::mix(ai2vec(ch->mScalingKeys[i].mValue),
-            ai2vec(ch->mScalingKeys[i + 1].mValue), glm::clamp(f, 0.f, 1.f));
+        float f = (float)((t - ch->mScalingKeys[i].mTime) / (ch->mScalingKeys[i + 1].mTime - ch->mScalingKeys[i].mTime));
+        return glm::mix(ai2vec(ch->mScalingKeys[i].mValue), ai2vec(ch->mScalingKeys[i + 1].mValue), glm::clamp(f, 0.f, 1.f));
     }
 
     void _calcBones(const aiAnimation* anim, double t,
@@ -243,8 +191,6 @@ private:
     {
         const std::string name = node->mName.C_Str();
         glm::mat4 nodeT = ai2glm(node->mTransformation);
-
-        // O(1) поиск через кеш вместо O(N) линейного
         const aiNodeAnim* ch = animCache.getCh(anim, name);
         if (ch) {
             glm::mat4 T = glm::translate(glm::mat4(1.f), _lerpPos(ch, t));
@@ -252,12 +198,10 @@ private:
             glm::mat4 S = glm::scale(glm::mat4(1.f), _lerpScale(ch, t));
             nodeT = T * R * S;
         }
-
         glm::mat4 global = parent * nodeT;
         auto it = boneMap.find(name);
         if (it != boneMap.end() && it->second.id < MAX_BONES)
             out[it->second.id] = globalInvT * global * it->second.offset;
-
         for (unsigned int i = 0; i < node->mNumChildren; i++)
             _calcBones(anim, t, node->mChildren[i], global, out);
     }
@@ -298,10 +242,7 @@ inline void AnimatedModel::update(float dt)
     if (curAnim.empty() || !scene) return;
     auto it = animIndex.find(curAnim);
     if (it == animIndex.end()) return;
-
-    // Перестраиваем кеш если нужно
     if (cachedAnimName != curAnim) _rebuildCache();
-
     const aiAnimation* anim = scene->mAnimations[it->second];
     double tps = anim->mTicksPerSecond > 0 ? anim->mTicksPerSecond : 25.0;
     double dur = anim->mDuration;
@@ -357,6 +298,7 @@ inline void AnimatedModel::loadMesh(aiMesh* am, const std::string& texDir)
         else { verts.push_back(0); verts.push_back(1); verts.push_back(0); }
         if (am->HasTextureCoords(0)) { verts.push_back(am->mTextureCoords[0][i].x); verts.push_back(am->mTextureCoords[0][i].y); }
         else { verts.push_back(0); verts.push_back(0); }
+        // Bone IDs и weights — всегда 16 floats на вертекс
         verts.push_back((float)bIDs[i][0]); verts.push_back((float)bIDs[i][1]);
         verts.push_back((float)bIDs[i][2]); verts.push_back((float)bIDs[i][3]);
         verts.push_back(bWts[i][0]); verts.push_back(bWts[i][1]);
@@ -384,13 +326,19 @@ inline void AnimatedModel::loadMesh(aiMesh* am, const std::string& texDir)
     GPUMesh mesh;
     mesh.indexCount = (unsigned int)idx.size();
     mesh.texID = texID; mesh.skinned = am->HasBones();
+    // stride = 16 floats * 4 bytes = 64 bytes
+    mesh.dxStride = 16 * sizeof(float);
+
     const int STR = 16 * sizeof(float);
-    glGenVertexArrays(1, &mesh.VAO); glGenBuffers(1, &mesh.VBO); glGenBuffers(1, &mesh.EBO);
+    glGenVertexArrays(1, &mesh.VAO);
+    glGenBuffers(1, &mesh.VBO);
+    glGenBuffers(1, &mesh.EBO);
     glBindVertexArray(mesh.VAO);
     glBindBuffer(GL_ARRAY_BUFFER, mesh.VBO);
     glBufferData(GL_ARRAY_BUFFER, verts.size() * sizeof(float), verts.data(), GL_STATIC_DRAW);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, idx.size() * sizeof(unsigned int), idx.data(), GL_STATIC_DRAW);
+    // layout: pos(3) norm(3) uv(2) boneIDs(4) boneWeights(4) = 16 floats
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, STR, (void*)0);                  glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, STR, (void*)(3 * sizeof(float)));  glEnableVertexAttribArray(1);
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, STR, (void*)(6 * sizeof(float)));  glEnableVertexAttribArray(2);

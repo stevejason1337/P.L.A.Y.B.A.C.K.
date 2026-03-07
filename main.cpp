@@ -1,5 +1,21 @@
+// Правильный порядок: windows.h → glad → glfw3 → glfw3native → остальное
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
 #include <glad/glad.h>
+#ifdef _WIN32
+#define GLFW_EXPOSE_NATIVE_WIN32
+#endif
 #include <GLFW/glfw3.h>
+#ifdef _WIN32
+#include <GLFW/glfw3native.h>
+#endif
 #include <vector>
 #include "Settings.h"
 #include "TextRenderer.h"
@@ -23,7 +39,7 @@ float            flashTimer = 0.f;
 int              fireAnimCounter = 0;
 std::vector<BulletHole> bulletHoles;
 SoundManager     soundManager;
-Renderer         renderer;
+Renderer          renderer;
 
 glm::vec3 camFront = glm::vec3(0.f, 0.f, -1.f);
 glm::vec3 camUp = glm::vec3(0.f, 1.f, 0.f);
@@ -43,7 +59,7 @@ int main()
     if (!window) { glfwTerminate(); return -1; }
 
     glfwMakeContextCurrent(window);
-    glfwSwapInterval(0);   // vsync выключен для максимального FPS
+    glfwSwapInterval(0);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) return -1;
 
@@ -82,6 +98,7 @@ int main()
 
     // ── Враги ──
     enemyManager.load();
+
 
     // ── Звук ──
     soundManager.init();
@@ -122,8 +139,10 @@ int main()
         renderer.updateGunAnim(weaponManager.active(), dt);
 
         // ── Очистка ──
+        // Shadow pass — до основного рендера
+        renderer.renderShadowPass(mapMeshes, camPos);
         renderer.beginFrame();
-        glClearColor(0.68f, 0.65f, 0.60f, 1.f);   // тёплое небо = цвет тумана
+        glClearColor(0.68f, 0.65f, 0.60f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // ── Сцена ──
