@@ -532,6 +532,8 @@
     <ClInclude Include="Renderapi dx11.h" />
     <ClInclude Include="Renderapi gl.h" />
     <ClInclude Include="Renderapi.h" />
+    <ClInclude Include="Rendercommon.h" />
+    <ClInclude Include="Renderdebug.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="Settings.h" />
     <ClInclude Include="Soundmanager.h" />

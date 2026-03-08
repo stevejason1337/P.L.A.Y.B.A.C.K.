@@ -49,8 +49,7 @@ inline unsigned int loadTexture(const std::string& path)
     unsigned int id = 0;
 
     int w, h, ch;
-    // OpenGL: перевертаем (UV снизу вверх), DX11: НЕ перевертаем (UV сверху вниз)
-    stbi_set_flip_vertically_on_load(gLoadGLTextures ? 1 : 0);
+    stbi_set_flip_vertically_on_load(true);
     unsigned char* data = stbi_load(path.c_str(), &w, &h, &ch, 4); // всегда 4 канала
     if (!data) {
         std::cerr << "[TEX] Failed: " << path << "\n";
@@ -157,21 +156,22 @@ inline std::vector<GPUMesh> loadModel(const std::string& path,
         GPUMesh mesh;
         mesh.indexCount = (unsigned int)idx.size();
         mesh.texID = texID; mesh.skinned = false;
-        // Сохраняем путь к текстуре для DX11 — используем тот же путь что и в loadTexture
+        // Сохраняем путь к текстуре для DX11 texPixelCache lookup
+        // Нормализуем так же как loadTexture — берём basename чтобы ключи совпадали
         if (am->mMaterialIndex < sc->mNumMaterials) {
             aiMaterial* mat2 = sc->mMaterials[am->mMaterialIndex];
             aiString tp2;
             if (mat2->GetTexture(aiTextureType_DIFFUSE, 0, &tp2) == AI_SUCCESS) {
-                std::string fullPath = texDir + "/" + tp2.C_Str();
-                // Используем тот же ключ что попал в texPixelCache
-                if (texPixelCache.count(fullPath))
-                    mesh.texPath = fullPath;
-                else {
-                    std::string n = tp2.C_Str();
-                    size_t sl = n.find_last_of("/\\");
-                    if (sl != std::string::npos) n = n.substr(sl + 1);
-                    mesh.texPath = texDir + "/" + n;
-                }
+                std::string rawName = tp2.C_Str();
+                // Normalize backslashes
+                for (auto& ch : rawName) if (ch == '\\') ch = '/';
+                size_t sl = rawName.find_last_of("/");
+                std::string baseName = (sl != std::string::npos) ? rawName.substr(sl + 1) : rawName;
+                // Try full path first, then basename — same priority as loadTexture
+                std::string fullPath = texDir + "/" + rawName;
+                std::string basePath = texDir + "/" + baseName;
+                // Store whichever is actually in the cache (or basePath as fallback)
+                mesh.texPath = (texPixelCache.count(fullPath)) ? fullPath : basePath;
             }
         }
 
@@ -235,52 +235,38 @@ inline void uploadMeshesToDX11(std::vector<GPUMesh>& meshes, ID3D11Device* dev)
 
         // ── Текстура: берём пиксели из texPixelCache (нет GL) ─────────────────
         if (!m.dxSRV && !m.texPath.empty()) {
-            // 1) Точное совпадение пути
+            // Try exact path, then basename fallback
             auto it = texPixelCache.find(m.texPath);
-            // 2) Fallback: ищем по basename (имя файла без папки)
             if (it == texPixelCache.end()) {
-                std::string base = m.texPath;
-                size_t sl = base.find_last_of("/\\");
-                if (sl != std::string::npos) base = base.substr(sl + 1);
+                size_t sl = m.texPath.find_last_of("/\\");
+                std::string base = (sl != std::string::npos) ? m.texPath.substr(sl + 1) : m.texPath;
                 for (auto& kv : texPixelCache) {
-                    std::string kb = kv.first;
-                    size_t ksl = kb.find_last_of("/\\");
-                    if (ksl != std::string::npos) kb = kb.substr(ksl + 1);
-                    if (kb == base) { it = texPixelCache.find(kv.first); break; }
+                    size_t ksl = kv.first.find_last_of("/\\");
+                    std::string kbase = (ksl != std::string::npos) ? kv.first.substr(ksl + 1) : kv.first;
+                    if (kbase == base) { it = texPixelCache.find(kv.first); break; }
                 }
             }
             if (it != texPixelCache.end()) {
                 auto& px = it->second;
-                // Создаём текстуру с MipMaps для правильной фильтрации
                 D3D11_TEXTURE2D_DESC td = {};
-                td.Width = px.w; td.Height = px.h;
-                td.MipLevels = 0; // 0 = auto mip chain
-                td.ArraySize = 1;
-                td.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-                td.SampleDesc.Count = 1;
+                td.Width = px.w; td.Height = px.h; td.MipLevels = 0; td.ArraySize = 1;
+                td.Format = DXGI_FORMAT_R8G8B8A8_UNORM; td.SampleDesc.Count = 1;
                 td.Usage = D3D11_USAGE_DEFAULT;
                 td.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
                 td.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
                 ID3D11Texture2D* tex2d = nullptr;
                 if (SUCCEEDED(dev->CreateTexture2D(&td, nullptr, &tex2d))) {
-                    // Загружаем mip0 вручную
                     ID3D11DeviceContext* ctx = nullptr;
                     dev->GetImmediateContext(&ctx);
-                    if (ctx) {
-                        ctx->UpdateSubresource(tex2d, 0, nullptr,
-                            px.data.data(), (UINT)(px.w * 4), 0);
-                        if (SUCCEEDED(dev->CreateShaderResourceView(tex2d, nullptr,
-                            (ID3D11ShaderResourceView**)&m.dxSRV))) {
-                            ctx->GenerateMips((ID3D11ShaderResourceView*)m.dxSRV);
-                            printf("[DX11] Texture OK (+mips): %s\n", it->first.c_str());
-                        }
-                        ctx->Release();
+                    ctx->UpdateSubresource(tex2d, 0, nullptr, px.data.data(), px.w * 4, 0);
+                    ID3D11ShaderResourceView* srv = nullptr;
+                    if (SUCCEEDED(dev->CreateShaderResourceView(tex2d, nullptr, &srv))) {
+                        ctx->GenerateMips(srv);
+                        m.dxSRV = srv;
                     }
+                    ctx->Release();
                     tex2d->Release();
                 }
-            }
-            else {
-                printf("[DX11] Texture NOT FOUND in cache: %s\n", m.texPath.c_str());
             }
         }
 

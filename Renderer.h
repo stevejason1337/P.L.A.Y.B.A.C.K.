@@ -350,7 +350,7 @@ static bool _dxInit(HWND hwnd) {
         d.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD; dx11.dev->CreateBlendState(&d, &dx11.bsAlpha);
     }
     {
-        D3D11_SAMPLER_DESC d = {}; d.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR; d.AddressU = d.AddressV = d.AddressW = D3D11_TEXTURE_ADDRESS_WRAP; d.MaxLOD = D3D11_FLOAT32_MAX; d.ComparisonFunc = D3D11_COMPARISON_ALWAYS; dx11.dev->CreateSamplerState(&d, &dx11.sampLin);
+        D3D11_SAMPLER_DESC d = {}; d.Filter = D3D11_FILTER_ANISOTROPIC; d.AddressU = d.AddressV = d.AddressW = D3D11_TEXTURE_ADDRESS_WRAP; d.MaxAnisotropy = 16; d.MaxLOD = D3D11_FLOAT32_MAX; d.ComparisonFunc = D3D11_COMPARISON_ALWAYS; dx11.dev->CreateSamplerState(&d, &dx11.sampLin);
         d.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT; d.AddressU = d.AddressV = d.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP; d.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL; dx11.dev->CreateSamplerState(&d, &dx11.sampCmp);
     }
 
