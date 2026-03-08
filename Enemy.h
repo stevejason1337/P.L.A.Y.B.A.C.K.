@@ -13,6 +13,7 @@
 #include <memory>
 #include <cmath>
 #include <map>
+#include <queue>
 #include "ModelLoader.h"
 #include "AnimatedModel.h"
 #include "AABB.h"
@@ -134,6 +135,9 @@ struct Enemy
 
     // Кости — единственное что уникально для каждого врага
     std::vector<glm::mat4> boneFinal;
+    struct FlatNode { int parentIdx; std::string name; glm::mat4 localT; };
+    std::vector<FlatNode>  flatNodes;
+    std::vector<glm::mat4> globalMats;
 
     // Анимационное состояние
     std::string curAnim;
@@ -228,8 +232,20 @@ struct Enemy
         if (myCachedAnim != curAnim) {
             myCache.build(anim);
             myCachedAnim = curAnim;
+            flatNodes.clear();
+            struct _BFSEntry { aiNode* node; int parent; };
+            std::queue<_BFSEntry> _q;
+            _q.push({ m.scene->mRootNode, -1 });
+            while (!_q.empty()) {
+                auto [_nd, _par] = _q.front(); _q.pop();
+                int _idx = (int)flatNodes.size();
+                flatNodes.push_back({ _par, _nd->mName.C_Str(), ai2glm(_nd->mTransformation) });
+                for (unsigned int _ci = 0; _ci < _nd->mNumChildren; _ci++)
+                    _q.push({ _nd->mChildren[_ci], _idx });
+            }
+            globalMats.resize(flatNodes.size());
         }
-        // Считаем кости используя персональный кеш врага
+        // Proven recursive bone calc
         _calcBonesWithCache(m, anim, (double)animTime,
             m.scene->mRootNode, glm::mat4(1.f), boneFinal);
     }
@@ -513,6 +529,17 @@ struct Enemy
         mat = glm::scale(mat, glm::vec3(scale));
         return mat;
     }
+    void _recalcBonesParallel()
+    {
+        auto& m = sharedModel().proto;
+        if (curAnim.empty() || !m.scene || myCachedAnim != curAnim) return;
+        auto it = m.animIndex.find(curAnim);
+        if (it == m.animIndex.end()) return;
+        const aiAnimation* anim = m.scene->mAnimations[it->second];
+        _calcBonesWithCache(m, anim, (double)animTime,
+            m.scene->mRootNode, glm::mat4(1.f), boneFinal);
+    }
+
 };
 
 // ══════════════════════════════════════════════════════════
@@ -526,9 +553,9 @@ struct EnemyManager
     std::string texDir = "models/characters/soldier";
     // Зомби 1
     std::string zombiePath = "models/characters/walker/walker.fbx";
-    std::string zombieTexDir = "models/characters/walker";
+    std::string zombieTexDir = "models/characters/walker/textures";
     // Зомби 2 (walker2 - с текстурами)
-    std::string zombie2Path = "models/characters/walker2/walker2.fbx";
+    std::string zombie2Path = "models/characters/walker2/walker2.fbx.fbx";
     std::string zombie2TexDir = "models/characters/walker2/textures";
 
     void load()
@@ -539,6 +566,21 @@ struct EnemyManager
         if (!zombiePath.empty()) {
             if (!gModelZombie.load(zombiePath, zombieTexDir))
                 std::cerr << "[ENEMY] Failed to load zombie\n";
+            else {
+                // Walker FBX may have no embedded tex — assign manually
+                const std::string texNames[] = {
+                    "@Diffuse_0.png","@Diffuse_1.png","@Diffuse_2.png","@Diffuse_3.png","@Diffuse.png"
+                };
+                auto& meshes = gModelZombie.proto.meshes;
+                for (int mi = 0; mi < (int)meshes.size(); mi++) {
+                    if (meshes[mi].texID == 0 && meshes[mi].dxSRV == nullptr) {
+                        std::string tn = texNames[mi % 5];
+                        unsigned int tid = loadTexture(zombieTexDir + "/" + tn);
+                        if (tid) meshes[mi].texID = tid;
+                        meshes[mi].texPath = zombieTexDir + "/" + tn;
+                    }
+                }
+            }
         }
         if (!zombie2Path.empty()) {
             if (!gModelZombie2.load(zombie2Path, zombie2TexDir))
@@ -552,21 +594,14 @@ struct EnemyManager
         _spawnEnemy(p, EnemyType::SOLDIER);
     }
 
+    // Спавн зомби
     void spawnZombie(glm::vec3 p)
     {
-        if (!gModelZombie.loaded) {
-            std::cerr << "[ENEMY] Zombie model not loaded — cannot spawn! Check path: " << zombiePath << "\n";
-            return;
-        }
         _spawnEnemy(p, EnemyType::ZOMBIE);
     }
 
     void spawnZombie2(glm::vec3 p)
     {
-        if (!gModelZombie2.loaded) {
-            std::cerr << "[ENEMY] Zombie2 model not loaded — cannot spawn! Check path: " << zombie2Path << "\n";
-            return;
-        }
         _spawnEnemy(p, EnemyType::ZOMBIE2);
     }
 
@@ -653,6 +688,13 @@ struct EnemyManager
         }
 
         // (анимации обновляются внутри каждого e.update() выше)
+
+        // Parallel bone recalc across all enemies
+        gThreadPool.parallel_for(0, (int)enemies.size(), [this](int i) {
+            auto& e = enemies[i];
+            if (!e.removed && e.sharedModel().loaded)
+                e._recalcBonesParallel();
+            });
 
         enemies.erase(
             std::remove_if(enemies.begin(), enemies.end(),

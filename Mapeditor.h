@@ -25,6 +25,9 @@
 #include "ModelLoader.h"
 #include "TextRenderer.h"
 #include "AABB.h"
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
 
 // ──────────────────────────────────────────────
 //  Placed object
@@ -39,6 +42,9 @@ struct EdObj
     std::vector<GPUMesh> meshes;
     bool                 loaded = false;
     bool                 isSpawn = false;   // player spawn marker
+    bool                 isEnemy = false;
+    std::string          enemyType = "";
+    float                enemyPatrolRadius = 8.f;
 
     glm::mat4 matrix() const
     {
@@ -64,7 +70,10 @@ struct PaletteEntry {
 };
 
 inline std::vector<PaletteEntry> editorPalette = {
-    { "[SPAWN]",  "",                                     "",                             {1,1,1}, true  },
+    { "[SPAWN]",  "",                                                       "",                                    {1,1,1}, true  },
+    { "[ZOMBIE]",  "models/characters/walker/walker.fbx",                   "models/characters/walker/textures",   {0.01f,0.01f,0.01f}, false },
+    { "[SOLDIER]", "models/characters/soldier/Ch35_nonPBR.fbx",             "models/characters/soldier/textures",  {0.01f,0.01f,0.01f}, false },
+    { "[ZOMBIE2]", "models/characters/walker2/walker2.fbx.fbx",             "models/characters/walker2/textures",  {0.01f,0.01f,0.01f}, false },
     { "Cube",     "models/props/cube/cube.fbx",           "models/props/cube/textures",   {1,1,1}, false },
     { "House",    "models/props/house/house.fbx",         "models/props/house/textures",  {1,1,1}, false },
     { "Tree",     "models/props/tree/tree.fbx",           "models/props/tree/textures",   {1,1,1}, false },
@@ -381,6 +390,8 @@ struct MapEditor
             f << "pos " << o.pos.x << " " << o.pos.y << " " << o.pos.z << "\n";
             f << "rot " << o.rot.x << " " << o.rot.y << " " << o.rot.z << "\n";
             f << "scl " << o.scl.x << " " << o.scl.y << " " << o.scl.z << "\n";
+            if (o.isEnemy)
+                f << "enemy " << o.enemyType << " " << o.enemyPatrolRadius << "\n";
             f << "end\n";
         }
         std::cout << "[EDITOR] Saved " << objects.size() << " objects → " << saveFile << "\n";
@@ -409,6 +420,7 @@ struct MapEditor
             else if (cmd == "pos" && building) ss >> cur.pos.x >> cur.pos.y >> cur.pos.z;
             else if (cmd == "rot" && building) ss >> cur.rot.x >> cur.rot.y >> cur.rot.z;
             else if (cmd == "scl" && building) ss >> cur.scl.x >> cur.scl.y >> cur.scl.z;
+            else if (cmd == "enemy" && building) { cur.isEnemy = true; ss >> cur.enemyType >> cur.enemyPatrolRadius; }
             else if (cmd == "end" && building) {
                 if (!cur.isSpawn && !cur.modelPath.empty())
                     cur.meshes = loadModel(cur.modelPath, cur.texDir, glm::mat4(1.f), false);
@@ -452,6 +464,9 @@ private:
         o.texDir = pal.texDir;
         o.scl = pal.defScale;
         o.isSpawn = pal.isSpawn;
+        if (pal.label == "[ZOMBIE]") { o.isEnemy = true; o.enemyType = "zombie"; }
+        if (pal.label == "[SOLDIER]") { o.isEnemy = true; o.enemyType = "soldier"; }
+        if (pal.label == "[ZOMBIE2]") { o.isEnemy = true; o.enemyType = "zombie2"; }
 
         // Raycast from camera to find placement point
         glm::vec3 hitPos;
@@ -533,6 +548,13 @@ private:
     {
         if (!o.loaded) return;
 
+        if (o.isEnemy) {
+            glm::vec4 ec = (o.enemyType == "zombie") ? glm::vec4(0.9f, 0.2f, 0.1f, 1.f)
+                : (o.enemyType == "soldier") ? glm::vec4(0.2f, 0.5f, 1.f, 1.f)
+                : glm::vec4(0.8f, 0.1f, 0.8f, 1.f);
+            drawMarker(o.pos, proj * view, ec, 1.2f);
+            return;
+        }
         if (o.isSpawn) {
             drawMarker(o.pos, proj * view,
                 sel ? glm::vec4(1.f, 1.f, 0.f, 1.f) : glm::vec4(0.f, 1.f, 0.5f, 1.f), 1.0f);
@@ -640,105 +662,229 @@ private:
     void drawUI()
     {
         float W = (float)SCR_WIDTH, H = (float)SCR_HEIGHT;
-        const float PW = 230.f;   // panel width
 
-        // ── Left panel background ───────────────
-        textRenderer.drawRect(0, 0, PW, H, { 0.09f,0.10f,0.12f,0.93f });
+        // ═══════════════════════════════════════════════════════
+        //  LEFT PANEL — Palette + Properties
+        // ═══════════════════════════════════════════════════════
+        ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
+        ImGui::SetNextWindowSize(ImVec2(270, H), ImGuiCond_Always);
+        ImGui::Begin("##left", nullptr,
+            ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+            ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus |
+            ImGuiWindowFlags_NoScrollbar);
 
-        // Header
-        textRenderer.drawRect(0, 0, PW, 30.f, { 0.05f,0.06f,0.08f,1.f });
-        textRenderer.drawText("MAP EDITOR", 10.f, 21.f, { 1.f,0.72f,0.10f,1.f });
-        textRenderer.drawRect(0, 30.f, PW, 1.f, { 0.25f,0.27f,0.30f,1.f });
+        // ── Header ──────────────────────────────
+        ImGui::SetCursorPosX(10);
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.75f, 0.1f, 1.f));
+        ImGui::Text("  FPS ENGINE — MAP EDITOR");
+        ImGui::PopStyleColor();
+        ImGui::Separator();
+        ImGui::Spacing();
 
-        // Object palette header
-        textRenderer.drawText("OBJECTS  (PgUp/Dn)", 10.f, 50.f, { 0.55f,0.57f,0.62f,1.f });
-        textRenderer.drawRect(0, 55.f, PW, 1.f, { 0.18f,0.20f,0.23f,1.f });
+        // ── Palette ─────────────────────────────
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.55f, 0.65f, 1.f));
+        ImGui::Text("  PLACE OBJECTS   [PgUp/Dn]");
+        ImGui::PopStyleColor();
+        ImGui::Separator();
+        ImGui::Spacing();
 
+        // Category: Markers
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.35f, 0.38f, 0.45f, 1.f));
+        ImGui::Text(" MARKERS"); ImGui::PopStyleColor();
         for (int i = 0; i < (int)editorPalette.size(); i++) {
-            float py = 56.f + i * 26.f;
-            bool  sel = (i == palIdx);
-            if (sel) textRenderer.drawRect(0, py, PW, 25.f, { 0.18f,0.34f,0.58f,1.f });
-            glm::vec4 tc = sel ? glm::vec4(1.f, 1.f, 1.f, 1.f) : glm::vec4(0.72f, 0.74f, 0.78f, 1.f);
-            textRenderer.drawText("  " + editorPalette[i].label, 8.f, py + 17.f, tc);
+            auto& pe = editorPalette[i];
+            if (pe.label != "[SPAWN]") continue;
+            bool sel = (palIdx == i);
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.2f, 0.9f, 0.3f, 1.f));
+            ImGui::Bullet(); ImGui::SameLine(); ImGui::PopStyleColor();
+            char lbl[64]; snprintf(lbl, 64, "%s##p%d", pe.label.c_str(), i);
+            if (ImGui::Selectable(lbl, sel, 0, ImVec2(0, 20))) palIdx = i;
+        }
+        ImGui::Spacing();
+
+        // Category: Enemies
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.35f, 0.38f, 0.45f, 1.f));
+        ImGui::Text(" ENEMIES"); ImGui::PopStyleColor();
+        const char* enemyLabels[] = { "[ZOMBIE]","[SOLDIER]","[ZOMBIE2]" };
+        ImVec4 enemyColors[] = {
+            ImVec4(0.9f,0.25f,0.15f,1.f),
+            ImVec4(0.2f,0.5f,1.0f,1.f),
+            ImVec4(0.8f,0.15f,0.8f,1.f)
+        };
+        for (int i = 0; i < (int)editorPalette.size(); i++) {
+            auto& pe = editorPalette[i];
+            bool isEnemy = false; int ci = 0;
+            for (int k = 0; k < 3; k++) if (pe.label == enemyLabels[k]) { isEnemy = true; ci = k; break; }
+            if (!isEnemy) continue;
+            bool sel = (palIdx == i);
+            ImGui::PushStyleColor(ImGuiCol_Text, enemyColors[ci]);
+            ImGui::Text("  ⚠"); ImGui::SameLine(); ImGui::PopStyleColor();
+            char lbl[64]; snprintf(lbl, 64, "%s##p%d", pe.label.c_str(), i);
+            if (ImGui::Selectable(lbl, sel, 0, ImVec2(0, 20))) palIdx = i;
+        }
+        ImGui::Spacing();
+
+        // Category: Props
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.35f, 0.38f, 0.45f, 1.f));
+        ImGui::Text(" PROPS"); ImGui::PopStyleColor();
+        for (int i = 0; i < (int)editorPalette.size(); i++) {
+            auto& pe = editorPalette[i];
+            if (pe.isSpawn) continue;
+            bool skip = false;
+            for (int k = 0; k < 3; k++) if (pe.label == enemyLabels[k]) { skip = true; break; }
+            if (skip) continue;
+            bool sel = (palIdx == i);
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.75f, 1.f, 1.f));
+            ImGui::Bullet(); ImGui::SameLine(); ImGui::PopStyleColor();
+            char lbl[64]; snprintf(lbl, 64, "%s##p%d", pe.label.c_str(), i);
+            if (ImGui::Selectable(lbl, sel, 0, ImVec2(0, 20))) palIdx = i;
         }
 
-        float divY = 56.f + editorPalette.size() * 26.f + 6.f;
-        textRenderer.drawRect(0, divY, PW, 1.f, { 0.18f,0.20f,0.23f,1.f });
+        ImGui::Separator();
+        ImGui::Spacing();
 
-        // Properties of selected
+        // ── Properties ──────────────────────────
         if (selected >= 0 && selected < (int)objects.size()) {
             auto& o = objects[selected];
-            float ty = divY + 18.f;
-            textRenderer.drawText("PROPERTIES", 10.f, ty, { 0.55f,0.57f,0.62f,1.f }); ty += 20.f;
 
-            char buf[80];
-            auto row = [&](const char* lbl, const char* val, glm::vec4 vc) {
-                textRenderer.drawText(lbl, 10.f, ty, { 0.45f,0.47f,0.52f,1.f });
-                textRenderer.drawText(val, 75.f, ty, vc); ty += 17.f;
-                };
-            snprintf(buf, 80, "%.1f %.1f %.1f", o.pos.x, o.pos.y, o.pos.z);
-            row("Pos:", buf, { 0.85f,0.88f,1.f,1.f });
-            snprintf(buf, 80, "%.0f %.0f %.0f", o.rot.x, o.rot.y, o.rot.z);
-            row("Rot:", buf, { 0.88f,1.f,0.88f,1.f });
-            snprintf(buf, 80, "%.2f %.2f %.2f", o.scl.x, o.scl.y, o.scl.z);
-            row("Scl:", buf, { 1.f,0.90f,0.78f,1.f });
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.55f, 0.65f, 1.f));
+            ImGui::Text("  PROPERTIES"); ImGui::PopStyleColor();
+            ImGui::Separator(); ImGui::Spacing();
+
+            // Type badge
+            if (o.isEnemy) {
+                ImVec4 bc = (o.enemyType == "zombie") ? ImVec4(0.9f, 0.25f, 0.15f, 1.f)
+                    : (o.enemyType == "soldier") ? ImVec4(0.2f, 0.5f, 1.f, 1.f)
+                    : ImVec4(0.8f, 0.15f, 0.8f, 1.f);
+                ImGui::PushStyleColor(ImGuiCol_Text, bc);
+                ImGui::Text("  ⚠ ENEMY: %s", o.enemyType.c_str());
+                ImGui::PopStyleColor();
+            }
+            else if (o.isSpawn) {
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.2f, 0.9f, 0.3f, 1.f));
+                ImGui::Text("  ★ PLAYER SPAWN");
+                ImGui::PopStyleColor();
+            }
+            else {
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.75f, 1.f, 1.f));
+                ImGui::Text("  ■ %s", o.modelPath.c_str());
+                ImGui::PopStyleColor();
+            }
+            ImGui::Spacing();
+
+            ImGui::PushItemWidth(200);
+            ImGui::Text("Position");
+            ImGui::DragFloat3("##pos", &o.pos.x, 0.1f);
+            ImGui::Text("Rotation");
+            ImGui::DragFloat3("##rot", &o.rot.x, 1.f);
+            ImGui::Text("Scale");
+            ImGui::DragFloat3("##scl", &o.scl.x, 0.01f, 0.001f, 100.f);
+            if (o.isEnemy) {
+                ImGui::Spacing();
+                ImGui::Text("Patrol Radius");
+                ImGui::SliderFloat("##patrol", &o.enemyPatrolRadius, 0.f, 30.f);
+            }
+            ImGui::PopItemWidth();
+            ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
+
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.14f, 0.28f, 0.50f, 1.f));
+            if (ImGui::Button("  Duplicate  [Ctrl+D]  ", ImVec2(-1, 0))) {
+                EdObj cp = o; cp.pos.x += 2.f;
+                objects.push_back(cp); selected = (int)objects.size() - 1;
+                setStatus("Duplicated");
+            }
+            ImGui::PopStyleColor();
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.50f, 0.10f, 0.10f, 1.f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.70f, 0.15f, 0.15f, 1.f));
+            if (ImGui::Button("  Delete  [Del]  ", ImVec2(-1, 0))) {
+                objects.erase(objects.begin() + selected);
+                selected = -1; setStatus("Deleted");
+            }
+            ImGui::PopStyleColor(2);
         }
 
-        // Bottom of left panel
-        textRenderer.drawRect(0, H - 50.f, PW, 50.f, { 0.06f,0.07f,0.09f,0.95f });
-        textRenderer.drawRect(0, H - 51.f, PW, 1.f, { 0.18f,0.20f,0.23f,1.f });
-        textRenderer.drawText("Objects: " + std::to_string(objects.size()), 10.f, H - 33.f, { 0.65f,0.67f,0.72f,1.f });
-        char cambuf[64]; snprintf(cambuf, 64, "Cam %.0f %.0f %.0f", cam.pos.x, cam.pos.y, cam.pos.z);
-        textRenderer.drawText(cambuf, 10.f, H - 15.f, { 0.42f,0.44f,0.48f,1.f });
+        // ── Stats ────────────────────────────────
+        ImGui::SetCursorPosY(H - 80);
+        ImGui::Separator();
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 0.42f, 0.48f, 1.f));
+        int ec = 0; for (auto& ob : objects) if (ob.isEnemy) ec++;
+        ImGui::Text("  Objects: %d   Enemies: %d", (int)objects.size(), ec);
+        ImGui::Text("  Cam: %.0f  %.0f  %.0f", cam.pos.x, cam.pos.y, cam.pos.z);
+        ImGui::PopStyleColor();
 
-        // ── Top toolbar ─────────────────────────
-        textRenderer.drawRect(PW, 0, W - PW, 28.f, { 0.06f,0.07f,0.09f,0.95f });
-        textRenderer.drawRect(PW, 28.f, W - PW, 1.f, { 0.22f,0.24f,0.27f,1.f });
+        ImGui::End();
 
-        struct ModeBtn { const char* label; int id; };
-        ModeBtn btns[] = { {"[G] Move",0},{"[R] Rotate",1},{"[T] Scale",2} };
-        float bx = PW + 12.f;
-        for (auto& b : btns) {
-            bool a = (b.id == gizmoMode);
-            if (a) textRenderer.drawRect(bx - 4.f, 2.f, 100.f, 24.f, { 0.18f,0.34f,0.58f,1.f });
-            textRenderer.drawText(b.label, bx, 19.f, a ? glm::vec4(1, 1, 1, 1) : glm::vec4(0.60f, 0.62f, 0.67f, 1.f));
-            bx += 108.f;
+        // ═══════════════════════════════════════════════════════
+        //  TOP TOOLBAR
+        // ═══════════════════════════════════════════════════════
+        ImGui::SetNextWindowPos(ImVec2(270, 0), ImGuiCond_Always);
+        ImGui::SetNextWindowSize(ImVec2(W - 270, 46), ImGuiCond_Always);
+        ImGui::Begin("##toolbar", nullptr,
+            ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+            ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus);
+
+        ImGui::SetCursorPosY(8);
+        const char* gLabels[] = { "[G] Move","[R] Rotate","[T] Scale" };
+        for (int i = 0; i < 3; i++) {
+            bool a = (gizmoMode == i);
+            if (a) ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.14f, 0.38f, 0.70f, 1.f));
+            else  ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.12f, 0.14f, 0.18f, 1.f));
+            if (ImGui::Button(gLabels[i], ImVec2(88, 0))) gizmoMode = i;
+            ImGui::PopStyleColor(); ImGui::SameLine();
         }
+        ImGui::SameLine(0, 16);
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.48f, 0.52f, 0.58f, 1.f));
+        ImGui::Text("Snap: %.1f [Home]", snapOn ? gridSnap : 0.f);
+        ImGui::PopStyleColor();
 
-        // Snap info
-        char sb[48]; snprintf(sb, 48, "  Snap:%.1f [Home]", snapOn ? gridSnap : 0.f);
-        textRenderer.drawText(sb, bx + 10.f, 19.f, { 0.52f,0.54f,0.58f,1.f });
+        ImGui::SameLine(W - 380);
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.08f, 0.38f, 0.12f, 1.f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.12f, 0.50f, 0.16f, 1.f));
+        if (ImGui::Button("  Save  [Ctrl+S]  ")) { save(); setStatus("Map saved!"); }
+        ImGui::PopStyleColor(2);
+        ImGui::SameLine();
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.50f, 0.36f, 0.04f, 1.f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.65f, 0.48f, 0.06f, 1.f));
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.88f, 0.3f, 1.f));
+        ImGui::Button("  F5 = Play Game  ");
+        ImGui::PopStyleColor(3);
+        ImGui::End();
 
-        // F5 hint
-        textRenderer.drawText("F5 = Play game",
-            W - 160.f, 19.f, { 1.f,0.72f,0.10f,1.f });
+        // ═══════════════════════════════════════════════════════
+        //  STATUS BAR
+        // ═══════════════════════════════════════════════════════
+        ImGui::SetNextWindowPos(ImVec2(270, H - 28), ImGuiCond_Always);
+        ImGui::SetNextWindowSize(ImVec2(W - 270, 28), ImGuiCond_Always);
+        ImGui::Begin("##status", nullptr,
+            ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+            ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus);
+        ImGui::SetCursorPosY(4);
+        ImGui::PushStyleColor(ImGuiCol_Text, statusTimer > 0
+            ? ImVec4(0.9f, 1.f, 0.4f, 1.f) : ImVec4(0.42f, 0.44f, 0.50f, 1.f));
+        ImGui::Text("  %s", statusMsg.c_str());
+        ImGui::PopStyleColor();
+        ImGui::End();
 
-        // ── Status bar ──────────────────────────
-        textRenderer.drawRect(PW, H - 26.f, W - PW, 26.f, { 0.06f,0.07f,0.09f,0.95f });
-        textRenderer.drawRect(PW, H - 27.f, W - PW, 1.f, { 0.22f,0.24f,0.27f,1.f });
-        glm::vec4 sc = statusTimer > 0 ? glm::vec4(0.95f, 1.f, 0.5f, 1.f) : glm::vec4(0.48f, 0.50f, 0.55f, 1.f);
-        textRenderer.drawText(statusMsg, PW + 10.f, H - 8.f, sc);
-
-        // ── Help block (bottom right) ────────────
-        float hx = W - 248.f, hy = H - 210.f;
-        textRenderer.drawRect(hx - 6.f, hy - 16.f, 244.f, 195.f, { 0.04f,0.04f,0.06f,0.80f });
-        textRenderer.drawRect(hx - 6.f, hy - 16.f, 244.f, 1.f, { 0.22f,0.24f,0.27f,1.f });
-        textRenderer.drawText("CONTROLS", hx, hy, { 0.55f,0.57f,0.62f,1.f }); hy += 18.f;
-        auto hl = [&](const std::string& t) {
-            textRenderer.drawText(t, hx, hy, { 0.45f,0.47f,0.52f,1.f }); hy += 16.f;
-            };
-        hl("RMB + WASD    fly camera");
-        hl("Shift         fast fly");
-        hl("Enter / F     place object");
-        hl("Arrows / Q/E  move/rotate/scale");
-        hl("Del           delete");
-        hl("Ctrl+D        duplicate");
-        hl("Z             snap to ground");
-        hl("Tab           toggle grid");
-        hl("Home          toggle snap");
-        hl("PgUp/Dn       change palette");
-        hl("Ctrl+S        save map");
-        hl("F5            play in game!");
+        // ═══════════════════════════════════════════════════════
+        //  HELP PANEL
+        // ═══════════════════════════════════════════════════════
+        ImGui::SetNextWindowPos(ImVec2(W - 255, H - 250), ImGuiCond_FirstUseEver);
+        ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.44f, 0.46f, 0.52f, 1.f));
+        ImGui::Text("RMB + WASD    fly camera");
+        ImGui::Text("Shift         fast fly");
+        ImGui::Text("Enter / F     place object");
+        ImGui::Text("Arrows / Q/E  move selected");
+        ImGui::Text("Del           delete");
+        ImGui::Text("Ctrl+D        duplicate");
+        ImGui::Text("Z             snap to ground");
+        ImGui::Text("Tab           toggle grid");
+        ImGui::Text("Home          toggle snap");
+        ImGui::Text("PgUp/Dn       change palette");
+        ImGui::Text("Ctrl+S        save map");
+        ImGui::Text("F5            play in game!");
+        ImGui::PopStyleColor();
+        ImGui::End();
     }
 
     void setStatus(const std::string& s) { statusMsg = s; statusTimer = 5.f; std::cout << "[ED] " << s << "\n"; }

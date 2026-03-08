@@ -363,15 +363,15 @@ inline void AnimatedModel::loadMesh(aiMesh* am, const std::string& texDir)
             (uint8_t*)verts.data() + verts.size() * sizeof(float));
         mesh.cpuIdx.assign((uint8_t*)idx.data(),
             (uint8_t*)idx.data() + idx.size() * sizeof(unsigned int));
-        // texPath для поиска в texPixelCache — берём только basename файла
+        // texPath для поиска в texPixelCache
         if (texLoader && am->mMaterialIndex < scene->mNumMaterials) {
             aiMaterial* mat2 = scene->mMaterials[am->mMaterialIndex];
             aiString tp2;
             if (mat2->GetTexture(aiTextureType_DIFFUSE, 0, &tp2) == AI_SUCCESS) {
-                std::string n = tp2.C_Str();
-                size_t sl = n.find_last_of("/\\");
-                if (sl != std::string::npos) n = n.substr(sl + 1);
-                mesh.texPath = texDir + "/" + n;
+                std::string _t2 = tp2.C_Str();
+                size_t _s2 = _t2.find_last_of("/\\");
+                if (_s2 != std::string::npos) _t2 = _t2.substr(_s2 + 1);
+                mesh.texPath = texDir + "/" + _t2;
             }
         }
     }

@@ -201,6 +201,7 @@
     <ClCompile Include="dependencies\include\glm\glm.cppm" />
     <ClCompile Include="Editor main.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\123321\Project1;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <ClCompile Include="glad.c" />
     <ClCompile Include="imgui.cpp" />
@@ -512,6 +513,7 @@
     <ClInclude Include="dependencies\include\glm\vector_relational.hpp" />
     <ClInclude Include="dependencies\include\KHR\khrplatform.h" />
     <ClInclude Include="Enemy.h" />
+    <ClInclude Include="GPUSkinning.h" />
     <ClInclude Include="Hud.h" />
     <ClInclude Include="imconfig.h" />
     <ClInclude Include="imgui.h" />

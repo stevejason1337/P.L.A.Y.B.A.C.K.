@@ -7,6 +7,9 @@
 #include "AABB.h"
 #include "TextRenderer.h"
 #include "MapEditor.h"
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
 
 // ──────────────────────────────────────────────
 //  Editor.exe
@@ -63,6 +66,34 @@ int main()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    // ImGui init
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& imio = ImGui::GetIO();
+    imio.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    ImGui::StyleColorsDark();
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.WindowRounding = 6.f;
+    style.FrameRounding = 4.f;
+    style.ScrollbarRounding = 4.f;
+    style.GrabRounding = 4.f;
+    style.WindowBorderSize = 1.f;
+    style.FrameBorderSize = 0.f;
+    style.Colors[ImGuiCol_WindowBg] = ImVec4(0.08f, 0.09f, 0.11f, 0.94f);
+    style.Colors[ImGuiCol_TitleBg] = ImVec4(0.05f, 0.06f, 0.08f, 1.f);
+    style.Colors[ImGuiCol_TitleBgActive] = ImVec4(0.10f, 0.18f, 0.30f, 1.f);
+    style.Colors[ImGuiCol_Header] = ImVec4(0.14f, 0.28f, 0.50f, 1.f);
+    style.Colors[ImGuiCol_HeaderHovered] = ImVec4(0.20f, 0.38f, 0.64f, 1.f);
+    style.Colors[ImGuiCol_Button] = ImVec4(0.14f, 0.28f, 0.50f, 1.f);
+    style.Colors[ImGuiCol_ButtonHovered] = ImVec4(0.20f, 0.38f, 0.64f, 1.f);
+    style.Colors[ImGuiCol_ButtonActive] = ImVec4(0.24f, 0.46f, 0.76f, 1.f);
+    style.Colors[ImGuiCol_FrameBg] = ImVec4(0.12f, 0.14f, 0.18f, 1.f);
+    style.Colors[ImGuiCol_SliderGrab] = ImVec4(0.24f, 0.46f, 0.76f, 1.f);
+    style.Colors[ImGuiCol_CheckMark] = ImVec4(0.26f, 0.59f, 0.98f, 1.f);
+    style.Colors[ImGuiCol_Separator] = ImVec4(0.20f, 0.22f, 0.27f, 1.f);
+    ImGui_ImplGlfw_InitForOpenGL(gWindow, true);
+    ImGui_ImplOpenGL3_Init("#version 330");
+
     // Font must be initialised before anything that draws text
     textRenderer.init("cour.ttf", 16.f, SCR_WIDTH, SCR_HEIGHT);
 
@@ -91,13 +122,25 @@ int main()
         dt = now - last; last = now;
         if (dt > 0.1f) dt = 0.1f;
 
+        // ImGui new frame
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
         mapEditor.update(gWindow, dt);
         mapEditor.draw();
+
+        // ImGui render
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         glfwSwapBuffers(gWindow);
         glfwPollEvents();
     }
 
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
     glfwTerminate();
     return 0;
 }

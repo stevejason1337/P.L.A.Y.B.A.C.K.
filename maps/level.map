@@ -1,1 +1,22 @@
 # 3D Engine Map  version 1
+obj
+model SPAWN
+tex NONE
+pos -20 0.484922 44
+rot 0 0 0
+scl 1 1 1
+end
+obj
+model SPAWN
+tex NONE
+pos -1 0.484922 47
+rot 0 0 0
+scl 1 1 1
+end
+obj
+model SPAWN
+tex NONE
+pos 17 0.484921 41
+rot 0 0 0
+scl 1 1 1
+end

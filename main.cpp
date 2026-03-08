@@ -247,25 +247,65 @@ int main()
     weaponManager.loadAll();
     gun.ammo = weaponManager.activeDef().maxAmmo;
 
-    // Загружаем врагов ДО uploadMeshesToDX11 — иначе их меши не попадут на GPU
-    enemyManager.load();
-    soundManager.init();
-
 #ifdef _WIN32
     if (gRenderBackend == RenderBackend::DX11) {
         if (auto* dx = static_cast<ID3D11Device*>(renderer.getDX11Device())) {
-            // Оружие
             for (auto& m : weaponManager.models)
                 uploadMeshesToDX11(m->meshes, dx);
-            // Враги — все три модели
-            uploadMeshesToDX11(gModelSoldier.proto.meshes, dx);
-            if (gModelZombie.loaded)
-                uploadMeshesToDX11(gModelZombie.proto.meshes, dx);
-            if (gModelZombie2.loaded)
-                uploadMeshesToDX11(gModelZombie2.proto.meshes, dx);
         }
     }
 #endif
+
+    enemyManager.load();
+#ifdef _WIN32
+    if (gRenderBackend == RenderBackend::DX11) {
+        if (auto* dx = static_cast<ID3D11Device*>(renderer.getDX11Device())) {
+            uploadMeshesToDX11(gModelSoldier.proto.meshes, dx);
+            uploadMeshesToDX11(gModelZombie.proto.meshes, dx);
+            uploadMeshesToDX11(gModelZombie2.proto.meshes, dx);
+        }
+    }
+#endif
+    // Load enemy spawns from map file (only if no enemies already present)
+    {
+        std::ifstream mf("maps/level.map");
+        if (mf) {
+            std::string line, cmd;
+            bool inObj = false;
+            std::string eType; glm::vec3 ePos(0);
+            bool isEnemy = false;
+            std::vector<std::pair<std::string, glm::vec3>> pendingSpawns;
+            while (std::getline(mf, line)) {
+                std::istringstream ss(line);
+                ss >> cmd;
+                if (cmd == "obj") { inObj = true; eType = ""; ePos = glm::vec3(0); isEnemy = false; }
+                else if (cmd == "pos" && inObj) { ss >> ePos.x >> ePos.y >> ePos.z; }
+                else if (cmd == "enemy" && inObj) { isEnemy = true; ss >> eType; }
+                else if (cmd == "end" && inObj) {
+                    if (isEnemy) pendingSpawns.push_back({ eType, ePos });
+                    inObj = false;
+                }
+            }
+            // Deduplicate by position (remove entries closer than 0.5 units)
+            std::vector<std::pair<std::string, glm::vec3>> uniqueSpawns;
+            for (auto& sp : pendingSpawns) {
+                bool dup = false;
+                for (auto& us : uniqueSpawns)
+                    if (glm::distance(us.second, sp.second) < 0.5f) { dup = true; break; }
+                if (!dup) uniqueSpawns.push_back(sp);
+            }
+            // Only spawn from map if enemies list is currently empty
+            if (enemyManager.enemies.empty()) {
+                for (auto& [t, p] : uniqueSpawns) {
+                    if (t == "zombie")       enemyManager.spawnZombie(p);
+                    else if (t == "zombie2") enemyManager.spawnZombie2(p);
+                    else if (t == "soldier") enemyManager.spawn(p);
+                    std::cout << "[MAP] Spawned " << t << " at " << p.x << "," << p.y << "," << p.z << "\n";
+                }
+            }
+        }
+    }
+    soundManager.init();
 
     // ── 10. Стартовая позиция игрока ─────────────────────────
     {
@@ -326,7 +366,18 @@ int main()
                 glm::radians(curFOV),
                 (float)SCR_WIDTH / (float)SCR_HEIGHT,
                 0.05f, 5000.f);
-            enemyManager.draw(renderer.gunShader, view, proj);
+#ifdef _WIN32
+            if (gRenderBackend == RenderBackend::DX11) {
+                renderer.beginEnemyBatch(view, proj);
+                for (auto& e : enemyManager.enemies) {
+                    if (e.removed) continue;
+                    renderer.drawEnemyDX11(e.getMatrix(), e.boneFinal,
+                        e.sharedModel().proto.meshes, view, proj);
+                }
+            }
+            else
+#endif
+                enemyManager.draw(renderer.gunShader, view, proj);
         }
 
         // ── ImGui кадр ───────────────────────────────────────────

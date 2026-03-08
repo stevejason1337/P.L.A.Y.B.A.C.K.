@@ -142,18 +142,19 @@ using Microsoft::WRL::ComPtr;
 static const char* HLSL_WORLD = R"(
 cbuffer PerFrame:register(b0){matrix view,projection,lightSpaceMatrix;float3 lightDir;float _p0;float3 fogColor;float fogStart;float fogEnd;float3 camPos;float _p1;};
 cbuffer PerObject:register(b1){matrix model,normalMatrix;float3 baseColor;int hasTexture;};
-Texture2D diffuse:register(t0);SamplerState sLin:register(s0);
-struct V2P{float4 pos:SV_Position;float3 norm:NORMAL;float2 uv:TEXCOORD0;float fd:TEXCOORD1;};
+Texture2D diffuse:register(t0);
+SamplerState sLin:register(s0);
+struct V2P{float4 pos:SV_Position;float3 norm:NORMAL;float2 uv:TEXCOORD0;float3 wp:TEXCOORD1;float fd:TEXCOORD2;float4 lsp:TEXCOORD3;};
 V2P VSMain(float3 p:POSITION,float3 n:NORMAL,float2 uv:TEXCOORD0){
-    V2P o;float4 wp=mul(model,float4(p,1));o.norm=mul((float3x3)normalMatrix,n);
-    o.uv=uv;float4 vp=mul(view,wp);o.fd=-vp.z;o.pos=mul(projection,vp);return o;
+    V2P o;float4 wp=mul(model,float4(p,1));o.wp=wp.xyz;o.norm=mul((float3x3)normalMatrix,n);
+    o.uv=uv;o.lsp=mul(lightSpaceMatrix,wp);float4 vp=mul(view,wp);o.fd=-vp.z;o.pos=mul(projection,vp);return o;
 }
 float3 ACES(float3 x){return clamp((x*(2.51*x+.03))/(x*(2.43*x+.59)+.14),0,1);}
 float3 sat3(float3 c,float s){float l=dot(c,float3(.2126,.7152,.0722));return lerp(l,c,s);}
 float4 PSMain(V2P i):SV_Target{
     float3 alb=hasTexture?pow(diffuse.Sample(sLin,i.uv).rgb,2.2):baseColor;
     float3 N=normalize(i.norm),L=normalize(-lightDir);float NdL=max(dot(N,L),0);
-    float3 lit=alb*(float3(.30,.28,.25)+float3(1.05,.95,.80)*NdL*.85+float3(.55,.70,.90)*max(dot(N,float3(0,1,0)),0)*.25+float3(.40,.35,.28)*max(dot(N,float3(0,-1,0)),0)*.12);
+    float3 lit=alb*(float3(.25,.22,.20)+float3(1.05,.95,.80)*NdL*.85+float3(.55,.70,.90)*max(dot(N,float3(0,1,0)),0)*.25+float3(.40,.35,.28)*max(dot(N,float3(0,-1,0)),0)*.12);
     lit+=pow(max(dot(normalize(L+float3(0,0,1)),N),0),32)*.15;
     lit=sat3(lit,1.2);lit=ACES(lit*.8);
     float fogT=saturate((i.fd-fogStart)/(fogEnd-fogStart));fogT=fogT*fogT*fogT;
@@ -350,7 +351,7 @@ static bool _dxInit(HWND hwnd) {
         d.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD; dx11.dev->CreateBlendState(&d, &dx11.bsAlpha);
     }
     {
-        D3D11_SAMPLER_DESC d = {}; d.Filter = D3D11_FILTER_ANISOTROPIC; d.AddressU = d.AddressV = d.AddressW = D3D11_TEXTURE_ADDRESS_WRAP; d.MaxAnisotropy = 16; d.MaxLOD = D3D11_FLOAT32_MAX; d.ComparisonFunc = D3D11_COMPARISON_ALWAYS; dx11.dev->CreateSamplerState(&d, &dx11.sampLin);
+        D3D11_SAMPLER_DESC d = {}; d.Filter = D3D11_FILTER_ANISOTROPIC; d.MaxAnisotropy = 16; d.AddressU = d.AddressV = d.AddressW = D3D11_TEXTURE_ADDRESS_WRAP; d.MaxLOD = D3D11_FLOAT32_MAX; d.ComparisonFunc = D3D11_COMPARISON_ALWAYS; dx11.dev->CreateSamplerState(&d, &dx11.sampLin);
         d.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT; d.AddressU = d.AddressV = d.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP; d.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL; dx11.dev->CreateSamplerState(&d, &dx11.sampCmp);
     }
 
@@ -682,6 +683,7 @@ private:
         dx11.ctx->RSSetState(rs);
         dx11.ctx->OMSetDepthStencilState(dx11.dssOn.Get(), 0); dx11.ctx->OMSetBlendState(dx11.bsOpaque.Get(), nullptr, 0xFFFFFFFF);
         dx11.ctx->VSSetConstantBuffers(0, 1, dx11.cbWF.GetAddressOf()); dx11.ctx->PSSetConstantBuffers(0, 1, dx11.cbWF.GetAddressOf());
+        // shadow SRV removed — was conflicting with t1 slot
         dx11.ctx->PSSetSamplers(0, 1, dx11.sampLin.GetAddressOf());
         if (!mm.empty()) {
             for (auto& m : mm) {
@@ -711,5 +713,56 @@ private:
             }
         }
     }
+
+public:
+    // DX11 enemy rendering — called from EnemyManager::draw when DX11 mode
+    void beginEnemyBatch(const glm::mat4& view, const glm::mat4& proj)
+    {
+        if (!dx11.ready || !dx11.gun.vs) return;
+        dx11.ctx->VSSetShader(dx11.gun.vs.Get(), nullptr, 0);
+        dx11.ctx->PSSetShader(dx11.gun.ps.Get(), nullptr, 0);
+        dx11.ctx->IASetInputLayout(dx11.gun.il.Get());
+        dx11.ctx->RSSetState(dx11.rsNoCull.Get());
+        dx11.ctx->OMSetDepthStencilState(dx11.dssOn.Get(), 0);
+        dx11.ctx->OMSetBlendState(dx11.bsOpaque.Get(), nullptr, 0xFFFFFFFF);
+        dx11.ctx->PSSetSamplers(0, 1, dx11.sampLin.GetAddressOf());
+        DX_GF gf; gf.view = view; gf.proj = proj;
+        _dxUp(dx11.cbGF, &gf, sizeof(gf));
+        dx11.ctx->VSSetConstantBuffers(0, 1, dx11.cbGF.GetAddressOf());
+        dx11.ctx->PSSetConstantBuffers(0, 1, dx11.cbGF.GetAddressOf());
+    }
+
+    void drawEnemyDX11(const glm::mat4& model, const std::vector<glm::mat4>& bones,
+        const std::vector<GPUMesh>& meshes,
+        const glm::mat4& view, const glm::mat4& proj)
+    {
+        if (!dx11.ready || !dx11.gun.vs) return;
+        DX_GO go; go.model = model;
+        go.nm = glm::mat4(glm::transpose(glm::inverse(glm::mat3(model))));
+        go.gc = glm::vec3(0.8f, 0.75f, 0.7f); go.flash = 0.f; go.ht = 0;
+        bool hasBones = !bones.empty();
+        go.sk = hasBones ? 1 : 0; go._p = glm::vec2(0, 0);
+
+        if (hasBones) {
+            int bc = std::min((int)bones.size(), 100);
+            _dxUp(dx11.cbBones, glm::value_ptr(bones[0]), (size_t)bc * 64);
+            dx11.ctx->VSSetConstantBuffers(2, 1, dx11.cbBones.GetAddressOf());
+        }
+        for (auto& m : meshes) {
+            if (m.dxSRV) {
+                auto* srv = static_cast<ID3D11ShaderResourceView*>(m.dxSRV);
+                dx11.ctx->PSSetShaderResources(0, 1, &srv); go.ht = 1;
+            }
+            else {
+                ID3D11ShaderResourceView* n = nullptr;
+                dx11.ctx->PSSetShaderResources(0, 1, &n); go.ht = 0;
+            }
+            _dxUp(dx11.cbGO, &go, sizeof(go));
+            dx11.ctx->VSSetConstantBuffers(1, 1, dx11.cbGO.GetAddressOf());
+            dx11.ctx->PSSetConstantBuffers(1, 1, dx11.cbGO.GetAddressOf());
+            _dxMesh(m);
+        }
+    }
+
 #endif
 };
