@@ -9,6 +9,9 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
+// Определён в ModelLoader.h — флаг OpenGL vs DX11 пути загрузки
+extern bool gLoadGLTextures;
+
 #include <iostream>
 #include <vector>
 #include <string>
@@ -41,6 +44,11 @@ struct GPUMesh {
     void* dxIB = nullptr;      // ID3D11Buffer*
     void* dxSRV = nullptr;     // ID3D11ShaderResourceView*
     unsigned int dxStride = 0;
+
+    // CPU-side буферы для DX11 (заполняются в loadModel, очищаются после upload)
+    std::vector<uint8_t> cpuVerts;
+    std::vector<uint8_t> cpuIdx;
+    std::string          texPath; // путь к текстуре для поиска в texPixelCache
 };
 
 // ──────────────────────────────────────────────
@@ -330,20 +338,42 @@ inline void AnimatedModel::loadMesh(aiMesh* am, const std::string& texDir)
     mesh.dxStride = 16 * sizeof(float);
 
     const int STR = 16 * sizeof(float);
-    glGenVertexArrays(1, &mesh.VAO);
-    glGenBuffers(1, &mesh.VBO);
-    glGenBuffers(1, &mesh.EBO);
-    glBindVertexArray(mesh.VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, mesh.VBO);
-    glBufferData(GL_ARRAY_BUFFER, verts.size() * sizeof(float), verts.data(), GL_STATIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, idx.size() * sizeof(unsigned int), idx.data(), GL_STATIC_DRAW);
-    // layout: pos(3) norm(3) uv(2) boneIDs(4) boneWeights(4) = 16 floats
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, STR, (void*)0);                  glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, STR, (void*)(3 * sizeof(float)));  glEnableVertexAttribArray(1);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, STR, (void*)(6 * sizeof(float)));  glEnableVertexAttribArray(2);
-    glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, STR, (void*)(8 * sizeof(float)));  glEnableVertexAttribArray(3);
-    glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, STR, (void*)(12 * sizeof(float))); glEnableVertexAttribArray(4);
-    glBindVertexArray(0);
+
+    if (gLoadGLTextures) {
+        // ── OpenGL: грузим на GPU ───────────────────────────────
+        glGenVertexArrays(1, &mesh.VAO);
+        glGenBuffers(1, &mesh.VBO);
+        glGenBuffers(1, &mesh.EBO);
+        glBindVertexArray(mesh.VAO);
+        glBindBuffer(GL_ARRAY_BUFFER, mesh.VBO);
+        glBufferData(GL_ARRAY_BUFFER, verts.size() * sizeof(float), verts.data(), GL_STATIC_DRAW);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.EBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, idx.size() * sizeof(unsigned int), idx.data(), GL_STATIC_DRAW);
+        // layout: pos(3) norm(3) uv(2) boneIDs(4) boneWeights(4) = 16 floats
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, STR, (void*)0);                  glEnableVertexAttribArray(0);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, STR, (void*)(3 * sizeof(float)));  glEnableVertexAttribArray(1);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, STR, (void*)(6 * sizeof(float)));  glEnableVertexAttribArray(2);
+        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, STR, (void*)(8 * sizeof(float)));  glEnableVertexAttribArray(3);
+        glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, STR, (void*)(12 * sizeof(float))); glEnableVertexAttribArray(4);
+        glBindVertexArray(0);
+    }
+    else {
+        // ── DX11: сохраняем в CPU память для uploadMeshesToDX11() ─
+        mesh.cpuVerts.assign((uint8_t*)verts.data(),
+            (uint8_t*)verts.data() + verts.size() * sizeof(float));
+        mesh.cpuIdx.assign((uint8_t*)idx.data(),
+            (uint8_t*)idx.data() + idx.size() * sizeof(unsigned int));
+        // texPath для поиска в texPixelCache — берём только basename файла
+        if (texLoader && am->mMaterialIndex < scene->mNumMaterials) {
+            aiMaterial* mat2 = scene->mMaterials[am->mMaterialIndex];
+            aiString tp2;
+            if (mat2->GetTexture(aiTextureType_DIFFUSE, 0, &tp2) == AI_SUCCESS) {
+                std::string n = tp2.C_Str();
+                size_t sl = n.find_last_of("/\\");
+                if (sl != std::string::npos) n = n.substr(sl + 1);
+                mesh.texPath = texDir + "/" + n;
+            }
+        }
+    }
     meshes.push_back(mesh);
 }

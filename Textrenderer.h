@@ -60,21 +60,37 @@ struct TextRenderer
     {
         scrW = sw; scrH = sh; fontH = h;
 
-        auto compile = [](unsigned int t, const char* s) {
+        // Проверка: если нет GL контекста (DX11 режим или вызов до gladLoadGL)
+        // glCreateShader вернёт 0 -> glShaderSource упадёт с access violation
+        if (!glGetString(GL_VERSION)) {
+            std::cerr << "[TEXT] No OpenGL context — TextRenderer disabled\n";
+            return false;
+        }
+
+        auto compile = [](unsigned int t, const char* s) -> unsigned int {
             unsigned int sh = glCreateShader(t);
+            if (!sh) { std::cerr << "[TEXT] glCreateShader=0, no GL context?\n"; return 0; }
             glShaderSource(sh, 1, &s, NULL); glCompileShader(sh);
             int ok; glGetShaderiv(sh, GL_COMPILE_STATUS, &ok);
-            if (!ok) { char l[512]; glGetShaderInfoLog(sh, 512, NULL, l); std::cerr << "[TEXT]" << l; }
+            if (!ok) { char l[512]; glGetShaderInfoLog(sh, 512, NULL, l); std::cerr << "[TEXT] " << l; }
             return sh;
             };
-        auto link = [&](const char* v, const char* f) {
-            unsigned int vs = compile(GL_VERTEX_SHADER, v), fs = compile(GL_FRAGMENT_SHADER, f);
+        auto link = [&](const char* v, const char* f) -> unsigned int {
+            unsigned int vs = compile(GL_VERTEX_SHADER, v);
+            unsigned int fs = compile(GL_FRAGMENT_SHADER, f);
+            if (!vs || !fs) { if (vs) glDeleteShader(vs); if (fs) glDeleteShader(fs); return 0; }
             unsigned int p = glCreateProgram();
             glAttachShader(p, vs); glAttachShader(p, fs); glLinkProgram(p);
+            int ok; glGetProgramiv(p, GL_LINK_STATUS, &ok);
+            if (!ok) { char l[512]; glGetProgramInfoLog(p, 512, NULL, l); std::cerr << "[TEXT] Link: " << l; }
             glDeleteShader(vs); glDeleteShader(fs); return p;
             };
         textShader = link(TEXT_VERT, TEXT_FRAG);
         rectShader = link(RECT_VERT, RECT_FRAG);
+        if (!textShader || !rectShader) {
+            std::cerr << "[TEXT] Shader build failed\n";
+            return false;
+        }
 
         std::ifstream f(path, std::ios::binary | std::ios::ate);
         if (!f) { std::cerr << "[FONT] Cannot open: " << path << "\n"; return false; }

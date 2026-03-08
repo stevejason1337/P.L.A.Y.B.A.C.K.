@@ -1,21 +1,7 @@
 #pragma once
 // Renderer.h — единый рендерер с поддержкой OpenGL 3.3 и DirectX 11
-// По умолчанию DX11 на Windows, OpenGL на Linux/Mac
-// Переключение до renderer.init():
-//   gRenderBackend = RenderBackend::OpenGL;
+// gRenderBackend задаётся в Settings.h до вызова renderer.init()
 
-// ════════════════════════════════════════════════════════════
-//  ВЫБОР БЭКЕНДА — меняется из главного меню
-// ════════════════════════════════════════════════════════════
-enum class RenderBackend { OpenGL, DX11 };
-
-// По умолчанию OpenGL — стабильный рабочий рендер
-// Для DX11: gRenderBackend = RenderBackend::DX11; до renderer.init()
-inline RenderBackend gRenderBackend = RenderBackend::OpenGL;
-
-// ════════════════════════════════════════════════════════════
-//  ОБЩИЕ INCLUDES
-// ════════════════════════════════════════════════════════════
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -156,32 +142,23 @@ using Microsoft::WRL::ComPtr;
 static const char* HLSL_WORLD = R"(
 cbuffer PerFrame:register(b0){matrix view,projection,lightSpaceMatrix;float3 lightDir;float _p0;float3 fogColor;float fogStart;float fogEnd;float3 camPos;float _p1;};
 cbuffer PerObject:register(b1){matrix model,normalMatrix;float3 baseColor;int hasTexture;};
-Texture2D diffuse:register(t0);Texture2D shadowMap:register(t1);
-SamplerState sLin:register(s0);SamplerComparisonState sCmp:register(s1);
-struct V2P{float4 pos:SV_Position;float3 norm:NORMAL;float2 uv:TEXCOORD0;float3 wp:TEXCOORD1;float fd:TEXCOORD2;float4 lsp:TEXCOORD3;};
+Texture2D diffuse:register(t0);SamplerState sLin:register(s0);
+struct V2P{float4 pos:SV_Position;float3 norm:NORMAL;float2 uv:TEXCOORD0;float fd:TEXCOORD1;};
 V2P VSMain(float3 p:POSITION,float3 n:NORMAL,float2 uv:TEXCOORD0){
-    V2P o;float4 wp=mul(model,float4(p,1));o.wp=wp.xyz;o.norm=mul((float3x3)normalMatrix,n);
-    o.uv=uv;o.lsp=mul(lightSpaceMatrix,wp);float4 vp=mul(view,wp);o.fd=-vp.z;o.pos=mul(projection,vp);return o;
+    V2P o;float4 wp=mul(model,float4(p,1));o.norm=mul((float3x3)normalMatrix,n);
+    o.uv=uv;float4 vp=mul(view,wp);o.fd=-vp.z;o.pos=mul(projection,vp);return o;
 }
 float3 ACES(float3 x){return clamp((x*(2.51*x+.03))/(x*(2.43*x+.59)+.14),0,1);}
 float3 sat3(float3 c,float s){float l=dot(c,float3(.2126,.7152,.0722));return lerp(l,c,s);}
 float4 PSMain(V2P i):SV_Target{
     float3 alb=hasTexture?pow(diffuse.Sample(sLin,i.uv).rgb,2.2):baseColor;
     float3 N=normalize(i.norm),L=normalize(-lightDir);float NdL=max(dot(N,L),0);
-    float3 prj=i.lsp.xyz/i.lsp.w;prj=prj*.5+.5;prj.y=1-prj.y;
-    float shadow=0;
-    if(prj.z<=1&&all(prj.xy>0)&&all(prj.xy<1)){
-        float bias=max(.005*(1-NdL),.002);float2 ts;shadowMap.GetDimensions(ts.x,ts.y);ts=1/ts;
-        [unroll]for(int x=-1;x<=1;x++)[unroll]for(int y=-1;y<=1;y++)shadow+=shadowMap.SampleCmpLevelZero(sCmp,prj.xy+float2(x,y)*ts,prj.z-bias);
-        shadow=(9-shadow)/9*.65;
-    }
-    float3 lit=alb*(float3(.25,.22,.20)+float3(1.05,.95,.80)*NdL*.85*(1-shadow)+float3(.55,.70,.90)*max(dot(N,float3(0,1,0)),0)*.25+float3(.40,.35,.28)*max(dot(N,float3(0,-1,0)),0)*.12);
-    lit+=pow(max(dot(normalize(L+float3(0,0,1)),N),0),32)*.15*(1-shadow);
+    float3 lit=alb*(float3(.30,.28,.25)+float3(1.05,.95,.80)*NdL*.85+float3(.55,.70,.90)*max(dot(N,float3(0,1,0)),0)*.25+float3(.40,.35,.28)*max(dot(N,float3(0,-1,0)),0)*.12);
+    lit+=pow(max(dot(normalize(L+float3(0,0,1)),N),0),32)*.15;
     lit=sat3(lit,1.2);lit=ACES(lit*.8);
     float fogT=saturate((i.fd-fogStart)/(fogEnd-fogStart));fogT=fogT*fogT*fogT;
     lit=lerp(lit,fogColor,fogT);lit=pow(max(lit,0),1.0/2.2);return float4(lit,1);
 })";
-
 static const char* HLSL_GUN = R"(
 cbuffer PF:register(b0){matrix view,projection;};
 cbuffer PO:register(b1){matrix model,normalMatrix;float3 gunColor;float flash;int hasTexture;int skinned;float2 _p;};
@@ -207,7 +184,6 @@ float4 PSMain(V2P i):SV_Target{
     float3 lit=alb*(.18+d1*.55+d2+rim)+sp*.6+float3(1,.85,.5)*flash*.3;
     lit=ACES(lit);lit=pow(max(lit,0),1.0/2.2);return float4(lit,1);
 })";
-
 static const char* HLSL_POST = R"(
 cbuffer CB:register(b0){float2 resolution;float time;float hp01;};
 Texture2D screen:register(t0);SamplerState sLin:register(s0);
@@ -224,11 +200,10 @@ float4 PSMain(V2P i):SV_Target{
                      -screen.Sample(sLin,uv+float2(0,1)*px).rgb-screen.Sample(sLin,uv+float2(0,-1)*px).rgb;
     col=lerp(col,sharp,.18);float lum=dot(col,float3(.2126,.7152,.0722));col=lerp(lum,col,1.15);
     col=(col-.5)*1.08+.5;float dist=length(uv-.5);col*=1-dist*dist*.40;
-    if(hp01<.30){float p=sin(time*2.5)*.5+.5;float inten=(0.30-hp01)/.30*.45*(.5+.5*p);col=lerp(col,float3(col.r,col.g*.2,col.b*.2),inten*smoothstep(.25,.5,dist));}
+    if(hp01<.30){float p2=sin(time*2.5)*.5+.5;float inten=(0.30-hp01)/.30*.45*(.5+.5*p2);col=lerp(col,float3(col.r,col.g*.2,col.b*.2),inten*smoothstep(.25,.5,dist));}
     float noise=frac(sin(dot(uv+frac(time),float2(127.1,311.7)))*43758.5453);
     col+=(noise-.5)*.012;return float4(saturate(col),1);
 })";
-
 static const char* HLSL_SHADOW = R"(
 cbuffer CB:register(b0){matrix lightMVP;int skinned;float3 _p;};
 cbuffer Bones:register(b1){matrix bones[100];};
@@ -241,39 +216,43 @@ float4 VSMain(VI i):SV_Position{
         pos=mul(skin,pos);}
     return mul(lightMVP,pos);
 }
-float4 PSMain():SV_Target{return 0;})";
-
+float4 PSMain():SV_Target{return float4(0,0,0,0);}
+)";
 static const char* HLSL_DOT = R"(
 cbuffer CB:register(b0){matrix mvp;float4 color;};
 float4 VSMain(float3 p:POSITION):SV_Position{return mul(mvp,float4(p,1));}
-float4 PSMain(float4 p:SV_Position):SV_Target{return color;})";
+float4 PSMain():SV_Target{return color;}
+)";
 
-// ── DX11 state (всё в одной структуре) ───────────────────────
+// ── DX11 State ────────────────────────────────────────────────
 struct DX11State {
     ComPtr<ID3D11Device>           dev;
     ComPtr<ID3D11DeviceContext>    ctx;
     ComPtr<IDXGISwapChain>         sc;
     ComPtr<ID3D11RenderTargetView> bbRTV;
-    // Post render target (рендерим сцену сюда, потом пост-процесс в backbuffer)
-    ComPtr<ID3D11Texture2D>          postTex, postDepth, shadowTex, mainDepth;
-    ComPtr<ID3D11RenderTargetView>   postRTV;
-    ComPtr<ID3D11ShaderResourceView> postSRV, shadowSRV;
-    ComPtr<ID3D11DepthStencilView>   postDSV, shadowDSV, mainDSV;
-    // Шейдеры
-    struct Sh { ComPtr<ID3D11VertexShader>vs; ComPtr<ID3D11PixelShader>ps; ComPtr<ID3D11InputLayout>il; };
-    Sh world, gun, post, shadow, dot;
-    // Constant buffers
-    ComPtr<ID3D11Buffer> cbWF, cbWO, cbGF, cbGO, cbBones, cbPost, cbShadow, cbDot;
+    // Post-process offscreen
+    ComPtr<ID3D11Texture2D>        postTex, postDepth;
+    ComPtr<ID3D11RenderTargetView> postRTV;
+    ComPtr<ID3D11ShaderResourceView> postSRV;
+    ComPtr<ID3D11DepthStencilView> postDSV;
+    // Shadow map
+    ComPtr<ID3D11Texture2D>        shadowTex;
+    ComPtr<ID3D11DepthStencilView> shadowDSV;
+    ComPtr<ID3D11ShaderResourceView> shadowSRV;
     // States
-    ComPtr<ID3D11RasterizerState>   rsNorm, rsNoCull, rsShadow;
-    ComPtr<ID3D11DepthStencilState> dssOn, dssOff;
-    ComPtr<ID3D11BlendState>        bsOpaque, bsAlpha;
-    ComPtr<ID3D11SamplerState>      sampLin, sampCmp;
+    ComPtr<ID3D11RasterizerState>  rsNorm, rsNoCull, rsShadow, rsWireframe;
+    ComPtr<ID3D11DepthStencilState>dssOn, dssOff;
+    ComPtr<ID3D11BlendState>       bsOpaque, bsAlpha;
+    ComPtr<ID3D11SamplerState>     sampLin, sampCmp;
+    // Constant buffers
+    ComPtr<ID3D11Buffer>           cbWF, cbWO, cbGF, cbGO, cbBones, cbPost, cbShadow, cbDot;
+    struct Sh { ComPtr<ID3D11VertexShader>vs; ComPtr<ID3D11PixelShader>ps; ComPtr<ID3D11InputLayout>il; };
+    Sh world, gun, shadow, dot, post;
     bool ready = false;
-};
-inline DX11State dx11;
+    bool wireframe = false; // DX11 wireframe флаг
+} dx11;
 
-// ── DX11 CB structs ───────────────────────────────────────────
+// ── CB structs (16-byte aligned) ─────────────────────────────
 struct alignas(16) DX_WF { glm::mat4 view, proj, ls; glm::vec3 ld; float _0; glm::vec3 fc; float fs; float fe; glm::vec3 cp; float _1; };
 struct alignas(16) DX_WO { glm::mat4 model, nm; glm::vec3 bc; int ht; };
 struct alignas(16) DX_GF { glm::mat4 view, proj; };
@@ -282,12 +261,20 @@ struct alignas(16) DX_Post { glm::vec2 res; float time; float hp; };
 struct alignas(16) DX_Shadow { glm::mat4 lmvp; int sk; glm::vec3 _p; };
 struct alignas(16) DX_Dot { glm::mat4 mvp; glm::vec4 color; };
 
-static void _dxCB(ComPtr<ID3D11Buffer>& b, UINT sz) { D3D11_BUFFER_DESC d = {}; d.ByteWidth = ((sz + 15) / 16) * 16; d.Usage = D3D11_USAGE_DYNAMIC; d.BindFlags = D3D11_BIND_CONSTANT_BUFFER; d.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE; dx11.dev->CreateBuffer(&d, nullptr, &b); }
-static void _dxUp(ComPtr<ID3D11Buffer>& b, const void* data, size_t sz) { D3D11_MAPPED_SUBRESOURCE m; if (SUCCEEDED(dx11.ctx->Map(b.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &m))) { memcpy(m.pData, data, sz); dx11.ctx->Unmap(b.Get(), 0); } }
+static void _dxCB(ComPtr<ID3D11Buffer>& b, UINT sz) {
+    D3D11_BUFFER_DESC d = {}; d.ByteWidth = ((sz + 15) / 16) * 16; d.Usage = D3D11_USAGE_DYNAMIC;
+    d.BindFlags = D3D11_BIND_CONSTANT_BUFFER; d.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    dx11.dev->CreateBuffer(&d, nullptr, &b);
+}
+static void _dxUp(ComPtr<ID3D11Buffer>& b, const void* data, size_t sz) {
+    D3D11_MAPPED_SUBRESOURCE m;
+    if (SUCCEEDED(dx11.ctx->Map(b.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &m))) { memcpy(m.pData, data, sz); dx11.ctx->Unmap(b.Get(), 0); }
+}
 static ComPtr<ID3DBlob> _dxC(const char* src, const char* e, const char* t) {
     ComPtr<ID3DBlob>b, err;
     HRESULT hr = D3DCompile(src, strlen(src), nullptr, nullptr, nullptr, e, t, D3DCOMPILE_OPTIMIZATION_LEVEL3, 0, &b, &err);
-    if (FAILED(hr) && err)printf("[DX11]%s\n", (char*)err->GetBufferPointer()); return b;
+    if (FAILED(hr) && err)printf("[DX11] Shader error (%s):\n%s\n", e, (char*)err->GetBufferPointer());
+    return b;
 }
 static void _dxSh(DX11State::Sh& sh, const char* src, bool il = true, const char* vs = "VSMain", const char* ps = "PSMain") {
     static D3D11_INPUT_ELEMENT_DESC lay[] = {
@@ -319,10 +306,13 @@ static bool _dxInit(HWND hwnd) {
     scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT; scd.OutputWindow = hwnd;
     scd.SampleDesc.Count = 1; scd.Windowed = TRUE; scd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
     D3D_FEATURE_LEVEL fl = D3D_FEATURE_LEVEL_11_0;
-    HRESULT hr = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0, &fl, 1, D3D11_SDK_VERSION, &scd, &dx11.sc, &dx11.dev, nullptr, &dx11.ctx);
+    UINT flags = 0;
+#ifdef _DEBUG
+    flags |= D3D11_CREATE_DEVICE_DEBUG;
+#endif
+    HRESULT hr = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, flags, &fl, 1, D3D11_SDK_VERSION, &scd, &dx11.sc, &dx11.dev, nullptr, &dx11.ctx);
     if (FAILED(hr)) { printf("[DX11] Device create FAILED 0x%08X\n", hr); return false; }
 
-    // Backbuffer
     { ComPtr<ID3D11Texture2D>bb; dx11.sc->GetBuffer(0, IID_PPV_ARGS(&bb)); dx11.dev->CreateRenderTargetView(bb.Get(), nullptr, &dx11.bbRTV); }
 
     auto mkTex2D = [&](ComPtr<ID3D11Texture2D>& tex, int w, int h, DXGI_FORMAT fmt, UINT bind) {
@@ -330,23 +320,24 @@ static bool _dxInit(HWND hwnd) {
         d.Format = fmt; d.SampleDesc.Count = 1; d.BindFlags = bind;
         dx11.dev->CreateTexture2D(&d, nullptr, &tex);
         };
-    // Post target
     mkTex2D(dx11.postTex, SCR_WIDTH, SCR_HEIGHT, DXGI_FORMAT_R8G8B8A8_UNORM, D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE);
     dx11.dev->CreateRenderTargetView(dx11.postTex.Get(), nullptr, &dx11.postRTV);
     dx11.dev->CreateShaderResourceView(dx11.postTex.Get(), nullptr, &dx11.postSRV);
     mkTex2D(dx11.postDepth, SCR_WIDTH, SCR_HEIGHT, DXGI_FORMAT_D24_UNORM_S8_UINT, D3D11_BIND_DEPTH_STENCIL);
     dx11.dev->CreateDepthStencilView(dx11.postDepth.Get(), nullptr, &dx11.postDSV);
-
-    // Shadow map
     mkTex2D(dx11.shadowTex, 2048, 2048, DXGI_FORMAT_R32_TYPELESS, D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE);
     { D3D11_DEPTH_STENCIL_VIEW_DESC d = {}; d.Format = DXGI_FORMAT_D32_FLOAT; d.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D; dx11.dev->CreateDepthStencilView(dx11.shadowTex.Get(), &d, &dx11.shadowDSV); }
     { D3D11_SHADER_RESOURCE_VIEW_DESC d = {}; d.Format = DXGI_FORMAT_R32_FLOAT; d.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D; d.Texture2D.MipLevels = 1; dx11.dev->CreateShaderResourceView(dx11.shadowTex.Get(), &d, &dx11.shadowSRV); }
 
-    // States
+    // Rasterizer states
     {
-        D3D11_RASTERIZER_DESC d = {}; d.FillMode = D3D11_FILL_SOLID; d.CullMode = D3D11_CULL_BACK; d.DepthClipEnable = TRUE;
-        dx11.dev->CreateRasterizerState(&d, &dx11.rsNorm); d.CullMode = D3D11_CULL_NONE; dx11.dev->CreateRasterizerState(&d, &dx11.rsNoCull);
+        D3D11_RASTERIZER_DESC d = {}; d.FillMode = D3D11_FILL_SOLID; d.CullMode = D3D11_CULL_NONE; d.FrontCounterClockwise = TRUE; d.DepthClipEnable = TRUE;
+        dx11.dev->CreateRasterizerState(&d, &dx11.rsNorm);
+        d.CullMode = D3D11_CULL_NONE; dx11.dev->CreateRasterizerState(&d, &dx11.rsNoCull);
         d.CullMode = D3D11_CULL_BACK; d.DepthBias = 1000; d.SlopeScaledDepthBias = 2.f; dx11.dev->CreateRasterizerState(&d, &dx11.rsShadow);
+        // Wireframe
+        d.FillMode = D3D11_FILL_WIREFRAME; d.CullMode = D3D11_CULL_NONE; d.DepthBias = 0; d.SlopeScaledDepthBias = 0;
+        dx11.dev->CreateRasterizerState(&d, &dx11.rsWireframe);
     }
     {
         D3D11_DEPTH_STENCIL_DESC d = {}; d.DepthEnable = TRUE; d.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL; d.DepthFunc = D3D11_COMPARISON_LESS;
@@ -363,22 +354,17 @@ static bool _dxInit(HWND hwnd) {
         d.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT; d.AddressU = d.AddressV = d.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP; d.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL; dx11.dev->CreateSamplerState(&d, &dx11.sampCmp);
     }
 
-    // Constant buffers
     _dxCB(dx11.cbWF, sizeof(DX_WF)); _dxCB(dx11.cbWO, sizeof(DX_WO));
     _dxCB(dx11.cbGF, sizeof(DX_GF)); _dxCB(dx11.cbGO, sizeof(DX_GO));
     _dxCB(dx11.cbBones, 6400); _dxCB(dx11.cbPost, sizeof(DX_Post));
     _dxCB(dx11.cbShadow, sizeof(DX_Shadow)); _dxCB(dx11.cbDot, sizeof(DX_Dot));
 
-    // Shaders
     printf("[DX11] Compiling shaders...\n");
     _dxSh(dx11.world, HLSL_WORLD); _dxSh(dx11.gun, HLSL_GUN);
     _dxSh(dx11.shadow, HLSL_SHADOW); _dxSh(dx11.dot, HLSL_DOT);
     {
         auto vb = _dxC(HLSL_POST, "VSMain", "vs_5_0"); auto pb = _dxC(HLSL_POST, "PSMain", "ps_5_0");
-        if (vb && pb) {
-            dx11.dev->CreateVertexShader(vb->GetBufferPointer(), vb->GetBufferSize(), nullptr, &dx11.post.vs);
-            dx11.dev->CreatePixelShader(pb->GetBufferPointer(), pb->GetBufferSize(), nullptr, &dx11.post.ps);
-        }
+        if (vb && pb) { dx11.dev->CreateVertexShader(vb->GetBufferPointer(), vb->GetBufferSize(), nullptr, &dx11.post.vs); dx11.dev->CreatePixelShader(pb->GetBufferPointer(), pb->GetBufferSize(), nullptr, &dx11.post.ps); }
     }
 
     dx11.ready = true;
@@ -388,7 +374,7 @@ static bool _dxInit(HWND hwnd) {
 #endif // _WIN32
 
 // ════════════════════════════════════════════════════════════
-//  RENDERER STRUCT
+//  RENDERER
 // ════════════════════════════════════════════════════════════
 extern bool isADS;
 inline constexpr float ADS_SPEED = 8.f;
@@ -404,7 +390,6 @@ struct Renderer
     struct GL2 { int model, view, proj, nm, sk, bones, ht, tex, gc, flash; }gl{};
     struct DL { int mvp, color; }dl{};
 
-    // Shared
     glm::mat4 lightSpaceMatrix{ 1.f };
     glm::vec3 sunDir = glm::normalize(glm::vec3(0.4f, -1.f, 0.3f));
     float postTime = 0.f, postHp01 = 1.f;
@@ -412,7 +397,52 @@ struct Renderer
     bool  reloadStarted = false;
     float reloadTimer = 0.f, reloadDuration = 2.5f;
 
-    // ── init ─────────────────────────────────────────────
+    // ── Wireframe — одинаково работает на обоих API ──────────
+    // Вызывай когда wireframe флаг изменился
+    void setWireframe(bool on)
+    {
+#ifdef _WIN32
+        if (gRenderBackend == RenderBackend::DX11 && dx11.ready) {
+            dx11.wireframe = on;
+            return;
+        }
+#endif
+        glPolygonMode(GL_FRONT_AND_BACK, on ? GL_LINE : GL_FILL);
+    }
+
+    // ── Проверка состояния DX11 ──────────────────────────────
+    bool isDX11Ready() const {
+#ifdef _WIN32
+        return dx11.ready;
+#else
+        return false;
+#endif
+    }
+
+    // ── Получить DX11 Device / Context (для upload и ImGui) ──
+    void* getDX11Device() const {
+#ifdef _WIN32
+        return dx11.ready ? (void*)dx11.dev.Get() : nullptr;
+#else
+        return nullptr;
+#endif
+    }
+    void* getDX11Context() const {
+#ifdef _WIN32
+        return dx11.ready ? (void*)dx11.ctx.Get() : nullptr;
+#else
+        return nullptr;
+#endif
+    }
+
+    const char* backendName() const {
+#ifdef _WIN32
+        if (gRenderBackend == RenderBackend::DX11 && dx11.ready) return "DirectX 11";
+#endif
+        return "OpenGL";
+    }
+
+    // ── init ─────────────────────────────────────────────────
     void init(void* windowHandle = nullptr)
     {
 #ifdef _WIN32
@@ -420,25 +450,18 @@ struct Renderer
             if (_dxInit((HWND)windowHandle)) { printf("[Renderer] Backend: DirectX 11\n"); return; }
             printf("[Renderer] DX11 failed, falling back to OpenGL\n");
             gRenderBackend = RenderBackend::OpenGL;
+            saveEngineConfig(); // сохраняем фоллбэк
         }
 #endif
         _initGL();
         printf("[Renderer] Backend: OpenGL\n");
     }
 
-    const char* backendName()const {
-#ifdef _WIN32
-        if (gRenderBackend == RenderBackend::DX11 && dx11.ready)return"DirectX 11";
-#endif
-        return"OpenGL";
-    }
-
-    // ── Shadow pass ──────────────────────────────────────
+    // ── Shadow pass ──────────────────────────────────────────
     void renderShadowPass(const std::vector<GPUMesh>& mm, const glm::vec3& cam)
     {
         glm::mat4 lv = glm::lookAt(cam - sunDir * 40.f, cam, glm::vec3(0, 1, 0));
         lightSpaceMatrix = glm::ortho(-30.f, 30.f, -30.f, 30.f, 1.f, 120.f) * lv;
-
 #ifdef _WIN32
         if (gRenderBackend == RenderBackend::DX11 && dx11.ready) {
             D3D11_VIEWPORT vp = { 0,0,2048,2048,0,1 }; dx11.ctx->RSSetViewports(1, &vp);
@@ -461,7 +484,7 @@ struct Renderer
         glBindFramebuffer(GL_FRAMEBUFFER, 0); glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
     }
 
-    // ── Begin frame ──────────────────────────────────────
+    // ── Begin frame ──────────────────────────────────────────
     void beginFrame()
     {
 #ifdef _WIN32
@@ -477,7 +500,7 @@ struct Renderer
         glBindFramebuffer(GL_FRAMEBUFFER, fbo);
     }
 
-    // ── Draw scene ───────────────────────────────────────
+    // ── Draw scene ───────────────────────────────────────────
     void drawScene(const std::vector<GPUMesh>& mm, AnimatedModel& gm,
         glm::mat4 mapT, const glm::vec3& cam, const glm::vec3& cf, const glm::vec3& cu)
     {
@@ -488,7 +511,6 @@ struct Renderer
         glm::mat4 proj = glm::perspective(glm::radians(glm::mix(FOV, FOV * 0.6f, gun.adsProgress)), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.15f, 2000.f);
         glm::mat4 projG = glm::perspective(glm::radians(GUN_FOV), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.01f, 100.f);
 
-        // Gun matrix (common)
         glm::vec3 right = glm::normalize(glm::cross(cf, cu)), up2 = glm::normalize(glm::cross(right, cf));
         bool mov = glm::length(glm::vec2(player.vel.x, player.vel.z)) > 0.5f;
         float bobX = mov ? sinf(gun.bobTimer) * .003f : 0.f, bobY = mov ? cosf(gun.bobTimer * 2.f) * .002f : 0.f;
@@ -507,7 +529,7 @@ struct Renderer
         _glScene(mm, gm, mapT, cam, view, proj, projG, gMat);
     }
 
-    // ── End frame ────────────────────────────────────────
+    // ── End frame ────────────────────────────────────────────
     void endFrame(float dt = 0.016f)
     {
         postTime += dt;
@@ -535,7 +557,7 @@ struct Renderer
         glBindVertexArray(quadVAO); glDrawArrays(GL_TRIANGLES, 0, 6); glEnable(GL_DEPTH_TEST);
     }
 
-    // ── Weapon anim (одинаково для обоих API) ─────────────
+    // ── Weapon anim (одинаково для обоих API) ────────────────
     void updateGunAnim(AnimatedModel& gm, float dt)
     {
         const WeaponDef& def = weaponManager.activeDef();
@@ -631,7 +653,9 @@ private:
             glUniform3f(wl.bc, .75f, .72f, .65f); GLuint lt = 0;
             for (auto& m : mm) { if (m.texID) { if (m.texID != lt) { glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, m.texID); lt = m.texID; }glUniform1i(wl.ht, 1); glUniform1i(wl.tex, 0); } else { glUniform1i(wl.ht, 0); lt = 0; }glBindVertexArray(m.VAO); glDrawElements(GL_TRIANGLES, m.indexCount, GL_UNSIGNED_INT, 0); }
         }
-        else { glm::mat4 id(1.f); glUniformMatrix4fv(wl.model, 1, GL_FALSE, glm::value_ptr(id)); glUniform3f(wl.bc, .3f, .55f, .3f); glUniform1i(wl.ht, 0); glBindVertexArray(floorVAO); glDrawArrays(GL_TRIANGLES, 0, 6); }
+        else {
+            glm::mat4 id(1.f); glUniformMatrix4fv(wl.model, 1, GL_FALSE, glm::value_ptr(id)); glUniform3f(wl.bc, .3f, .55f, .3f); glUniform1i(wl.ht, 0); glBindVertexArray(floorVAO); glDrawArrays(GL_TRIANGLES, 0, 6);
+        }
         if (!bulletHoles.empty()) { glUseProgram(dotShader); glBindVertexArray(dotVAO); for (auto& bh : bulletHoles) { glm::mat4 mvp = proj * view * glm::translate(glm::mat4(1.f), bh.pos); glUniformMatrix4fv(dl.mvp, 1, GL_FALSE, glm::value_ptr(mvp)); glUniform4f(dl.color, .05f, .05f, .05f, bh.life / 5.f); glDrawArrays(GL_TRIANGLES, 0, 6); } }
         if (!gm.meshes.empty()) {
             glClear(GL_DEPTH_BUFFER_BIT); glDisable(GL_CULL_FACE); glUseProgram(gunShader);
@@ -645,45 +669,32 @@ private:
     }
 
 #ifdef _WIN32
-    // ════════════════════════════════════════════════════
-    //  DX11 PRIVATE
-    // ════════════════════════════════════════════════════
     void _dxScene(const std::vector<GPUMesh>& mm, AnimatedModel& gm, glm::mat4 mapT, const glm::vec3& cam,
         const glm::mat4& view, const glm::mat4& proj, const glm::mat4& projG, const glm::mat4& gMat)
     {
+        // Выбираем rasterizer state с учётом wireframe
+        ID3D11RasterizerState* rs = dx11.wireframe ? dx11.rsWireframe.Get() : dx11.rsNorm.Get();
+
         DX_WF wf; wf.view = view; wf.proj = proj; wf.ls = lightSpaceMatrix; wf.ld = sunDir; wf.fc = glm::vec3(0.68f, 0.65f, 0.60f); wf.fs = 15.f; wf.fe = 60.f; wf.cp = cam;
         _dxUp(dx11.cbWF, &wf, sizeof(wf));
         dx11.ctx->VSSetShader(dx11.world.vs.Get(), nullptr, 0); dx11.ctx->PSSetShader(dx11.world.ps.Get(), nullptr, 0);
         dx11.ctx->IASetInputLayout(dx11.world.il.Get()); dx11.ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-        dx11.ctx->RSSetState(dx11.rsNorm.Get()); dx11.ctx->OMSetDepthStencilState(dx11.dssOn.Get(), 0); dx11.ctx->OMSetBlendState(dx11.bsOpaque.Get(), nullptr, 0xFFFFFFFF);
+        dx11.ctx->RSSetState(rs);
+        dx11.ctx->OMSetDepthStencilState(dx11.dssOn.Get(), 0); dx11.ctx->OMSetBlendState(dx11.bsOpaque.Get(), nullptr, 0xFFFFFFFF);
         dx11.ctx->VSSetConstantBuffers(0, 1, dx11.cbWF.GetAddressOf()); dx11.ctx->PSSetConstantBuffers(0, 1, dx11.cbWF.GetAddressOf());
-        dx11.ctx->PSSetShaderResources(1, 1, dx11.shadowSRV.GetAddressOf()); dx11.ctx->PSSetSamplers(0, 1, dx11.sampLin.GetAddressOf()); dx11.ctx->PSSetSamplers(1, 1, dx11.sampCmp.GetAddressOf());
+        dx11.ctx->PSSetSamplers(0, 1, dx11.sampLin.GetAddressOf());
         if (!mm.empty()) {
             for (auto& m : mm) {
-                DX_WO wo;
-                wo.model = mapT;
-                wo.nm = glm::mat4(glm::transpose(glm::inverse(glm::mat3(mapT))));
-                wo.bc = glm::vec3(.75f, .72f, .65f);
-                wo.ht = 0;
-                // Биндим текстуру меша если есть
-                if (m.dxSRV) {
-                    ID3D11ShaderResourceView* srv = static_cast<ID3D11ShaderResourceView*>(m.dxSRV);
-                    dx11.ctx->PSSetShaderResources(0, 1, &srv);
-                    wo.ht = 1;
-                }
-                else {
-                    ID3D11ShaderResourceView* null = nullptr;
-                    dx11.ctx->PSSetShaderResources(0, 1, &null);
-                    wo.ht = 0;
-                }
-                _dxUp(dx11.cbWO, &wo, sizeof(wo));
-                dx11.ctx->VSSetConstantBuffers(1, 1, dx11.cbWO.GetAddressOf());
-                dx11.ctx->PSSetConstantBuffers(1, 1, dx11.cbWO.GetAddressOf());
+                DX_WO wo; wo.model = mapT; wo.nm = glm::mat4(glm::transpose(glm::inverse(glm::mat3(mapT)))); wo.bc = glm::vec3(.75f, .72f, .65f); wo.ht = 0;
+                if (m.dxSRV) { ID3D11ShaderResourceView* srv = static_cast<ID3D11ShaderResourceView*>(m.dxSRV); dx11.ctx->PSSetShaderResources(0, 1, &srv); wo.ht = 1; }
+                else { ID3D11ShaderResourceView* null = nullptr; dx11.ctx->PSSetShaderResources(0, 1, &null); wo.ht = 0; }
+                _dxUp(dx11.cbWO, &wo, sizeof(wo)); dx11.ctx->VSSetConstantBuffers(1, 1, dx11.cbWO.GetAddressOf()); dx11.ctx->PSSetConstantBuffers(1, 1, dx11.cbWO.GetAddressOf());
                 _dxMesh(m);
             }
         }
         if (!gm.meshes.empty()) {
-            dx11.ctx->ClearDepthStencilView(dx11.postDSV.Get(), D3D11_CLEAR_DEPTH, 1, 0); dx11.ctx->RSSetState(dx11.rsNoCull.Get());
+            dx11.ctx->ClearDepthStencilView(dx11.postDSV.Get(), D3D11_CLEAR_DEPTH, 1, 0);
+            dx11.ctx->RSSetState(dx11.rsNoCull.Get()); // оружие — без culling
             dx11.ctx->VSSetShader(dx11.gun.vs.Get(), nullptr, 0); dx11.ctx->PSSetShader(dx11.gun.ps.Get(), nullptr, 0); dx11.ctx->IASetInputLayout(dx11.gun.il.Get());
             DX_GF gf; gf.view = view; gf.proj = projG; _dxUp(dx11.cbGF, &gf, sizeof(gf));
             DX_GO go; go.model = gMat; go.nm = glm::mat4(glm::transpose(glm::inverse(glm::mat3(gMat)))); go.gc = glm::vec3(.4f, .4f, .42f); go.flash = flashTimer > 0.f ? flashTimer * 4.f : 0.f; go.ht = 0;
@@ -693,18 +704,9 @@ private:
             dx11.ctx->VSSetConstantBuffers(0, 1, dx11.cbGF.GetAddressOf()); dx11.ctx->VSSetConstantBuffers(1, 1, dx11.cbGO.GetAddressOf());
             dx11.ctx->PSSetConstantBuffers(0, 1, dx11.cbGF.GetAddressOf()); dx11.ctx->PSSetConstantBuffers(1, 1, dx11.cbGO.GetAddressOf());
             for (auto& m : gm.meshes) {
-                if (m.dxSRV) {
-                    ID3D11ShaderResourceView* srv = static_cast<ID3D11ShaderResourceView*>(m.dxSRV);
-                    dx11.ctx->PSSetShaderResources(0, 1, &srv);
-                    go.ht = 1;
-                }
-                else {
-                    ID3D11ShaderResourceView* null = nullptr;
-                    dx11.ctx->PSSetShaderResources(0, 1, &null);
-                    go.ht = 0;
-                }
-                _dxUp(dx11.cbGO, &go, sizeof(go));
-                dx11.ctx->PSSetConstantBuffers(1, 1, dx11.cbGO.GetAddressOf());
+                if (m.dxSRV) { ID3D11ShaderResourceView* srv = static_cast<ID3D11ShaderResourceView*>(m.dxSRV); dx11.ctx->PSSetShaderResources(0, 1, &srv); go.ht = 1; }
+                else { ID3D11ShaderResourceView* null = nullptr; dx11.ctx->PSSetShaderResources(0, 1, &null); go.ht = 0; }
+                _dxUp(dx11.cbGO, &go, sizeof(go)); dx11.ctx->PSSetConstantBuffers(1, 1, dx11.cbGO.GetAddressOf());
                 _dxMesh(m);
             }
         }

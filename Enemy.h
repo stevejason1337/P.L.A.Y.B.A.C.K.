@@ -528,7 +528,7 @@ struct EnemyManager
     std::string zombiePath = "models/characters/walker/walker.fbx";
     std::string zombieTexDir = "models/characters/walker";
     // Зомби 2 (walker2 - с текстурами)
-    std::string zombie2Path = "models/characters/walker2/walker2.fbx.fbx";
+    std::string zombie2Path = "models/characters/walker2/walker2.fbx";
     std::string zombie2TexDir = "models/characters/walker2/textures";
 
     void load()
@@ -552,14 +552,21 @@ struct EnemyManager
         _spawnEnemy(p, EnemyType::SOLDIER);
     }
 
-    // Спавн зомби
     void spawnZombie(glm::vec3 p)
     {
+        if (!gModelZombie.loaded) {
+            std::cerr << "[ENEMY] Zombie model not loaded — cannot spawn! Check path: " << zombiePath << "\n";
+            return;
+        }
         _spawnEnemy(p, EnemyType::ZOMBIE);
     }
 
     void spawnZombie2(glm::vec3 p)
     {
+        if (!gModelZombie2.loaded) {
+            std::cerr << "[ENEMY] Zombie2 model not loaded — cannot spawn! Check path: " << zombie2Path << "\n";
+            return;
+        }
         _spawnEnemy(p, EnemyType::ZOMBIE2);
     }
 
