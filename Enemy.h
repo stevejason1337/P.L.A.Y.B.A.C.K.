@@ -617,6 +617,10 @@ struct EnemyManager
         if (gy != std::numeric_limits<float>::lowest()) p.y = gy;
         // Если пол не найден — оставляем Y как есть (позиция игрока)
 
+        if ((int)enemies.size() >= 64) {
+            std::cerr << "[ENEMY] Max enemies (64) reached!\n"; return;
+        }
+        enemies.reserve(std::max((int)enemies.capacity(), (int)enemies.size() + 8));
         Enemy e;
         e.type = t;
         e.pos = p;
@@ -689,12 +693,10 @@ struct EnemyManager
 
         // (анимации обновляются внутри каждого e.update() выше)
 
-        // Parallel bone recalc across all enemies
-        gThreadPool.parallel_for(0, (int)enemies.size(), [this](int i) {
-            auto& e = enemies[i];
+        // Serial bone recalc (safe, parallel only needed for 10+ enemies)
+        for (auto& e : enemies)
             if (!e.removed && e.sharedModel().loaded)
                 e._recalcBonesParallel();
-            });
 
         enemies.erase(
             std::remove_if(enemies.begin(), enemies.end(),

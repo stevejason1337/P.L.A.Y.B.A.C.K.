@@ -154,6 +154,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>C:\123321\Project1\dependencies\include;C:\123321\Project1;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -538,6 +539,7 @@
     <ClInclude Include="Renderdebug.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="Settings.h" />
+    <ClInclude Include="Simdmath.h" />
     <ClInclude Include="Soundmanager.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="stb_truetype.h" />

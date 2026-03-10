@@ -62,7 +62,7 @@ const char* ANIM_WALK = "Armature|FPS_Pistol_Walk";
 enum class RenderBackend { OpenGL, DX11 };
 
 // Глобальный выбор бэкенда — меняется до renderer.init()
-inline RenderBackend gRenderBackend = RenderBackend::DX11;
+inline RenderBackend gRenderBackend = RenderBackend::OpenGL;
 
 inline const char* ENGINE_CFG = "engine.cfg";
 
@@ -72,8 +72,8 @@ inline void loadEngineConfig()
 {
     std::ifstream f(ENGINE_CFG);
     if (!f.is_open()) {
-        // No config file — default to DX11
-        gRenderBackend = RenderBackend::DX11;
+        // Нет файла — по умолчанию OpenGL (безопаснее)
+        gRenderBackend = RenderBackend::OpenGL;
         return;
     }
     std::string key, val;
