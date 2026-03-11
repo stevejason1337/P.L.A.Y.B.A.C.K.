@@ -33,6 +33,8 @@
 #include "HUD.h"
 #include "Renderer.h"
 #include "Input.h"
+#include "BulletIntegration.h"
+#include "BloodFX.h"
 
 // ─── Dear ImGui ───────────────────────────────────────────────
 #include <imgui.h>
@@ -243,6 +245,12 @@ int main()
     printf("[MAIN] Building BVH...\n");
     bvh.build(colTris);
 
+    // Bullet Physics + Blood FX
+    bulletWorld.init();
+    bulletWorld.addMapCollision();
+    if (gRenderBackend == RenderBackend::OpenGL)
+        bloodFX.init();
+
     // ── 9. Оружие, враги, звук ───────────────────────────────
     weaponManager.loadAll();
     gun.ammo = weaponManager.activeDef().maxAmmo;
@@ -344,6 +352,10 @@ int main()
         glm::vec3 camPos = player.pos + glm::vec3(0.f, player.eyeH, 0.f);
         enemyManager.update(dt, camPos, playerHP);
 
+        bulletWorld.update(dt);
+        if (gRenderBackend == RenderBackend::OpenGL)
+            bloodFX.update(dt);
+
         renderer.updateGunAnim(weaponManager.active(), dt);
 
         // ── Рендер ──
@@ -378,6 +390,15 @@ int main()
             else
 #endif
                 enemyManager.draw(renderer.gunShader, view, proj);
+
+            // Брызги крови (только OpenGL)
+            if (gRenderBackend == RenderBackend::OpenGL) {
+                glm::mat4 view2 = glm::lookAt(camPos, camPos + camFront, camUp);
+                float curFOV2 = glm::mix(FOV, FOV * 0.6f, gun.adsProgress);
+                glm::mat4 proj2 = glm::perspective(glm::radians(curFOV2),
+                    (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.05f, 5000.f);
+                bloodFX.draw(view2, proj2);
+            }
         }
 
         // ── ImGui кадр ───────────────────────────────────────────
@@ -388,6 +409,7 @@ int main()
             ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
+        gHitMarker.draw();
 
         // HUD (работает на обоих API через ImGui DrawList)
         if (showHUD)
@@ -442,6 +464,9 @@ int main()
     }
 
     soundManager.shutdown();
+    bulletWorld.shutdown();
+    if (gRenderBackend == RenderBackend::OpenGL)
+        bloodFX.shutdown();
 
     // ImGui cleanup
 #ifdef _WIN32

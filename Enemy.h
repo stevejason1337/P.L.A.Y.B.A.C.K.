@@ -3,6 +3,9 @@
 #include "Settings.h"
 #include "ThreadPool.h"
 #include "Physics.h"
+#include "BulletIntegration.h"
+#include "BloodFX.h"
+#include "ImpactPhysics.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -66,7 +69,7 @@ private:
         SHOOT = _find({ "firing rifle","Firing Rifle","shoot","fire","Shoot" });
         RELOAD = _find({ "reloading","Reloading","reload" });
         HIT = _find({ "hit reaction","Hit Reaction","hit","getting hit" });
-        DEATH = _find({ "dying","Dying","death","Death","die","falling back death" });
+        DEATH = _find({ "dying","Dying","death","Death","die","falling back death","Death From Back Headshot","Standing React Death","Standing Death Backward 01" });
 
         if (IDLE.empty() && !proto.animIndex.empty())
             IDLE = proto.animIndex.begin()->first;
@@ -132,6 +135,7 @@ struct Enemy
     DeathAnimator deathAnim;          // ragdoll при смерти
     Hitbox        hitbox;             // точные хитбоксы
     glm::vec3     lastShootDir = glm::vec3(0, 0, 1); // направление последнего выстрела
+    int           bulletId = -1;  // ID в BulletWorld
 
     // Кости — единственное что уникально для каждого врага
     std::vector<glm::mat4> boneFinal;
@@ -167,6 +171,7 @@ struct Enemy
         boneFinal.assign(AnimatedModel::MAX_BONES, glm::mat4(1.f));
         auto& sm = sharedModel();
         playAnim(sm.WALK.empty() ? sm.IDLE : sm.WALK, true);
+        bulletId = bulletWorld.addEnemy(pos, rotY);
     }
 
     // Возвращает нужную SharedModel по типу
@@ -323,12 +328,23 @@ struct Enemy
         lastShootDir = shootDir;
         hp -= dmg;
         hitTimer = 0.25f;
+
+        // Точка попадания
+        glm::vec3 hitPos = pos + glm::vec3(0.f, 1.2f, 0.f);
+
+        // Физический импульс от пули + брызги крови + hitmarker
+        bulletWorld.applyBulletImpulse(bulletId, shootDir, dmg, hitPos);
+        glm::vec3 bloodNorm = glm::normalize(-shootDir + glm::vec3(0, 0.2f, 0));
+        bloodFX.spawnHit(hitPos, bloodNorm, shootDir, (dmg >= 150.f) ? 35 : 20);
+        gHitMarker.trigger((int)dmg, dmg >= 150.f);
+
         if (hp <= 0.f) {
             hp = 0.f;
             state = EnemyState::DEAD;
             playAnim(sharedModel().DEATH, false);
-            // Запускаем ragdoll смерти
             deathAnim.trigger(pos, rotY, shootDir, 6.f);
+            bulletWorld.activateRagdoll(bulletId, pos, rotY, shootDir, dmg);
+            bloodFX.spawnDeath(pos, shootDir);
             return;
         }
         if (state == EnemyState::PATROL) state = EnemyState::APPROACH;
@@ -349,7 +365,14 @@ struct Enemy
                 if (deadAngle > 90.f) deadAngle = 90.f;
                 updateAnim(dt);
             }
-            if (deadTimer > 6.f) removed = true;
+            if (deadTimer > 6.f && !removed) {
+                // Сначала убираем из Bullet, потом помечаем removed
+                if (bulletId >= 0) {
+                    bulletWorld.removeEnemy(bulletId);
+                    bulletId = -1;
+                }
+                removed = true;
+            }
             return;
         }
 
@@ -521,8 +544,9 @@ struct Enemy
 
     glm::mat4 getMatrix() const
     {
+        glm::vec3 renderPos = pos + bulletWorld.getHitOffset(bulletId);
         glm::mat4 mat(1.f);
-        mat = glm::translate(mat, pos);
+        mat = glm::translate(mat, renderPos);
         mat = glm::rotate(mat, glm::radians(rotY), glm::vec3(0, 1, 0));
         if (isDead())
             mat = glm::rotate(mat, glm::radians(deadAngle), glm::vec3(1, 0, 0));

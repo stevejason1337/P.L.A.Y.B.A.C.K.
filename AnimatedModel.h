@@ -65,10 +65,11 @@ struct AnimCache {
     std::unordered_map<std::string, int> nodeIndex;
 
     void build(const aiAnimation* anim) {
+        if (!anim || !anim->mChannels) return;
         nodeIndex.clear();
         nodeIndex.reserve(anim->mNumChannels);
         for (unsigned int i = 0; i < anim->mNumChannels; i++)
-            nodeIndex[anim->mChannels[i]->mNodeName.C_Str()] = (int)i;
+            if (anim->mChannels[i]) nodeIndex[anim->mChannels[i]->mNodeName.C_Str()] = (int)i;
     }
 
     const aiNodeAnim* getCh(const aiAnimation* anim, const std::string& name) const {
@@ -104,6 +105,38 @@ struct AnimatedModel
     Assimp::Importer importer;
     const aiScene* scene = nullptr;
 
+    // Дополнительные FBX с анимациями (death1.fbx и т.д.)
+    std::vector<Assimp::Importer*>  extraImporters;
+    std::vector<const aiScene*>     extraScenes;
+    // animExtraScene[animName] = индекс в extraScenes
+    std::map<std::string, int>      animExtraScene;
+
+    // Загрузить доп. анимацию из отдельного FBX
+    bool loadExtraAnim(const std::string& path, const std::string& overrideName = "")
+    {
+        auto* imp = new Assimp::Importer();
+        const aiScene* sc = imp->ReadFile(path,
+            aiProcess_Triangulate | aiProcess_GenNormals |
+            aiProcess_LimitBoneWeights | aiProcess_OptimizeMeshes);
+        if (!sc || sc->mNumAnimations == 0) {
+            std::cerr << "[ANIM] loadExtraAnim failed: " << path << "\n";
+            delete imp; return false;
+        }
+        int scIdx = (int)extraScenes.size();
+        extraImporters.push_back(imp);
+        extraScenes.push_back(sc);
+        for (unsigned int i = 0; i < sc->mNumAnimations; i++) {
+            std::string n = overrideName.empty()
+                ? sc->mAnimations[i]->mName.C_Str()
+                : overrideName;
+            animIndex[n] = -1;          // -1 = в extraScene
+            animExtraScene[n] = scIdx;
+            std::cout << "[ANIM] Extra anim: '" << n << "' from " << path << "\n";
+            if (!overrideName.empty()) break; // один override — берём первую
+        }
+        return true;
+    }
+
     // Кеш каналов — перестраивается только при смене анимации
     mutable AnimCache   animCache;
     mutable std::string cachedAnimName;
@@ -118,7 +151,7 @@ struct AnimatedModel
         if (!animIndex.count(name)) { std::cerr << "[ANIM] Not found:" << name << "\n"; return; }
         if (curAnim == name) return;
         curAnim = name; animTime = 0.f; looping = loop; animSpeed = speed; animDone = false;
-        _rebuildCache();
+        cachedAnimName = ""; // сбрасываем кеш — update() перестроит безопасно
     }
 
     void playOnce(const std::string& name, const std::string& ret, float speed = 1.f)
@@ -126,7 +159,7 @@ struct AnimatedModel
         if (!animIndex.count(name)) { std::cerr << "[ANIM] Not found:" << name << "\n"; return; }
         nextAnim = ret; looping = false; animSpeed = speed;
         curAnim = name; animTime = 0.f; animDone = false;
-        _rebuildCache();
+        cachedAnimName = ""; // сбрасываем кеш — update() перестроит безопасно
     }
 
     void update(float dt);
@@ -167,7 +200,20 @@ private:
         if (!scene || curAnim.empty()) return;
         auto it = animIndex.find(curAnim);
         if (it == animIndex.end()) return;
-        animCache.build(scene->mAnimations[it->second]);
+
+        if (it->second == -1) {
+            // Анимация из доп. FBX
+            auto eit = animExtraScene.find(curAnim);
+            if (eit == animExtraScene.end() || eit->second >= (int)extraScenes.size()) return;
+            const aiScene* es = extraScenes[eit->second];
+            if (!es || es->mNumAnimations == 0) return;
+            // Берём первую анимацию из доп. сцены
+            animCache.build(es->mAnimations[0]);
+        }
+        else {
+            if (it->second < 0 || (unsigned)it->second >= scene->mNumAnimations) return;
+            animCache.build(scene->mAnimations[it->second]);
+        }
         cachedAnimName = curAnim;
     }
 
@@ -251,7 +297,29 @@ inline void AnimatedModel::update(float dt)
     auto it = animIndex.find(curAnim);
     if (it == animIndex.end()) return;
     if (cachedAnimName != curAnim) _rebuildCache();
-    const aiAnimation* anim = scene->mAnimations[it->second];
+
+    // Выбираем нужную сцену и анимацию
+    const aiScene* useScene = scene;
+    const aiAnimation* anim = nullptr;
+
+    if (it->second == -1) {
+        // Анимация из доп. FBX
+        auto eit = animExtraScene.find(curAnim);
+        if (eit == animExtraScene.end() || eit->second >= (int)extraScenes.size()) return;
+        useScene = extraScenes[eit->second];
+        // Берём первую анимацию из доп. сцены (или ищем по имени)
+        for (unsigned int i = 0; i < useScene->mNumAnimations; i++) {
+            std::string n = useScene->mAnimations[i]->mName.C_Str();
+            if (n == curAnim || useScene->mNumAnimations == 1) {
+                anim = useScene->mAnimations[i]; break;
+            }
+        }
+        if (!anim) anim = useScene->mAnimations[0];
+    }
+    else {
+        anim = scene->mAnimations[it->second];
+    }
+
     double tps = anim->mTicksPerSecond > 0 ? anim->mTicksPerSecond : 25.0;
     double dur = anim->mDuration;
     animTime += dt * animSpeed * (float)tps;
@@ -262,6 +330,7 @@ inline void AnimatedModel::update(float dt)
             if (!nextAnim.empty()) { std::string r = nextAnim; nextAnim = ""; play(r, true); return; }
         }
     }
+    // Используем rootNode из основной сцены (скелет там же)
     calcBones(anim, (double)animTime, scene->mRootNode, glm::mat4(1.f));
 }
 
