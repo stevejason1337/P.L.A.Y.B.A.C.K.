@@ -92,17 +92,18 @@ void main(){
     vec3 col=texture(screenTex,uv).rgb;
     vec3 sharp=col*5-texture(screenTex,uv+vec2(-1,0)*px).rgb-texture(screenTex,uv+vec2(1,0)*px).rgb
               -texture(screenTex,uv+vec2(0,1)*px).rgb-texture(screenTex,uv+vec2(0,-1)*px).rgb;
-    col=mix(col,sharp,0.15);
-    col*=0.80;
+    col=mix(col,sharp,0.18);
+    col*=0.70;
+    col=col*col*(3.0-2.0*col);
+    col=col*col*(3.0-2.0*col);
     float lum=dot(col,vec3(0.2126,0.7152,0.0722));
-    col=mix(col*vec3(0.88,0.80,0.68),col*vec3(1.10,1.02,0.78),lum);
+    col=mix(col*vec3(0.78,0.85,1.0),col*vec3(1.0,0.97,0.90),clamp(lum*2.0,0.0,1.0));
     float grey=dot(col,vec3(0.299,0.587,0.114));
-    col=mix(vec3(grey),col,1.35);
-    col=clamp((col*(2.51*col+0.03))/(col*(2.43*col+0.59)+0.14),0.0,1.0);
+    col=mix(vec3(grey),col,0.85);
     col=pow(max(col,vec3(0)),vec3(1.0/2.2));
-    float dist=length(uv-0.5);col*=1.0-dist*dist*0.60;
-    if(hp01<.30){float p=sin(time*2.5)*.5+.5;float inten=(0.30-hp01)/.30*.45*(.5+.5*p);col=mix(col,vec3(col.r,col.g*.2,col.b*.2),inten*smoothstep(.25,.5,dist));}
-    col+=(fract(sin(dot(uv+fract(time),vec2(127.1,311.7)))*43758.5453)-0.5)*0.010;
+    float dist=length(uv-0.5);col*=1.0-dist*dist*0.75;
+    if(hp01<.30){float p=sin(time*2.5)*.5+.5;float inten=(0.30-hp01)/.30*.50*(0.5+0.5*p);col=mix(col,vec3(col.r*0.5,0.0,0.0),inten*smoothstep(.20,.50,dist));}
+    col+=(fract(sin(dot(uv+fract(time),vec2(127.1,311.7)))*43758.5453)-0.5)*0.012;
     FragColor=vec4(clamp(col,0,1),1);
 })";
 static const char* GLSL_SHADOW_VERT = R"(
@@ -213,18 +214,22 @@ float4 PSMain(V2P i):SV_Target{
     float3 col=screen.Sample(sLin,uv).rgb;
     float3 sharp=col*5-screen.Sample(sLin,uv+float2(-1,0)*px).rgb-screen.Sample(sLin,uv+float2(1,0)*px).rgb
                      -screen.Sample(sLin,uv+float2(0,1)*px).rgb-screen.Sample(sLin,uv+float2(0,-1)*px).rgb;
-    col=lerp(col,sharp,0.15);
-    col*=0.80;
+    col=lerp(col,sharp,0.18);
+    // HL2: dark + hard contrast
+    col*=0.70;
+    col=col*col*(3.0-2.0*col);
+    col=col*col*(3.0-2.0*col);
+    // Cold shadows
     float lum=dot(col,float3(0.2126,0.7152,0.0722));
-    col=lerp(col*float3(0.88,0.80,0.68),col*float3(1.10,1.02,0.78),lum);
+    col=lerp(col*float3(0.78,0.85,1.0),col*float3(1.0,0.97,0.90),saturate(lum*2.0));
+    // Slight desaturate
     float grey=dot(col,float3(0.299,0.587,0.114));
-    col=lerp(float3(grey,grey,grey),col,1.35);
-    col=saturate((col*(2.51*col+0.03))/(col*(2.43*col+0.59)+0.14));
+    col=lerp((float3)grey,col,0.85);
     col=pow(max(col,0),1.0/2.2);
-    float dist=length(uv-0.5);col*=1.0-dist*dist*0.60;
-    if(hp01<.30){float p2=sin(time*2.5)*.5+.5;float inten=(0.30-hp01)/.30*.45*(.5+.5*p2);col=lerp(col,float3(col.r,col.g*.2,col.b*.2),inten*smoothstep(.25,.5,dist));}
+    float dist=length(uv-0.5);col*=1.0-dist*dist*0.75;
+    if(hp01<.30){float p2=sin(time*2.5)*.5+.5;float inten=(0.30-hp01)/.30*.50*(0.5+0.5*p2);col=lerp(col,float3(col.r*0.5,0,0),inten*smoothstep(.20,.50,dist));}
     float noise=frac(sin(dot(uv+frac(time),float2(127.1,311.7)))*43758.5453);
-    col+=(noise-.5)*.010;return float4(saturate(col),1);
+    col+=(noise-.5)*.012;return float4(saturate(col),1);
 })";
 static const char* HLSL_SHADOW = R"(
 cbuffer CB:register(b0){matrix lightMVP;int skinned;float3 _p;};
@@ -354,8 +359,7 @@ static bool _dxInit(HWND hwnd) {
     // Rasterizer states
     {
         D3D11_RASTERIZER_DESC d = {}; d.FillMode = D3D11_FILL_SOLID; d.CullMode = D3D11_CULL_BACK;
-        d.FrontCounterClockwise = TRUE; // FBX models use CCW winding
-        d.DepthClipEnable = TRUE;
+        d.FrontCounterClockwise = TRUE; d.DepthClipEnable = TRUE;
         dx11.dev->CreateRasterizerState(&d, &dx11.rsNorm);
         d.CullMode = D3D11_CULL_NONE; dx11.dev->CreateRasterizerState(&d, &dx11.rsNoCull);
         d.CullMode = D3D11_CULL_BACK; d.DepthBias = 1000; d.SlopeScaledDepthBias = 2.f; dx11.dev->CreateRasterizerState(&d, &dx11.rsShadow);
