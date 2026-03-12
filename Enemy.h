@@ -69,7 +69,7 @@ private:
         SHOOT = _find({ "firing rifle","Firing Rifle","shoot","fire","Shoot" });
         RELOAD = _find({ "reloading","Reloading","reload" });
         HIT = _find({ "hit reaction","Hit Reaction","hit","getting hit" });
-        DEATH = _find({ "dying","Dying","death","Death","die","falling back death","Death From Back Headshot","Standing React Death","Standing Death Backward 01" });
+        DEATH = _find({ "dying","Dying","death","Death","die","falling back death","Dead","dead" });
 
         if (IDLE.empty() && !proto.animIndex.empty())
             IDLE = proto.animIndex.begin()->first;
@@ -199,8 +199,21 @@ struct Enemy
         if (m.scene) {
             auto it = m.animIndex.find(name);
             if (it != m.animIndex.end()) {
-                myCache.build(m.scene->mAnimations[it->second]);
-                myCachedAnim = name;
+                if (it->second == -1) {
+                    // Анимация из доп. FBX
+                    auto eit = m.animExtraScene.find(name);
+                    if (eit != m.animExtraScene.end() && eit->second < (int)m.extraScenes.size()) {
+                        const aiScene* es = m.extraScenes[eit->second];
+                        if (es && es->mNumAnimations > 0) {
+                            myCache.build(es->mAnimations[0]);
+                            myCachedAnim = name;
+                        }
+                    }
+                }
+                else if (it->second >= 0 && (unsigned)it->second < m.scene->mNumAnimations) {
+                    myCache.build(m.scene->mAnimations[it->second]);
+                    myCachedAnim = name;
+                }
             }
         }
     }
@@ -214,7 +227,21 @@ struct Enemy
         auto it = m.animIndex.find(curAnim);
         if (it == m.animIndex.end()) return;
 
-        const aiAnimation* anim = m.scene->mAnimations[it->second];
+        // Получаем анимацию — из основной или доп. сцены
+        const aiAnimation* anim = nullptr;
+        if (it->second == -1) {
+            auto eit = m.animExtraScene.find(curAnim);
+            if (eit == m.animExtraScene.end() || eit->second >= (int)m.extraScenes.size()) return;
+            const aiScene* es = m.extraScenes[eit->second];
+            if (!es || es->mNumAnimations == 0) return;
+            anim = es->mAnimations[0];
+        }
+        else {
+            if (it->second < 0 || (unsigned)it->second >= m.scene->mNumAnimations) return;
+            anim = m.scene->mAnimations[it->second];
+        }
+        if (!anim) return;
+
         double tps = anim->mTicksPerSecond > 0 ? anim->mTicksPerSecond : 25.0;
         double dur = anim->mDuration;
 

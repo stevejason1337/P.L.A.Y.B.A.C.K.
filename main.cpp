@@ -36,7 +36,7 @@
 #include "BulletIntegration.h"
 #include "BloodFX.h"
 
-// ─── Dear ImGui ───────────────────────────────────────────────
+// --- Dear ImGui -----------------------------------------------
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #ifdef _WIN32
@@ -45,7 +45,11 @@
 #endif
 #include <imgui_impl_opengl3.h>
 
-// ─── ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ───────────────────────────────────
+#include "MainMenu.h"        // Главное меню + экран загрузки
+
+// --- ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
+bool gReturnToMenu = false;
+MenuState gGetMenuState() { return gMenu.state; }
 Character        player;
 GunState         gun;
 float            flashTimer = 0.f;
@@ -57,12 +61,12 @@ Renderer         renderer;
 glm::vec3 camFront = glm::vec3(0.f, 0.f, -1.f);
 glm::vec3 camUp = glm::vec3(0.f, 1.f, 0.f);
 bool      playerMoving = false;
-// ─────────────────────────────────────────────────────────────
+// -------------------------------------------------------------
 
-// ─────────────────────────────────────────────────────────────
-//  Меню выбора API — показывается если engine.cfg не найден
+// -------------------------------------------------------------
+//  Меню выбора API - показывается если engine.cfg не найден
 //  или пользователь нажал F10 в игре
-// ─────────────────────────────────────────────────────────────
+// -------------------------------------------------------------
 static void showAPISelectMenu()
 {
 #ifdef _WIN32
@@ -79,14 +83,14 @@ static void showAPISelectMenu()
     gRenderBackend = (result == IDYES) ? RenderBackend::DX11 : RenderBackend::OpenGL;
     saveEngineConfig();
 #else
-    // На Linux/Mac — только OpenGL
+    // На Linux/Mac - только OpenGL
     gRenderBackend = RenderBackend::OpenGL;
 #endif
 }
 
 int main()
 {
-    // ── 1. Читаем сохранённый выбор API ──────────────────────
+    // -- 1. Читаем сохранённый выбор API ----------------------
     bool cfgExists = false;
     {
         std::ifstream f(ENGINE_CFG);
@@ -96,14 +100,14 @@ int main()
         loadEngineConfig();
     }
     else {
-        // Первый запуск — спрашиваем
+        // Первый запуск - спрашиваем
         showAPISelectMenu();
     }
 
-    // ── 2. GLFW init ──────────────────────────────────────────
+    // -- 2. GLFW init ------------------------------------------
     if (!glfwInit()) return -1;
 
-    // Для DX11 нам не нужен OpenGL контекст — указываем GLFW не создавать его
+    // Для DX11 нам не нужен OpenGL контекст - указываем GLFW не создавать его
 #ifdef _WIN32
     if (gRenderBackend == RenderBackend::DX11) {
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -138,26 +142,26 @@ int main()
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     }
 
-    // ── 3. Получаем нативный хэндл окна ──────────────────────
+    // -- 3. Получаем нативный хэндл окна ----------------------
     void* nativeWindow = nullptr;
 #ifdef _WIN32
     nativeWindow = (void*)glfwGetWin32Window(window);
 #endif
 
-    // ── 4. Колбэки ───────────────────────────────────────────
+    // -- 4. Колбэки -------------------------------------------
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetMouseButtonCallback(window, mouse_button_callback);
     glfwSetKeyCallback(window, key_callback);
     glfwSetCharCallback(window, char_callback);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-    // ── 5. Console init ──────────────────────────────────────────
+    // -- 5. Console init ------------------------------------------
     console.init();
 
-    // ── 5b. Сообщаем ModelLoader использовать GL или CPU буферы ──
+    // -- 5b. Сообщаем ModelLoader использовать GL или CPU буферы --
     gLoadGLTextures = (gRenderBackend == RenderBackend::OpenGL);
 
-    // ── 6. Renderer — главная инициализация ──────────────────
+    // -- 6. Renderer - главная инициализация ------------------
     renderer.init(nativeWindow);
     printf("[MAIN] Backend active: %s\n", renderer.backendName());
 
@@ -165,14 +169,14 @@ int main()
     gSetWireframe = [](bool on) { renderer.setWireframe(on); };
     gGetBackendName = []() -> const char* { return renderer.backendName(); };
 
-    // ── ImGui init ────────────────────────────────────────────
+    // -- ImGui init --------------------------------------------
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& imio = ImGui::GetIO();
     imio.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     imio.IniFilename = nullptr; // не сохранять imgui.ini
 
-    // Стиль — тёмный, чуть настроен под игру
+    // Стиль - тёмный, чуть настроен под игру
     ImGui::StyleColorsDark();
     ImGuiStyle& style = ImGui::GetStyle();
     style.WindowRounding = 4.f;
@@ -198,7 +202,7 @@ int main()
         ImGui_ImplOpenGL3_Init("#version 330");
     }
 
-    // ── 7. Если DX11 упал — переключаемся на OpenGL ──────────
+    // -- 7. Если DX11 упал - переключаемся на OpenGL ----------
 #ifdef _WIN32
     if (gRenderBackend == RenderBackend::DX11 && !renderer.isDX11Ready()) {
         printf("[MAIN] DX11 init failed, switching to OpenGL\n");
@@ -226,7 +230,7 @@ int main()
     }
 #endif
 
-    // ── 8. Карта ─────────────────────────────────────────────
+    // -- 8. Карта ---------------------------------------------
     glm::mat4 mapT = glm::rotate(
         glm::scale(glm::mat4(1.f), glm::vec3(MAP_SCALE)),
         glm::radians(MAP_ROT_X), glm::vec3(1, 0, 0));
@@ -234,7 +238,7 @@ int main()
     printf("[MAIN] Loading map...\n");
     auto mapMeshes = loadModel(MAP_FILE, MAP_TEX_DIR, mapT, true);
 
-    // Для DX11 — загружаем меши в GPU
+    // Для DX11 - загружаем меши в GPU
 #ifdef _WIN32
     if (gRenderBackend == RenderBackend::DX11) {
         if (auto* dx = static_cast<ID3D11Device*>(renderer.getDX11Device()))
@@ -251,7 +255,7 @@ int main()
     if (gRenderBackend == RenderBackend::OpenGL)
         bloodFX.init();
 
-    // ── 9. Оружие, враги, звук ───────────────────────────────
+    // -- 9. Оружие, враги, звук -------------------------------
     weaponManager.loadAll();
     gun.ammo = weaponManager.activeDef().maxAmmo;
 
@@ -315,7 +319,7 @@ int main()
     }
     soundManager.init();
 
-    // ── 10. Стартовая позиция игрока ─────────────────────────
+    // -- 10. Стартовая позиция игрока -------------------------
     {
         float gy = getGroundY(player.pos, 200.f);
         if (gy != std::numeric_limits<float>::lowest())
@@ -323,6 +327,45 @@ int main()
     }
 
     float lastFrame = 0.f;
+
+    // -- Инициализация главного меню ---------------------------
+    gMenu.init();
+    // Колбэк применения настроек окна
+    gMenu.onApplySettings = [&](int w, int h, WindowMode wm, RenderBackend) {
+        int actualW = w, actualH = h;
+
+        if (wm == WindowMode::FULLSCREEN) {
+            GLFWmonitor* mon = glfwGetPrimaryMonitor();
+            const GLFWvidmode* vm = glfwGetVideoMode(mon);
+            glfwSetWindowMonitor(window, mon, 0, 0, vm->width, vm->height, vm->refreshRate);
+            actualW = vm->width; actualH = vm->height;
+        }
+        else if (wm == WindowMode::BORDERLESS) {
+            GLFWmonitor* mon = glfwGetPrimaryMonitor();
+            const GLFWvidmode* vm = glfwGetVideoMode(mon);
+            glfwSetWindowMonitor(window, nullptr, 0, 0, vm->width, vm->height, 0);
+            actualW = vm->width; actualH = vm->height;
+        }
+        else {
+            glfwSetWindowMonitor(window, nullptr, 100, 100, w, h, 0);
+            actualW = w; actualH = h;
+        }
+
+        // GLFW нужен один кадр чтобы применить размер — ждём
+        glfwPollEvents();
+
+        // Читаем реальный размер framebuffer после смены
+        int fbW, fbH;
+        glfwGetFramebufferSize(window, &fbW, &fbH);
+        if (fbW > 0 && fbH > 0) { actualW = fbW; actualH = fbH; }
+
+        // Ресайзим DX11 SwapChain / GL FBO и обновляем SCR_WIDTH/SCR_HEIGHT
+        renderer.resize(actualW, actualH);
+
+        // Курсор свободный в меню
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        printf("[Main] Window resized to %dx%d\n", actualW, actualH);
+        };
 
     // ════════════════════════════════════════════════════════
     //  ГЛАВНЫЙ ЦИКЛ
@@ -340,11 +383,43 @@ int main()
         fpsAccum += rawDt; fpsCnt++;
         if (fpsAccum >= 0.25f) { fpsValue = (float)fpsCnt / fpsAccum; fpsAccum = 0.f; fpsCnt = 0; }
 
-        // ── Ввод ──
+        // -- Ввод --
         glfwPollEvents();
+
+        // -- Главное меню -------------------------------------
+        if (gMenu.state != MenuState::INGAME) {
+            // Курсор свободный в меню
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+
+            if (gRenderBackend == RenderBackend::OpenGL) {
+                glClearColor(0.04f, 0.05f, 0.06f, 1.f);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                gMenu.draw(window, dt);
+                glfwSwapBuffers(window);
+            }
+            else {
+                // DX11 - используем beginFrame/endFrame
+                renderer.beginFrame();
+                gMenu.draw(window, dt);
+                renderer.endFrame();
+            }
+            continue;
+        }
+        // Захватываем курсор при входе в игру
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+        // disconnect command - return to main menu
+        if (gReturnToMenu) {
+            gReturnToMenu = false;
+            gMenu.state = MenuState::MAIN;
+            gMenu.fadingIn = true;
+            gMenu.fadeAlpha = 1.f;
+            continue;
+        }
+
         processMovement(window);
 
-        // ── Обновление ──
+        // -- Обновление --
         updatePlayer(dt);
         soundManager.playFootstep(dt, playerMoving, player.onGround);
         console.update(dt);
@@ -358,11 +433,11 @@ int main()
 
         renderer.updateGunAnim(weaponManager.active(), dt);
 
-        // ── Рендер ──
+        // -- Рендер --
         renderer.renderShadowPass(mapMeshes, camPos);
         renderer.beginFrame();
 
-        // glClear только для OpenGL — DX11 очищает в beginFrame()
+        // glClear только для OpenGL - DX11 очищает в beginFrame()
         if (gRenderBackend == RenderBackend::OpenGL) {
             glClearColor(0.68f, 0.65f, 0.60f, 1.f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -401,7 +476,7 @@ int main()
             }
         }
 
-        // ── ImGui кадр ───────────────────────────────────────────
+        // -- ImGui кадр -------------------------------------------
 #ifdef _WIN32
         if (gRenderBackend == RenderBackend::DX11) ImGui_ImplDX11_NewFrame();
         else

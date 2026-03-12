@@ -8,9 +8,9 @@
 #include <fstream>
 #include <iostream>
 
-// Window
-const unsigned int SCR_WIDTH = 1280;
-const unsigned int SCR_HEIGHT = 720;
+// Window — изменяемые (меняются при смене разрешения/fullscreen)
+inline unsigned int SCR_WIDTH = 1280;
+inline unsigned int SCR_HEIGHT = 720;
 
 // Camera
 const float FOV = 75.f;

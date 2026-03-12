@@ -1,6 +1,6 @@
 #pragma once
 // ════════════════════════════════════════════════════════════
-//  Console.h  —  Developer console через Dear ImGui
+//  Console.h  -  Developer console через Dear ImGui
 //  Работает одинаково на OpenGL и DX11
 // ════════════════════════════════════════════════════════════
 #include <string>
@@ -13,7 +13,7 @@
 #include <imgui.h>
 #include <GLFW/glfw3.h>
 
-// ─── игровые флаги ───────────────────────────────────────────
+// --- игровые флаги -------------------------------------------
 inline bool  noclip = false;
 inline bool  godMode = false;
 inline bool  showFPS = true;
@@ -23,18 +23,18 @@ inline float timeScale = 1.f;
 inline bool  wireframe = false;
 inline float fpsValue = 0.f;
 
-// ─── forward declarations ────────────────────────────────────
+// --- forward declarations ------------------------------------
 struct EnemyManager; extern EnemyManager enemyManager;
 struct Character;    extern Character    player;
 extern glm::vec3 camFront;
 struct GunState;     extern GunState     gun;
 extern float playerHP, playerMaxHP;
 
-// ─── колбэки (устанавливаются из main.cpp) ───────────────────
+// --- колбэки (устанавливаются из main.cpp) -------------------
 inline void(*gSetWireframe)(bool) = nullptr;
 inline const char* (*gGetBackendName)() = nullptr;
 
-// ─── цвета ───────────────────────────────────────────────────
+// --- цвета ---------------------------------------------------
 #define CON_WHITE  ImVec4(0.85f,0.85f,0.85f,1.f)
 #define CON_YELLOW ImVec4(1.f,0.80f,0.20f,1.f)
 #define CON_RED    ImVec4(1.f,0.30f,0.30f,1.f)
@@ -227,6 +227,11 @@ struct Console
         }
         else if (name == "clear") { lines.clear(); }
         else if (name == "quit" || name == "exit") { print("Goodbye.", CON_YELLOW); exit(0); }
+        else if (name == "disconnect") {
+            print("Returning to main menu...", CON_YELLOW);
+            extern bool gReturnToMenu;
+            gReturnToMenu = true;
+        }
         else { print("Unknown command: '" + name + "'  (type 'help')", CON_RED); }
 
         input.clear();

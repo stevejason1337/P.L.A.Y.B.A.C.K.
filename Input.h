@@ -6,17 +6,20 @@
 #include "WeaponManager.h"
 #include "Soundmanager.h"
 #include "Console.h"
+#include "MainMenu.h"
 
 extern glm::vec3 camFront;
 extern glm::vec3 camUp;
 extern bool      playerMoving;
+
+extern MenuState gGetMenuState();
 
 inline float yaw = -90.f;
 inline float pitch = 0.f;
 inline float lastMouseX = 640.f;
 inline float lastMouseY = 360.f;
 inline bool  firstMouse = true;
-inline bool  isADS = false;   // ПКМ зажат
+inline bool  isADS = false;
 
 inline void processMovement(GLFWwindow* w)
 {
@@ -42,13 +45,11 @@ inline void processMovement(GLFWwindow* w)
         if (len > 0.f) {
             glm::vec3 move = (dir / len) * speed;
             player.pos += move * 0.016f;
-            // Записываем горизонтальную скорость — нужна для анимации ходьбы и bob
             player.vel.x = move.x;
             player.vel.z = move.z;
         }
     }
     else {
-        // Нет ввода — горизонтальная скорость обнуляется
         player.vel.x = 0.f;
         player.vel.z = 0.f;
     }
@@ -73,6 +74,8 @@ inline void mouse_callback(GLFWwindow*, double xpos, double ypos)
 
 inline void key_callback(GLFWwindow* w, int key, int, int action, int)
 {
+    if (gGetMenuState() != MenuState::INGAME) return;
+
     if (key == GLFW_KEY_GRAVE_ACCENT && action == GLFW_PRESS) { console.toggle(); return; }
     if (console.open) { console.keyInput(key, action); return; }
     if (action == GLFW_PRESS) {
@@ -80,34 +83,28 @@ inline void key_callback(GLFWwindow* w, int key, int, int action, int)
         if (key == GLFW_KEY_1) weaponManager.pressSlot(0);
         if (key == GLFW_KEY_2) weaponManager.pressSlot(1);
         if (key == GLFW_KEY_3) weaponManager.pressSlot(2);
-        // Перезарядка — звук запускается тут же
         if (key == GLFW_KEY_R && !gun.reloading && gun.ammo < weaponManager.activeDef().maxAmmo) {
             gun.reloading = true;
             gun.reloadFull = (gun.ammo == 0);
             soundManager.playReload(weaponManager.current);
         }
-        if (key == GLFW_KEY_ESCAPE) glfwSetWindowShouldClose(w, GLFW_TRUE);
     }
 }
 
 inline void mouse_button_callback(GLFWwindow*, int button, int action, int)
 {
+    if (gGetMenuState() != MenuState::INGAME) return;
     if (console.open) return;
 
-    // ── ПКМ — прицеливание ──
     if (button == GLFW_MOUSE_BUTTON_RIGHT) {
         isADS = (action == GLFW_PRESS);
         return;
     }
 
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-        // Во время перезарядки — полная тишина
         if (gun.reloading) return;
-        // Пустой магазин — клик
         if (gun.ammo <= 0) { soundManager.playEmpty(); return; }
-        // Ещё не остыл — тишина
         if (gun.shootCooldown > 0) return;
-        // Реальный выстрел + звук
         const auto& def = weaponManager.activeDef();
         doShoot(player.pos + glm::vec3(0, player.eyeH, 0), camFront, def.fireRate, def.recoilKick);
         soundManager.playShot(weaponManager.current);

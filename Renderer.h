@@ -470,6 +470,87 @@ struct Renderer
         return "OpenGL";
     }
 
+    // ── resize — вызывай после glfwSetWindowMonitor ─────────
+    void resize(int w, int h)
+    {
+        if (w <= 0 || h <= 0) return;
+        SCR_WIDTH = (unsigned int)w;
+        SCR_HEIGHT = (unsigned int)h;
+
+#ifdef _WIN32
+        if (gRenderBackend == RenderBackend::DX11 && dx11.ready) {
+            // 1. Отвязываем все render targets перед ResizeBuffers
+            dx11.ctx->OMSetRenderTargets(0, nullptr, nullptr);
+            dx11.bbRTV.Reset();
+            dx11.postRTV.Reset();
+            dx11.postSRV.Reset();
+            dx11.postTex.Reset();
+            dx11.postDSV.Reset();
+            dx11.postDepth.Reset();
+
+            // 2. Ресайзим SwapChain под новое разрешение
+            HRESULT hr = dx11.sc->ResizeBuffers(0, (UINT)w, (UINT)h,
+                DXGI_FORMAT_UNKNOWN, 0);
+            if (FAILED(hr))
+                printf("[DX11] ResizeBuffers FAILED 0x%08X\n", hr);
+
+            // 3. Пересоздаём backbuffer RTV
+            {
+                ComPtr<ID3D11Texture2D> bb;
+                dx11.sc->GetBuffer(0, IID_PPV_ARGS(&bb));
+                dx11.dev->CreateRenderTargetView(bb.Get(), nullptr, &dx11.bbRTV);
+            }
+
+            // 4. Пересоздаём post-process текстуры
+            auto mkTex2D = [&](ComPtr<ID3D11Texture2D>& tex, int tw, int th,
+                DXGI_FORMAT fmt, UINT bind) {
+                    D3D11_TEXTURE2D_DESC d = {};
+                    d.Width = tw; d.Height = th; d.MipLevels = 1; d.ArraySize = 1;
+                    d.Format = fmt; d.SampleDesc.Count = 1; d.BindFlags = bind;
+                    dx11.dev->CreateTexture2D(&d, nullptr, &tex);
+                };
+            mkTex2D(dx11.postTex, w, h,
+                DXGI_FORMAT_R8G8B8A8_UNORM,
+                D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE);
+            dx11.dev->CreateRenderTargetView(dx11.postTex.Get(), nullptr, &dx11.postRTV);
+            dx11.dev->CreateShaderResourceView(dx11.postTex.Get(), nullptr, &dx11.postSRV);
+            mkTex2D(dx11.postDepth, w, h,
+                DXGI_FORMAT_D24_UNORM_S8_UINT, D3D11_BIND_DEPTH_STENCIL);
+            dx11.dev->CreateDepthStencilView(dx11.postDepth.Get(), nullptr, &dx11.postDSV);
+
+            // 5. Обновляем viewport
+            D3D11_VIEWPORT vp = { 0, 0, (float)w, (float)h, 0.f, 1.f };
+            dx11.ctx->RSSetViewports(1, &vp);
+
+            printf("[DX11] Resized to %dx%d\n", w, h);
+            return;
+        }
+#endif
+        // OpenGL
+        glViewport(0, 0, w, h);
+        // Пересоздаём FBO
+        if (fbo) {
+            glDeleteFramebuffers(1, &fbo);
+            glDeleteTextures(1, &fboTex);
+            glDeleteRenderbuffers(1, &fboRBO);
+            fbo = fboTex = fboRBO = 0;
+        }
+        glGenFramebuffers(1, &fbo);
+        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+        glGenTextures(1, &fboTex);
+        glBindTexture(GL_TEXTURE_2D, fboTex);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fboTex, 0);
+        glGenRenderbuffers(1, &fboRBO);
+        glBindRenderbuffer(GL_RENDERBUFFER, fboRBO);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, w, h);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, fboRBO);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        printf("[GL] Resized to %dx%d\n", w, h);
+    }
+
     // ── init ─────────────────────────────────────────────────
     void init(void* windowHandle = nullptr)
     {
