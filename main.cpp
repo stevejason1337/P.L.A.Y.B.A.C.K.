@@ -122,7 +122,7 @@ int main()
 
     const char* titleAPI = (gRenderBackend == RenderBackend::DX11) ? "DX11" : "OpenGL";
     char title[64];
-    snprintf(title, sizeof(title), "FPS Engine [%s]", titleAPI);
+    snprintf(title, sizeof(title), "P.L.A.Y.B.A.C.K.");
 
     GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, title, NULL, NULL);
     if (!window) { glfwTerminate(); return -1; }
@@ -164,6 +164,14 @@ int main()
     // -- 6. Renderer - главная инициализация ------------------
     renderer.init(nativeWindow);
     printf("[MAIN] Backend active: %s\n", renderer.backendName());
+#ifdef _WIN32
+    if (gRenderBackend == RenderBackend::DX11) {
+        gTAA.init(
+            static_cast<ID3D11Device*>(renderer.getDX11Device()),
+            static_cast<ID3D11DeviceContext*>(renderer.getDX11Context()),
+            SCR_WIDTH, SCR_HEIGHT);
+    }
+#endif
 
     // Подключаем консольные колбэки (разрываем circular dependency)
     gSetWireframe = [](bool on) { renderer.setWireframe(on); };
@@ -214,7 +222,7 @@ int main()
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-        window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "FPS Engine [OpenGL]", NULL, NULL);
+        window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "P.L.A.Y.B.A.C.K.", NULL, NULL);
         glfwMakeContextCurrent(window);
         glfwSwapInterval(0);
         gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
@@ -333,7 +341,6 @@ int main()
     // Колбэк применения настроек окна
     gMenu.onApplySettings = [&](int w, int h, WindowMode wm, RenderBackend) {
         int actualW = w, actualH = h;
-
         if (wm == WindowMode::FULLSCREEN) {
             GLFWmonitor* mon = glfwGetPrimaryMonitor();
             const GLFWvidmode* vm = glfwGetVideoMode(mon);
@@ -348,21 +355,11 @@ int main()
         }
         else {
             glfwSetWindowMonitor(window, nullptr, 100, 100, w, h, 0);
-            actualW = w; actualH = h;
         }
-
-        // GLFW нужен один кадр чтобы применить размер — ждём
         glfwPollEvents();
-
-        // Читаем реальный размер framebuffer после смены
-        int fbW, fbH;
-        glfwGetFramebufferSize(window, &fbW, &fbH);
+        int fbW, fbH; glfwGetFramebufferSize(window, &fbW, &fbH);
         if (fbW > 0 && fbH > 0) { actualW = fbW; actualH = fbH; }
-
-        // Ресайзим DX11 SwapChain / GL FBO и обновляем SCR_WIDTH/SCR_HEIGHT
-        renderer.resize(actualW, actualH);
-
-        // Курсор свободный в меню
+        renderer.resize(actualW, actualH);  // пересоздаёт DX11 буферы + TAA
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         printf("[Main] Window resized to %dx%d\n", actualW, actualH);
         };

@@ -8,7 +8,7 @@
 #include <fstream>
 #include <iostream>
 
-// Window — изменяемые (меняются при смене разрешения/fullscreen)
+// Window
 inline unsigned int SCR_WIDTH = 1280;
 inline unsigned int SCR_HEIGHT = 720;
 

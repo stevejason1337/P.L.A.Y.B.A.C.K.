@@ -549,6 +549,7 @@
     <ClInclude Include="Soundmanager.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="stb_truetype.h" />
+    <ClInclude Include="TAA.h" />
     <ClInclude Include="Textrenderer.h" />
     <ClInclude Include="Threadpool.h" />
     <ClInclude Include="Triangle.h" />

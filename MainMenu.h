@@ -19,6 +19,7 @@
 #include "imgui_impl_dx11.h"
 #endif
 #include "Settings.h"
+#include "TAA.h"
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -68,6 +69,7 @@ struct MainMenu {
     int         resIndex = 0;   // индекс в kResPresets
     int         apiIndex = 0;   // 0=DX11 1=OpenGL
     bool        settingsChanged = false;
+    bool        taaEnabled = true;  // TAA вкл/выкл
 
     // Анимация
     float       time = 0.f;
@@ -98,6 +100,7 @@ struct MainMenu {
     void init() {
         // Читаем текущие настройки
         apiIndex = (gRenderBackend == RenderBackend::DX11) ? 0 : 1;
+        taaEnabled = gTAAEnabled;  // читаем текущее состояние
         fadingIn = true;
         fadeAlpha = 1.f;
     }
@@ -124,8 +127,7 @@ struct MainMenu {
             }
         }
 
-        // Берём актуальный размер окна (уже обновлён после resize)
-        // SCR_WIDTH/SCR_HEIGHT обновлены renderer.resize() — используем их
+        // Размер берём из SCR_WIDTH/SCR_HEIGHT — они обновляются при resize
         float fw = (float)SCR_WIDTH, fh = (float)SCR_HEIGHT;
 
         // Новый ImGui кадр
@@ -134,8 +136,7 @@ struct MainMenu {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        // Принудительно выставляем правильный размер — GLFW backend
-        // может записать неверное значение если окно только что изменилось
+        // Принудительно выставляем правильный DisplaySize — GLFW мог перезаписать
         ImGui::GetIO().DisplaySize = ImVec2(fw, fh);
         ImGui::GetIO().DisplayFramebufferScale = ImVec2(1.f, 1.f);
 
@@ -219,7 +220,7 @@ private:
         // Версия
         ImDrawList* fdl = ImGui::GetForegroundDrawList();
         fdl->AddText({ fw - 120, fh - 24 },
-            IM_COL32(120, 120, 120, 180), "v0.1 ALPHA");
+            IM_COL32(120, 120, 120, 180), "build 0.1");
 
         // Кнопки
         float btnW = 280.f, btnH = 52.f;
@@ -245,7 +246,7 @@ private:
         // Подсказка внизу
         fdl->AddText({ btnX, fh - 40 },
             IM_COL32(80, 80, 80, 200),
-            "USE WASD + MOUSE TO MOVE");
+            "WASD + MOUSE");
     }
 
     // ─────────────────────────────────────────────────────────
@@ -300,6 +301,16 @@ private:
         }
         ly += lh + 10.f;
 
+        // ── Anti-Aliasing ────────────────────────────────────
+        fdl->AddText({ lx, ly }, IM_COL32(160, 160, 160, 255), "ANTI-ALIASING");
+        float ay = ly + 22.f;
+        static float hTAAon = 0, hTAAoff = 0;
+        bool taaOn = _tabBtn(fdl, "TAA  ON", { lx,          ay }, { bw, bh }, hTAAon, dt, taaEnabled);
+        bool taaOff = _tabBtn(fdl, "TAA  OFF", { lx + bw + 8, ay }, { bw, bh }, hTAAoff, dt, !taaEnabled);
+        if (taaOn)  taaEnabled = true;
+        if (taaOff) taaEnabled = false;
+        ly += lh;
+
         // ── Предупреждение о смене API ───────────────────────
         int newApi = apiIndex;
         bool apiWillChange = (newApi == 0) != (gRenderBackend == RenderBackend::DX11);
@@ -316,6 +327,8 @@ private:
         bool back = _menuBtn(fdl, "<  BACK", { lx + 216, ly }, { 160, 44 }, hoverBack, dt, IM_COL32(80, 80, 90, 255));
 
         if (apply) {
+            // Применяем TAA сразу — не требует рестарта
+            gTAAEnabled = taaEnabled;
             // Сохраняем настройки
             gRenderBackend = (apiIndex == 0) ? RenderBackend::DX11 : RenderBackend::OpenGL;
             saveEngineConfig();
@@ -386,7 +399,7 @@ private:
         dl->AddCircle({ cx, cy - 80 }, radius + 12, IM_COL32(200, 70, 30, 30), 64, 1.5f);
 
         // Текст ЗАГРУЗКА
-        const char* loadTxt = "LOADING";
+        const char* loadTxt = "P.L.A.Y.B.A.C.K.";
         ImVec2 tsz = ImGui::CalcTextSize(loadTxt);
         fdl->AddText(ImGui::GetFont(), 22.f,
             { cx - tsz.x * 0.6f, cy - 20 },
@@ -448,11 +461,11 @@ private:
 
         // Основной текст
         fdl->AddText(ImGui::GetFont(), 64.f, { 80, titleY },
-            IM_COL32(240, 240, 240, 255), "FPS ENGINE");
+            IM_COL32(240, 240, 240, 255), "P.L.A.Y.B.A.C.K.");
 
         // Подзаголовок
         fdl->AddText(ImGui::GetFont(), 16.f, { 84, titleY + 72 },
-            IM_COL32(200, 70, 30, 220), "TACTICAL COMBAT SIMULATOR");
+            IM_COL32(200, 70, 30, 220), "early access build");
 
         // Линия под заголовком
         fdl->AddLine({ 80, titleY + 95 }, { 460, titleY + 95 },

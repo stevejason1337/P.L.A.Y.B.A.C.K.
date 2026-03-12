@@ -10,6 +10,7 @@
 #include <vector>
 #include <string>
 #include "Settings.h"
+#include "TAA.h"
 #include "AnimatedModel.h"
 #include "Player.h"
 #include "WeaponManager.h"
@@ -476,79 +477,43 @@ struct Renderer
         if (w <= 0 || h <= 0) return;
         SCR_WIDTH = (unsigned int)w;
         SCR_HEIGHT = (unsigned int)h;
-
 #ifdef _WIN32
         if (gRenderBackend == RenderBackend::DX11 && dx11.ready) {
-            // 1. Отвязываем все render targets перед ResizeBuffers
             dx11.ctx->OMSetRenderTargets(0, nullptr, nullptr);
             dx11.bbRTV.Reset();
-            dx11.postRTV.Reset();
-            dx11.postSRV.Reset();
-            dx11.postTex.Reset();
-            dx11.postDSV.Reset();
-            dx11.postDepth.Reset();
-
-            // 2. Ресайзим SwapChain под новое разрешение
-            HRESULT hr = dx11.sc->ResizeBuffers(0, (UINT)w, (UINT)h,
-                DXGI_FORMAT_UNKNOWN, 0);
-            if (FAILED(hr))
-                printf("[DX11] ResizeBuffers FAILED 0x%08X\n", hr);
-
-            // 3. Пересоздаём backbuffer RTV
-            {
-                ComPtr<ID3D11Texture2D> bb;
-                dx11.sc->GetBuffer(0, IID_PPV_ARGS(&bb));
-                dx11.dev->CreateRenderTargetView(bb.Get(), nullptr, &dx11.bbRTV);
-            }
-
-            // 4. Пересоздаём post-process текстуры
-            auto mkTex2D = [&](ComPtr<ID3D11Texture2D>& tex, int tw, int th,
-                DXGI_FORMAT fmt, UINT bind) {
-                    D3D11_TEXTURE2D_DESC d = {};
-                    d.Width = tw; d.Height = th; d.MipLevels = 1; d.ArraySize = 1;
-                    d.Format = fmt; d.SampleDesc.Count = 1; d.BindFlags = bind;
-                    dx11.dev->CreateTexture2D(&d, nullptr, &tex);
+            dx11.postRTV.Reset(); dx11.postSRV.Reset(); dx11.postTex.Reset();
+            dx11.postDSV.Reset(); dx11.postDepth.Reset();
+            HRESULT hr = dx11.sc->ResizeBuffers(0, (UINT)w, (UINT)h, DXGI_FORMAT_UNKNOWN, 0);
+            if (FAILED(hr)) printf("[DX11] ResizeBuffers FAILED 0x%08X\n", hr);
+            { ComPtr<ID3D11Texture2D> bb; dx11.sc->GetBuffer(0, IID_PPV_ARGS(&bb)); dx11.dev->CreateRenderTargetView(bb.Get(), nullptr, &dx11.bbRTV); }
+            auto mkTex2D = [&](ComPtr<ID3D11Texture2D>& tex, int tw, int th, DXGI_FORMAT fmt, UINT bind) {
+                D3D11_TEXTURE2D_DESC d = {}; d.Width = tw; d.Height = th; d.MipLevels = 1; d.ArraySize = 1;
+                d.Format = fmt; d.SampleDesc.Count = 1; d.BindFlags = bind;
+                dx11.dev->CreateTexture2D(&d, nullptr, &tex);
                 };
-            mkTex2D(dx11.postTex, w, h,
-                DXGI_FORMAT_R8G8B8A8_UNORM,
-                D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE);
+            mkTex2D(dx11.postTex, w, h, DXGI_FORMAT_R8G8B8A8_UNORM, D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE);
             dx11.dev->CreateRenderTargetView(dx11.postTex.Get(), nullptr, &dx11.postRTV);
             dx11.dev->CreateShaderResourceView(dx11.postTex.Get(), nullptr, &dx11.postSRV);
-            mkTex2D(dx11.postDepth, w, h,
-                DXGI_FORMAT_D24_UNORM_S8_UINT, D3D11_BIND_DEPTH_STENCIL);
+            mkTex2D(dx11.postDepth, w, h, DXGI_FORMAT_D24_UNORM_S8_UINT, D3D11_BIND_DEPTH_STENCIL);
             dx11.dev->CreateDepthStencilView(dx11.postDepth.Get(), nullptr, &dx11.postDSV);
-
-            // 5. Обновляем viewport
+            gTAA.resize(w, h);  // TAA пересоздаёт свои буферы сам
             D3D11_VIEWPORT vp = { 0, 0, (float)w, (float)h, 0.f, 1.f };
             dx11.ctx->RSSetViewports(1, &vp);
-
             printf("[DX11] Resized to %dx%d\n", w, h);
             return;
         }
 #endif
-        // OpenGL
         glViewport(0, 0, w, h);
-        // Пересоздаём FBO
-        if (fbo) {
-            glDeleteFramebuffers(1, &fbo);
-            glDeleteTextures(1, &fboTex);
-            glDeleteRenderbuffers(1, &fboRBO);
-            fbo = fboTex = fboRBO = 0;
-        }
-        glGenFramebuffers(1, &fbo);
-        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-        glGenTextures(1, &fboTex);
-        glBindTexture(GL_TEXTURE_2D, fboTex);
+        if (fbo) { glDeleteFramebuffers(1, &fbo); glDeleteTextures(1, &fboTex); glDeleteRenderbuffers(1, &fboRBO); fbo = fboTex = fboRBO = 0; }
+        glGenFramebuffers(1, &fbo); glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+        glGenTextures(1, &fboTex); glBindTexture(GL_TEXTURE_2D, fboTex);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR); glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fboTex, 0);
-        glGenRenderbuffers(1, &fboRBO);
-        glBindRenderbuffer(GL_RENDERBUFFER, fboRBO);
+        glGenRenderbuffers(1, &fboRBO); glBindRenderbuffer(GL_RENDERBUFFER, fboRBO);
         glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, w, h);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, fboRBO);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        printf("[GL] Resized to %dx%d\n", w, h);
     }
 
     // ── init ─────────────────────────────────────────────────
@@ -625,6 +590,10 @@ struct Renderer
         glm::mat4 view = glm::lookAt(cam, cam + cf, cu);
         glm::mat4 proj = glm::perspective(glm::radians(glm::mix(FOV, FOV * 0.6f, gun.adsProgress)), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.15f, 2000.f);
         glm::mat4 projG = glm::perspective(glm::radians(GUN_FOV), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.01f, 100.f);
+        // TAA: sub-pixel jitter (только для основной камеры, не для gun)
+#ifdef _WIN32
+        if (gRenderBackend == RenderBackend::DX11) gTAA.applyJitter(proj);
+#endif
 
         glm::vec3 right = glm::normalize(glm::cross(cf, cu)), up2 = glm::normalize(glm::cross(right, cf));
         bool mov = glm::length(glm::vec2(player.vel.x, player.vel.z)) > 0.5f;
@@ -650,15 +619,25 @@ struct Renderer
         postTime += dt;
 #ifdef _WIN32
         if (gRenderBackend == RenderBackend::DX11 && dx11.ready) {
-            dx11.ctx->OMSetRenderTargets(1, dx11.bbRTV.GetAddressOf(), nullptr);
-            float c[4] = { 0,0,0,1 }; dx11.ctx->ClearRenderTargetView(dx11.bbRTV.Get(), c);
             dx11.ctx->OMSetDepthStencilState(dx11.dssOff.Get(), 0);
-            dx11.ctx->VSSetShader(dx11.post.vs.Get(), nullptr, 0); dx11.ctx->PSSetShader(dx11.post.ps.Get(), nullptr, 0);
-            dx11.ctx->IASetInputLayout(nullptr); dx11.ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+            dx11.ctx->IASetInputLayout(nullptr);
+            dx11.ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
             dx11.ctx->RSSetState(dx11.rsNoCull.Get());
+
+            // ── Шаг 1: TAA resolve (если включён) ───────────────
+            // Возвращает либо TAA SRV, либо оригинальный postSRV если TAA выключен
+            ID3D11ShaderResourceView* toPost = gTAA.resolve(dx11.postSRV.Get());
+
+            // ── Шаг 2: Post-process на backbuffer ────────────────
+            dx11.ctx->OMSetRenderTargets(1, dx11.bbRTV.GetAddressOf(), nullptr);
+            float clr[4] = { 0,0,0,1 }; dx11.ctx->ClearRenderTargetView(dx11.bbRTV.Get(), clr);
+            dx11.ctx->VSSetShader(dx11.post.vs.Get(), nullptr, 0);
+            dx11.ctx->PSSetShader(dx11.post.ps.Get(), nullptr, 0);
             DX_Post cbp; cbp.res = { SCR_WIDTH,SCR_HEIGHT }; cbp.time = postTime; cbp.hp = postHp01;
-            _dxUp(dx11.cbPost, &cbp, sizeof(cbp)); dx11.ctx->PSSetConstantBuffers(0, 1, dx11.cbPost.GetAddressOf());
-            dx11.ctx->PSSetShaderResources(0, 1, dx11.postSRV.GetAddressOf()); dx11.ctx->PSSetSamplers(0, 1, dx11.sampLin.GetAddressOf());
+            _dxUp(dx11.cbPost, &cbp, sizeof(cbp));
+            dx11.ctx->PSSetConstantBuffers(0, 1, dx11.cbPost.GetAddressOf());
+            dx11.ctx->PSSetShaderResources(0, 1, &toPost);
+            dx11.ctx->PSSetSamplers(0, 1, dx11.sampLin.GetAddressOf());
             dx11.ctx->Draw(6, 0);
             ID3D11ShaderResourceView* n = nullptr; dx11.ctx->PSSetShaderResources(0, 1, &n);
             dx11.sc->Present(1, 0); return;
