@@ -11,7 +11,15 @@
 #include <string>
 #include "Settings.h"
 #include "TAA.h"
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#ifdef _WIN32
+#include <imgui_impl_dx11.h>
+#endif
+#include <imgui_impl_opengl3.h>
+
 #include "AnimatedModel.h"
+#include "ModelLoader.h"
 #include "Player.h"
 #include "WeaponManager.h"
 
@@ -276,6 +284,7 @@ struct DX11State {
     ComPtr<ID3D11Buffer>           cbWF, cbWO, cbGF, cbGO, cbBones, cbPost, cbShadow, cbDot;
     struct Sh { ComPtr<ID3D11VertexShader>vs; ComPtr<ID3D11PixelShader>ps; ComPtr<ID3D11InputLayout>il; };
     Sh world, gun, shadow, dot, post;
+    void* dotVB = nullptr;  // unit quad VB для bullet holes
     bool ready = false;
     bool wireframe = false; // DX11 wireframe флаг
 } dx11;
@@ -391,6 +400,16 @@ static bool _dxInit(HWND hwnd) {
     printf("[DX11] Compiling shaders...\n");
     _dxSh(dx11.world, HLSL_WORLD); _dxSh(dx11.gun, HLSL_GUN);
     _dxSh(dx11.shadow, HLSL_SHADOW); _dxSh(dx11.dot, HLSL_DOT);
+    // Unit quad VB для дыр от пуль
+    {
+        float qv[] = { -0.5f,-0.5f,0, 0.5f,-0.5f,0, 0.5f,0.5f,0,
+                   -0.5f,-0.5f,0, 0.5f,0.5f,0, -0.5f,0.5f,0 };
+        D3D11_BUFFER_DESC bd = {}; bd.ByteWidth = sizeof(qv);
+        bd.Usage = D3D11_USAGE_IMMUTABLE; bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+        D3D11_SUBRESOURCE_DATA sd = {}; sd.pSysMem = qv;
+        ID3D11Buffer* vb = nullptr;
+        if (SUCCEEDED(dx11.dev->CreateBuffer(&bd, &sd, &vb))) dx11.dotVB = vb;
+    }
     {
         auto vb = _dxC(HLSL_POST, "VSMain", "vs_5_0"); auto pb = _dxC(HLSL_POST, "PSMain", "ps_5_0");
         if (vb && pb) { dx11.dev->CreateVertexShader(vb->GetBufferPointer(), vb->GetBufferSize(), nullptr, &dx11.post.vs); dx11.dev->CreatePixelShader(pb->GetBufferPointer(), pb->GetBufferSize(), nullptr, &dx11.post.ps); }
@@ -471,51 +490,6 @@ struct Renderer
         return "OpenGL";
     }
 
-    // ── resize — вызывай после glfwSetWindowMonitor ─────────
-    void resize(int w, int h)
-    {
-        if (w <= 0 || h <= 0) return;
-        SCR_WIDTH = (unsigned int)w;
-        SCR_HEIGHT = (unsigned int)h;
-#ifdef _WIN32
-        if (gRenderBackend == RenderBackend::DX11 && dx11.ready) {
-            dx11.ctx->OMSetRenderTargets(0, nullptr, nullptr);
-            dx11.bbRTV.Reset();
-            dx11.postRTV.Reset(); dx11.postSRV.Reset(); dx11.postTex.Reset();
-            dx11.postDSV.Reset(); dx11.postDepth.Reset();
-            HRESULT hr = dx11.sc->ResizeBuffers(0, (UINT)w, (UINT)h, DXGI_FORMAT_UNKNOWN, 0);
-            if (FAILED(hr)) printf("[DX11] ResizeBuffers FAILED 0x%08X\n", hr);
-            { ComPtr<ID3D11Texture2D> bb; dx11.sc->GetBuffer(0, IID_PPV_ARGS(&bb)); dx11.dev->CreateRenderTargetView(bb.Get(), nullptr, &dx11.bbRTV); }
-            auto mkTex2D = [&](ComPtr<ID3D11Texture2D>& tex, int tw, int th, DXGI_FORMAT fmt, UINT bind) {
-                D3D11_TEXTURE2D_DESC d = {}; d.Width = tw; d.Height = th; d.MipLevels = 1; d.ArraySize = 1;
-                d.Format = fmt; d.SampleDesc.Count = 1; d.BindFlags = bind;
-                dx11.dev->CreateTexture2D(&d, nullptr, &tex);
-                };
-            mkTex2D(dx11.postTex, w, h, DXGI_FORMAT_R8G8B8A8_UNORM, D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE);
-            dx11.dev->CreateRenderTargetView(dx11.postTex.Get(), nullptr, &dx11.postRTV);
-            dx11.dev->CreateShaderResourceView(dx11.postTex.Get(), nullptr, &dx11.postSRV);
-            mkTex2D(dx11.postDepth, w, h, DXGI_FORMAT_D24_UNORM_S8_UINT, D3D11_BIND_DEPTH_STENCIL);
-            dx11.dev->CreateDepthStencilView(dx11.postDepth.Get(), nullptr, &dx11.postDSV);
-            gTAA.resize(w, h);  // TAA пересоздаёт свои буферы сам
-            D3D11_VIEWPORT vp = { 0, 0, (float)w, (float)h, 0.f, 1.f };
-            dx11.ctx->RSSetViewports(1, &vp);
-            printf("[DX11] Resized to %dx%d\n", w, h);
-            return;
-        }
-#endif
-        glViewport(0, 0, w, h);
-        if (fbo) { glDeleteFramebuffers(1, &fbo); glDeleteTextures(1, &fboTex); glDeleteRenderbuffers(1, &fboRBO); fbo = fboTex = fboRBO = 0; }
-        glGenFramebuffers(1, &fbo); glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-        glGenTextures(1, &fboTex); glBindTexture(GL_TEXTURE_2D, fboTex);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR); glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fboTex, 0);
-        glGenRenderbuffers(1, &fboRBO); glBindRenderbuffer(GL_RENDERBUFFER, fboRBO);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, w, h);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, fboRBO);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    }
-
     // ── init ─────────────────────────────────────────────────
     void init(void* windowHandle = nullptr)
     {
@@ -590,7 +564,6 @@ struct Renderer
         glm::mat4 view = glm::lookAt(cam, cam + cf, cu);
         glm::mat4 proj = glm::perspective(glm::radians(glm::mix(FOV, FOV * 0.6f, gun.adsProgress)), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.15f, 2000.f);
         glm::mat4 projG = glm::perspective(glm::radians(GUN_FOV), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.01f, 100.f);
-        // TAA: sub-pixel jitter (только для основной камеры, не для gun)
 #ifdef _WIN32
         if (gRenderBackend == RenderBackend::DX11) gTAA.applyJitter(proj);
 #endif
@@ -623,12 +596,9 @@ struct Renderer
             dx11.ctx->IASetInputLayout(nullptr);
             dx11.ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
             dx11.ctx->RSSetState(dx11.rsNoCull.Get());
-
-            // ── Шаг 1: TAA resolve (если включён) ───────────────
-            // Возвращает либо TAA SRV, либо оригинальный postSRV если TAA выключен
+            // TAA resolve (если включён)
             ID3D11ShaderResourceView* toPost = gTAA.resolve(dx11.postSRV.Get());
-
-            // ── Шаг 2: Post-process на backbuffer ────────────────
+            // Post-process → backbuffer
             dx11.ctx->OMSetRenderTargets(1, dx11.bbRTV.GetAddressOf(), nullptr);
             float clr[4] = { 0,0,0,1 }; dx11.ctx->ClearRenderTargetView(dx11.bbRTV.Get(), clr);
             dx11.ctx->VSSetShader(dx11.post.vs.Get(), nullptr, 0);
@@ -668,6 +638,173 @@ struct Renderer
         gm.update(dt);
     }
     void onWeaponSwitch() { reloadStarted = false; reloadTimer = 0.f; lastFireCounter = fireAnimCounter; }
+
+    // ════════════════════════════════════════════════════════
+    //  UNIFIED API — одинаково для DX11 и OpenGL
+    // ════════════════════════════════════════════════════════
+
+    // ── resize: вызывай после glfwSetWindowMonitor ───────────
+    void resize(int w, int h) {
+        if (w <= 0 || h <= 0) return;
+        SCR_WIDTH = (unsigned int)w; SCR_HEIGHT = (unsigned int)h;
+#ifdef _WIN32
+        if (gRenderBackend == RenderBackend::DX11 && dx11.ready) {
+            dx11.ctx->OMSetRenderTargets(0, nullptr, nullptr);
+            dx11.bbRTV.Reset();
+            dx11.postRTV.Reset(); dx11.postSRV.Reset(); dx11.postTex.Reset();
+            dx11.postDSV.Reset(); dx11.postDepth.Reset();
+            HRESULT hr = dx11.sc->ResizeBuffers(0, (UINT)w, (UINT)h, DXGI_FORMAT_UNKNOWN, 0);
+            if (FAILED(hr))printf("[DX11] ResizeBuffers FAILED 0x%08X\n", hr);
+            {
+                ComPtr<ID3D11Texture2D>bb; dx11.sc->GetBuffer(0, IID_PPV_ARGS(&bb));
+                dx11.dev->CreateRenderTargetView(bb.Get(), nullptr, &dx11.bbRTV);
+            }
+            auto mkT = [&](ComPtr<ID3D11Texture2D>& t, int tw, int th, DXGI_FORMAT f, UINT b) {
+                D3D11_TEXTURE2D_DESC d = {}; d.Width = tw; d.Height = th; d.MipLevels = 1; d.ArraySize = 1;
+                d.Format = f; d.SampleDesc.Count = 1; d.BindFlags = b; dx11.dev->CreateTexture2D(&d, nullptr, &t); };
+            mkT(dx11.postTex, w, h, DXGI_FORMAT_R8G8B8A8_UNORM, D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE);
+            dx11.dev->CreateRenderTargetView(dx11.postTex.Get(), nullptr, &dx11.postRTV);
+            dx11.dev->CreateShaderResourceView(dx11.postTex.Get(), nullptr, &dx11.postSRV);
+            mkT(dx11.postDepth, w, h, DXGI_FORMAT_D24_UNORM_S8_UINT, D3D11_BIND_DEPTH_STENCIL);
+            dx11.dev->CreateDepthStencilView(dx11.postDepth.Get(), nullptr, &dx11.postDSV);
+            gTAA.resize(w, h);
+            D3D11_VIEWPORT vp = { 0,0,(float)w,(float)h,0.f,1.f }; dx11.ctx->RSSetViewports(1, &vp);
+            printf("[DX11] Resized %dx%d\n", w, h); return;
+        }
+#endif
+        glViewport(0, 0, w, h);
+        if (fbo) { glDeleteFramebuffers(1, &fbo); glDeleteTextures(1, &fboTex); glDeleteRenderbuffers(1, &fboRBO); fbo = fboTex = fboRBO = 0; }
+        glGenFramebuffers(1, &fbo); glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+        glGenTextures(1, &fboTex); glBindTexture(GL_TEXTURE_2D, fboTex);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fboTex, 0);
+        glGenRenderbuffers(1, &fboRBO); glBindRenderbuffer(GL_RENDERBUFFER, fboRBO);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, w, h);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, fboRBO);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
+
+    // ── Враги: единый метод для обоих API ───────────────────
+    void drawEnemy(const glm::mat4& modelMat, const std::vector<glm::mat4>& bones,
+        const std::vector<GPUMesh>& meshes,
+        const glm::mat4& view, const glm::mat4& proj)
+    {
+#ifdef _WIN32
+        if (gRenderBackend == RenderBackend::DX11 && dx11.ready) {
+            dx11.ctx->OMSetRenderTargets(1, dx11.postRTV.GetAddressOf(), dx11.postDSV.Get());
+            DX_GF gf; gf.view = view; gf.proj = proj; _dxUp(dx11.cbGF, &gf, sizeof(gf));
+            dx11.ctx->VSSetShader(dx11.gun.vs.Get(), nullptr, 0);
+            dx11.ctx->PSSetShader(dx11.gun.ps.Get(), nullptr, 0);
+            dx11.ctx->IASetInputLayout(dx11.gun.il.Get());
+            dx11.ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+            dx11.ctx->RSSetState(dx11.rsNoCull.Get());
+            dx11.ctx->OMSetDepthStencilState(dx11.dssOn.Get(), 0);
+            dx11.ctx->OMSetBlendState(dx11.bsOpaque.Get(), nullptr, 0xFFFFFFFF);
+            dx11.ctx->PSSetSamplers(0, 1, dx11.sampLin.GetAddressOf());
+            dx11.ctx->VSSetConstantBuffers(0, 1, dx11.cbGF.GetAddressOf());
+            dx11.ctx->PSSetConstantBuffers(0, 1, dx11.cbGF.GetAddressOf());
+            DX_GO go; go.model = modelMat;
+            go.nm = glm::mat4(glm::transpose(glm::inverse(glm::mat3(modelMat))));
+            go.gc = glm::vec3(1.f); go.flash = 0.f; go.ht = 0; go.sk = !bones.empty() ? 1 : 0;
+            if (!bones.empty()) {
+                int bc = std::min((int)bones.size(), 100);
+                _dxUp(dx11.cbBones, glm::value_ptr(bones[0]), (size_t)bc * 64);
+                dx11.ctx->VSSetConstantBuffers(2, 1, dx11.cbBones.GetAddressOf());
+            }
+            _dxUp(dx11.cbGO, &go, sizeof(go));
+            dx11.ctx->VSSetConstantBuffers(1, 1, dx11.cbGO.GetAddressOf());
+            dx11.ctx->PSSetConstantBuffers(1, 1, dx11.cbGO.GetAddressOf());
+            for (auto& m : meshes) {
+                if (m.dxSRV) { ID3D11ShaderResourceView* srv = static_cast<ID3D11ShaderResourceView*>(m.dxSRV); dx11.ctx->PSSetShaderResources(0, 1, &srv); go.ht = 1; }
+                else { ID3D11ShaderResourceView* n = nullptr; dx11.ctx->PSSetShaderResources(0, 1, &n); go.ht = 0; }
+                _dxUp(dx11.cbGO, &go, sizeof(go)); dx11.ctx->PSSetConstantBuffers(1, 1, dx11.cbGO.GetAddressOf());
+                _dxMesh(m);
+            }
+            return;
+        }
+#endif
+        // OpenGL
+        glEnable(GL_DEPTH_TEST); glDepthFunc(GL_LEQUAL); glDisable(GL_CULL_FACE);
+        glUseProgram(gunShader);
+        glUniformMatrix4fv(gl.view, 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(gl.proj, 1, GL_FALSE, glm::value_ptr(proj));
+        glUniformMatrix4fv(gl.model, 1, GL_FALSE, glm::value_ptr(modelMat));
+        glm::mat3 nm = glm::mat3(glm::transpose(glm::inverse(modelMat)));
+        glUniformMatrix3fv(gl.nm, 1, GL_FALSE, glm::value_ptr(nm));
+        glUniform3f(gl.gc, 1.f, 1.f, 1.f); glUniform1f(gl.flash, 0.f);
+        bool hb = !bones.empty(); glUniform1i(gl.sk, (int)hb);
+        if (hb && gl.bones >= 0) {
+            int bc = std::min((int)bones.size(), 100);
+            glUniformMatrix4fv(gl.bones, bc, GL_FALSE, glm::value_ptr(bones[0]));
+        }
+        GLuint lt = 0;
+        for (auto& m : meshes) {
+            if (m.texID && m.texID != lt) { glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, m.texID); lt = m.texID; glUniform1i(gl.ht, 1); glUniform1i(gl.tex, 0); }
+            else if (!m.texID) { glUniform1i(gl.ht, 0); lt = 0; }
+            glBindVertexArray(m.VAO); glDrawElements(GL_TRIANGLES, m.indexCount, GL_UNSIGNED_INT, 0);
+        }
+    }
+
+    // ── ImGui новый кадр ─────────────────────────────────────
+    void imguiNewFrame() {
+#ifdef _WIN32
+        if (gRenderBackend == RenderBackend::DX11) ImGui_ImplDX11_NewFrame();
+        else
+#endif
+            ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+    }
+
+    // ── ImGui рендер ─────────────────────────────────────────
+    void imguiRender() {
+        ImGui::Render();
+#ifdef _WIN32
+        if (gRenderBackend == RenderBackend::DX11)
+            ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+        else
+#endif
+            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    }
+
+    // ── SwapBuffers: вызывай всегда — сам разберётся ────────
+    void swapBuffers(GLFWwindow* w) {
+        if (gRenderBackend == RenderBackend::OpenGL)
+            glfwSwapBuffers(w);
+        // DX11: Present уже внутри endFrame()
+    }
+
+
+    // ── Загрузка мешей на GPU ────────────────────────────────
+    // Один вызов для обоих API — внутри сам разберётся
+    void uploadMeshes(std::vector<GPUMesh>& meshes) {
+        if (gRenderBackend == RenderBackend::OpenGL) return; // GL грузит в loadModel
+        uploadMeshesToDX11(meshes, getDX11Device());
+    }
+
+    // Перегрузка для AnimatedModel (оружие, враги)
+    void uploadModel(AnimatedModel& model) {
+        uploadMeshes(model.meshes);
+    }
+
+    // Перегрузка для вектора unique_ptr<AnimatedModel> (оружие из WeaponManager)
+    void uploadModels(std::vector<std::unique_ptr<AnimatedModel>>& models) {
+        for (auto& m : models)
+            if (m) uploadModel(*m);
+    }
+
+    // ── ImGui shutdown ───────────────────────────────────────
+    void imguiShutdown() {
+#ifdef _WIN32
+        if (gRenderBackend == RenderBackend::DX11) ImGui_ImplDX11_Shutdown();
+        else
+#endif
+            ImGui_ImplOpenGL3_Shutdown();
+        ImGui_ImplGlfw_Shutdown();
+        ImGui::DestroyContext();
+    }
 
     void beginEnemyBatch(const glm::mat4& view, const glm::mat4& proj)
     {
@@ -850,6 +987,35 @@ private:
                 _dxMesh(m);
             }
         }
+        // ── Дыры от пуль (DX11) ─────────────────────────────
+        if (!bulletHoles.empty()) {
+            dx11.ctx->VSSetShader(dx11.dot.vs.Get(), nullptr, 0);
+            dx11.ctx->PSSetShader(dx11.dot.ps.Get(), nullptr, 0);
+            dx11.ctx->IASetInputLayout(dx11.dot.il.Get());
+            dx11.ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+            dx11.ctx->RSSetState(dx11.rsNoCull.Get());
+            dx11.ctx->OMSetBlendState(dx11.bsAlpha.Get(), nullptr, 0xFFFFFFFF);
+            dx11.ctx->OMSetDepthStencilState(dx11.dssOn.Get(), 0);
+            for (auto& bh : bulletHoles) {
+                glm::mat4 mvp = proj * view
+                    * glm::translate(glm::mat4(1.f), bh.pos)
+                    * glm::scale(glm::mat4(1.f), glm::vec3(0.04f));
+                DX_Dot db; db.mvp = mvp;
+                db.color = glm::vec4(0.05f, 0.05f, 0.05f, bh.life / 5.f);
+                _dxUp(dx11.cbDot, &db, sizeof(db));
+                dx11.ctx->VSSetConstantBuffers(0, 1, dx11.cbDot.GetAddressOf());
+                dx11.ctx->PSSetConstantBuffers(0, 1, dx11.cbDot.GetAddressOf());
+                // unit quad VB (6 verts, создаётся один раз в init)
+                if (dx11.dotVB) {
+                    UINT st = sizeof(float) * 3, off = 0;
+                    ID3D11Buffer* vb = static_cast<ID3D11Buffer*>(dx11.dotVB);
+                    dx11.ctx->IASetVertexBuffers(0, 1, &vb, &st, &off);
+                    dx11.ctx->Draw(6, 0);
+                }
+            }
+            dx11.ctx->OMSetBlendState(dx11.bsOpaque.Get(), nullptr, 0xFFFFFFFF);
+        }
+
         if (!gm.meshes.empty()) {
             dx11.ctx->ClearDepthStencilView(dx11.postDSV.Get(), D3D11_CLEAR_DEPTH, 1, 0);
             dx11.ctx->RSSetState(dx11.rsNoCull.Get()); // оружие — без culling

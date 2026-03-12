@@ -69,7 +69,7 @@ struct MainMenu {
     int         resIndex = 0;   // индекс в kResPresets
     int         apiIndex = 0;   // 0=DX11 1=OpenGL
     bool        settingsChanged = false;
-    bool        taaEnabled = true;  // TAA вкл/выкл
+    bool        taaEnabled = true;
 
     // Анимация
     float       time = 0.f;
@@ -100,7 +100,7 @@ struct MainMenu {
     void init() {
         // Читаем текущие настройки
         apiIndex = (gRenderBackend == RenderBackend::DX11) ? 0 : 1;
-        taaEnabled = gTAAEnabled;  // читаем текущее состояние
+        taaEnabled = gTAAEnabled;
         fadingIn = true;
         fadeAlpha = 1.f;
     }
@@ -127,16 +127,14 @@ struct MainMenu {
             }
         }
 
-        // Размер берём из SCR_WIDTH/SCR_HEIGHT — они обновляются при resize
-        float fw = (float)SCR_WIDTH, fh = (float)SCR_HEIGHT;
-
         // Новый ImGui кадр
         if (gRenderBackend == RenderBackend::DX11) ImGui_ImplDX11_NewFrame();
         else ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        // Принудительно выставляем правильный DisplaySize — GLFW мог перезаписать
+        // SCR_WIDTH/HEIGHT обновляются renderer.resize() при смене режима
+        float fw = (float)SCR_WIDTH, fh = (float)SCR_HEIGHT;
         ImGui::GetIO().DisplaySize = ImVec2(fw, fh);
         ImGui::GetIO().DisplayFramebufferScale = ImVec2(1.f, 1.f);
 
@@ -301,14 +299,12 @@ private:
         }
         ly += lh + 10.f;
 
-        // ── Anti-Aliasing ────────────────────────────────────
+        // ── Сглаживание ──────────────────────────────────────
         fdl->AddText({ lx, ly }, IM_COL32(160, 160, 160, 255), "ANTI-ALIASING");
         float ay = ly + 22.f;
         static float hTAAon = 0, hTAAoff = 0;
-        bool taaOn = _tabBtn(fdl, "TAA  ON", { lx,          ay }, { bw, bh }, hTAAon, dt, taaEnabled);
-        bool taaOff = _tabBtn(fdl, "TAA  OFF", { lx + bw + 8, ay }, { bw, bh }, hTAAoff, dt, !taaEnabled);
-        if (taaOn)  taaEnabled = true;
-        if (taaOff) taaEnabled = false;
+        if (_tabBtn(fdl, "TAA  ON", { lx,        ay }, { bw,bh }, hTAAon, dt, taaEnabled))  taaEnabled = true;
+        if (_tabBtn(fdl, "TAA  OFF", { lx + bw + 8.f,ay }, { bw,bh }, hTAAoff, dt, !taaEnabled)) taaEnabled = false;
         ly += lh;
 
         // ── Предупреждение о смене API ───────────────────────
@@ -327,9 +323,7 @@ private:
         bool back = _menuBtn(fdl, "<  BACK", { lx + 216, ly }, { 160, 44 }, hoverBack, dt, IM_COL32(80, 80, 90, 255));
 
         if (apply) {
-            // Применяем TAA сразу — не требует рестарта
-            gTAAEnabled = taaEnabled;
-            // Сохраняем настройки
+            gTAAEnabled = taaEnabled;  // применяется мгновенно
             gRenderBackend = (apiIndex == 0) ? RenderBackend::DX11 : RenderBackend::OpenGL;
             saveEngineConfig();
             auto& rp = kResPresets[resIndex];

@@ -1,5 +1,12 @@
 #pragma once
 
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <d3d11.h>
+#endif
+
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -219,10 +226,14 @@ inline std::vector<GPUMesh> loadModel(const std::string& path,
 }
 
 // ── Загрузка DX11 буферов + текстур из CPU памяти (нет GL зависимости) ──
-#ifdef _WIN32
-#include <d3d11.h>
-inline void uploadMeshesToDX11(std::vector<GPUMesh>& meshes, ID3D11Device* dev)
+// uploadMeshesToDX11 — доступна на всех платформах,
+// на не-Windows компилируется в пустышку через void*
+inline void uploadMeshesToDX11(std::vector<GPUMesh>& meshes, void* dev_)
 {
+#ifdef _WIN32
+    ID3D11Device* dev = static_cast<ID3D11Device*>(dev_);
+    if (!dev) return;
+
     for (auto& m : meshes)
     {
         if (m.dxVB) continue;
@@ -273,8 +284,10 @@ inline void uploadMeshesToDX11(std::vector<GPUMesh>& meshes, ID3D11Device* dev)
             printf("[DX11] mesh OK (stride=%u idx=%u)\n", m.dxStride, m.indexCount);
     }
     printf("[DX11] Uploaded %zu meshes\n", meshes.size());
-}
+#else
+    (void)meshes; (void)dev_;
 #endif
+}
 
 inline void drawMeshes(const std::vector<GPUMesh>& meshes, unsigned int shader)
 {

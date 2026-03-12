@@ -120,11 +120,7 @@ int main()
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     }
 
-    const char* titleAPI = (gRenderBackend == RenderBackend::DX11) ? "DX11" : "OpenGL";
-    char title[64];
-    snprintf(title, sizeof(title), "P.L.A.Y.B.A.C.K.");
-
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, title, NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "P.L.A.Y.B.A.C.K.", NULL, NULL);
     if (!window) { glfwTerminate(); return -1; }
 
 #ifdef _WIN32
@@ -158,20 +154,13 @@ int main()
     // -- 5. Console init ------------------------------------------
     console.init();
 
-    // -- 5b. Сообщаем ModelLoader использовать GL или CPU буферы --
+    // ModelLoader: на OpenGL грузит текстуры в GL сразу,
+    // на DX11 — сохраняет пиксели в CPU для последующего uploadMeshes()
     gLoadGLTextures = (gRenderBackend == RenderBackend::OpenGL);
 
     // -- 6. Renderer - главная инициализация ------------------
     renderer.init(nativeWindow);
     printf("[MAIN] Backend active: %s\n", renderer.backendName());
-#ifdef _WIN32
-    if (gRenderBackend == RenderBackend::DX11) {
-        gTAA.init(
-            static_cast<ID3D11Device*>(renderer.getDX11Device()),
-            static_cast<ID3D11DeviceContext*>(renderer.getDX11Context()),
-            SCR_WIDTH, SCR_HEIGHT);
-    }
-#endif
 
     // Подключаем консольные колбэки (разрываем circular dependency)
     gSetWireframe = [](bool on) { renderer.setWireframe(on); };
@@ -247,12 +236,7 @@ int main()
     auto mapMeshes = loadModel(MAP_FILE, MAP_TEX_DIR, mapT, true);
 
     // Для DX11 - загружаем меши в GPU
-#ifdef _WIN32
-    if (gRenderBackend == RenderBackend::DX11) {
-        if (auto* dx = static_cast<ID3D11Device*>(renderer.getDX11Device()))
-            uploadMeshesToDX11(mapMeshes, dx);
-    }
-#endif
+    renderer.uploadMeshes(mapMeshes);
 
     printf("[MAIN] Building BVH...\n");
     bvh.build(colTris);
@@ -260,32 +244,19 @@ int main()
     // Bullet Physics + Blood FX
     bulletWorld.init();
     bulletWorld.addMapCollision();
-    if (gRenderBackend == RenderBackend::OpenGL)
-        bloodFX.init();
+    // BloodFX: передаём device/context — на OpenGL они nullptr, функция игнорирует
+    bloodFX.init(renderer.getDX11Device(), renderer.getDX11Context());
 
     // -- 9. Оружие, враги, звук -------------------------------
     weaponManager.loadAll();
     gun.ammo = weaponManager.activeDef().maxAmmo;
 
-#ifdef _WIN32
-    if (gRenderBackend == RenderBackend::DX11) {
-        if (auto* dx = static_cast<ID3D11Device*>(renderer.getDX11Device())) {
-            for (auto& m : weaponManager.models)
-                uploadMeshesToDX11(m->meshes, dx);
-        }
-    }
-#endif
+    renderer.uploadModels(weaponManager.models);
 
     enemyManager.load();
-#ifdef _WIN32
-    if (gRenderBackend == RenderBackend::DX11) {
-        if (auto* dx = static_cast<ID3D11Device*>(renderer.getDX11Device())) {
-            uploadMeshesToDX11(gModelSoldier.proto.meshes, dx);
-            uploadMeshesToDX11(gModelZombie.proto.meshes, dx);
-            uploadMeshesToDX11(gModelZombie2.proto.meshes, dx);
-        }
-    }
-#endif
+    renderer.uploadMeshes(gModelSoldier.proto.meshes);
+    renderer.uploadMeshes(gModelZombie.proto.meshes);
+    renderer.uploadMeshes(gModelZombie2.proto.meshes);
     // Load enemy spawns from map file (only if no enemies already present)
     {
         std::ifstream mf("maps/level.map");
@@ -340,28 +311,23 @@ int main()
     gMenu.init();
     // Колбэк применения настроек окна
     gMenu.onApplySettings = [&](int w, int h, WindowMode wm, RenderBackend) {
-        int actualW = w, actualH = h;
         if (wm == WindowMode::FULLSCREEN) {
             GLFWmonitor* mon = glfwGetPrimaryMonitor();
             const GLFWvidmode* vm = glfwGetVideoMode(mon);
             glfwSetWindowMonitor(window, mon, 0, 0, vm->width, vm->height, vm->refreshRate);
-            actualW = vm->width; actualH = vm->height;
         }
         else if (wm == WindowMode::BORDERLESS) {
             GLFWmonitor* mon = glfwGetPrimaryMonitor();
             const GLFWvidmode* vm = glfwGetVideoMode(mon);
             glfwSetWindowMonitor(window, nullptr, 0, 0, vm->width, vm->height, 0);
-            actualW = vm->width; actualH = vm->height;
         }
         else {
             glfwSetWindowMonitor(window, nullptr, 100, 100, w, h, 0);
         }
         glfwPollEvents();
         int fbW, fbH; glfwGetFramebufferSize(window, &fbW, &fbH);
-        if (fbW > 0 && fbH > 0) { actualW = fbW; actualH = fbH; }
-        renderer.resize(actualW, actualH);  // пересоздаёт DX11 буферы + TAA
+        renderer.resize(fbW > 0 ? fbW : w, fbH > 0 ? fbH : h);
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        printf("[Main] Window resized to %dx%d\n", actualW, actualH);
         };
 
     // ════════════════════════════════════════════════════════
@@ -391,15 +357,11 @@ int main()
             if (gRenderBackend == RenderBackend::OpenGL) {
                 glClearColor(0.04f, 0.05f, 0.06f, 1.f);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-                gMenu.draw(window, dt);
-                glfwSwapBuffers(window);
             }
-            else {
-                // DX11 - используем beginFrame/endFrame
-                renderer.beginFrame();
-                gMenu.draw(window, dt);
-                renderer.endFrame();
-            }
+            renderer.beginFrame();
+            gMenu.draw(window, dt);
+            renderer.endFrame();
+            renderer.swapBuffers(window);
             continue;
         }
         // Захватываем курсор при входе в игру
@@ -425,8 +387,7 @@ int main()
         enemyManager.update(dt, camPos, playerHP);
 
         bulletWorld.update(dt);
-        if (gRenderBackend == RenderBackend::OpenGL)
-            bloodFX.update(dt);
+        bloodFX.update(dt);
 
         renderer.updateGunAnim(weaponManager.active(), dt);
 
@@ -450,37 +411,16 @@ int main()
                 glm::radians(curFOV),
                 (float)SCR_WIDTH / (float)SCR_HEIGHT,
                 0.05f, 5000.f);
-#ifdef _WIN32
-            if (gRenderBackend == RenderBackend::DX11) {
-                renderer.beginEnemyBatch(view, proj);
-                for (auto& e : enemyManager.enemies) {
-                    if (e.removed) continue;
-                    renderer.drawEnemyDX11(e.getMatrix(), e.boneFinal,
-                        e.sharedModel().proto.meshes, view, proj);
-                }
+            for (auto& e : enemyManager.enemies) {
+                if (e.removed) continue;
+                renderer.drawEnemy(e.getMatrix(), e.boneFinal,
+                    e.sharedModel().proto.meshes, view, proj);
             }
-            else
-#endif
-                enemyManager.draw(renderer.gunShader, view, proj);
 
-            // Брызги крови (только OpenGL)
-            if (gRenderBackend == RenderBackend::OpenGL) {
-                glm::mat4 view2 = glm::lookAt(camPos, camPos + camFront, camUp);
-                float curFOV2 = glm::mix(FOV, FOV * 0.6f, gun.adsProgress);
-                glm::mat4 proj2 = glm::perspective(glm::radians(curFOV2),
-                    (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.05f, 5000.f);
-                bloodFX.draw(view2, proj2);
-            }
+            bloodFX.draw(view, proj);
         }
 
-        // -- ImGui кадр -------------------------------------------
-#ifdef _WIN32
-        if (gRenderBackend == RenderBackend::DX11) ImGui_ImplDX11_NewFrame();
-        else
-#endif
-            ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
+        renderer.imguiNewFrame();
         gHitMarker.draw();
 
         // HUD (работает на обоих API через ImGui DrawList)
@@ -518,36 +458,17 @@ int main()
             }
         }
 
-        // Рендер ImGui
-        ImGui::Render();
-#ifdef _WIN32
-        if (gRenderBackend == RenderBackend::DX11)
-            ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-        else
-#endif
-            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        renderer.imguiRender();
 
         renderer.postHp01 = std::max(0.f, std::min(1.f, playerHP / playerMaxHP));
         renderer.endFrame(dt);
-
-        // SwapBuffers только для OpenGL (DX11 делает Present внутри endFrame)
-        if (gRenderBackend == RenderBackend::OpenGL)
-            glfwSwapBuffers(window);
+        renderer.swapBuffers(window);
     }
 
     soundManager.shutdown();
     bulletWorld.shutdown();
-    if (gRenderBackend == RenderBackend::OpenGL)
-        bloodFX.shutdown();
-
-    // ImGui cleanup
-#ifdef _WIN32
-    if (gRenderBackend == RenderBackend::DX11) ImGui_ImplDX11_Shutdown();
-    else
-#endif
-        ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
+    bloodFX.shutdown();
+    renderer.imguiShutdown();
 
     glfwTerminate();
     return 0;
