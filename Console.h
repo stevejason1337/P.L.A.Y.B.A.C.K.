@@ -15,6 +15,7 @@
 
 // --- игровые флаги -------------------------------------------
 inline bool  noclip = false;
+inline bool  gShouldQuit = false;   // set by "quit" command, checked in main loop
 inline bool  godMode = false;
 inline bool  showFPS = true;
 inline bool  showPos = true;
@@ -226,7 +227,7 @@ struct Console
             print("Enemies alive: " + std::to_string(enemyManager.enemies.size()), CON_CYAN);
         }
         else if (name == "clear") { lines.clear(); }
-        else if (name == "quit" || name == "exit") { print("Goodbye.", CON_YELLOW); exit(0); }
+        else if (name == "quit" || name == "exit") { print("Goodbye.", CON_YELLOW); gShouldQuit = true; }
         else if (name == "disconnect") {
             print("Returning to main menu...", CON_YELLOW);
             extern bool gReturnToMenu;

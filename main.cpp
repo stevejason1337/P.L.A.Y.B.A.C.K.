@@ -55,7 +55,6 @@ GunState         gun;
 float            flashTimer = 0.f;
 int              fireAnimCounter = 0;
 std::vector<BulletHole> bulletHoles;
-SoundManager     soundManager;
 Renderer         renderer;
 
 glm::vec3 camFront = glm::vec3(0.f, 0.f, -1.f);
@@ -337,7 +336,7 @@ int main()
     // ════════════════════════════════════════════════════════
     //  ГЛАВНЫЙ ЦИКЛ
     // ════════════════════════════════════════════════════════
-    while (!glfwWindowShouldClose(window))
+    while (!glfwWindowShouldClose(window) && !gShouldQuit)
     {
         float now = (float)glfwGetTime();
         float rawDt = now - lastFrame;
