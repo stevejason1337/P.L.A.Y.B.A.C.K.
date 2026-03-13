@@ -243,7 +243,9 @@ struct Console
         if (!open) return;
         if (action == GLFW_PRESS || action == GLFW_REPEAT) {
             if (key == GLFW_KEY_ENTER) {
-                execute(input);
+                // НЕ вызываем execute() здесь — ImGui InputText с
+                // EnterReturnsTrue уже обрабатывает Enter и вызывает execute()
+                // Двойной вызов = двойной спавн и т.д.
             }
             else if (key == GLFW_KEY_BACKSPACE && !input.empty()) {
                 input.pop_back();

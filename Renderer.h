@@ -59,7 +59,8 @@ void main(){
     lit+=pow(max(dot(normalize(L+vec3(0,0,1)),N),0),32)*.15*(1-shadow);
     lit=sat(lit,1.2); lit=ACES(lit*.8);
     float fogT=clamp((vFogDist-fogStart)/(fogEnd-fogStart),0,1); fogT=fogT*fogT*fogT;
-    lit=mix(lit,fogColor,fogT); lit=pow(max(lit,vec3(0)),vec3(1.0/2.2));
+    lit=mix(lit,fogColor,fogT);
+    // Линейный HDR — gamma encode делает только POST шейдер
     FragColor=vec4(lit,1);
 })";
 static const char* GLSL_GUN_VERT = R"(
@@ -86,7 +87,9 @@ void main(){
     float rim=pow(1-max(dot(N,vec3(0,0,1)),0),3)*.15;
     float sp=pow(max(dot(normalize(normalize(vec3(.3,.8,.5))+vec3(0,0,1)),N),0),64)*.4;
     vec3 lit=alb*(.18+d1*.55+d2+rim)+sp*.6+vec3(1,.85,.5)*flash*.3;
-    lit=ACES(lit); lit=pow(max(lit,vec3(0)),vec3(1.0/2.2)); FragColor=vec4(lit,1);
+    lit=ACES(lit);
+    // Линейный HDR — gamma encode делает POST
+    FragColor=vec4(lit,1);
 })";
 static const char* GLSL_POST_VERT = R"(
 #version 330 core
@@ -102,13 +105,13 @@ void main(){
     vec3 sharp=col*5-texture(screenTex,uv+vec2(-1,0)*px).rgb-texture(screenTex,uv+vec2(1,0)*px).rgb
               -texture(screenTex,uv+vec2(0,1)*px).rgb-texture(screenTex,uv+vec2(0,-1)*px).rgb;
     col=mix(col,sharp,0.18);
-    col*=0.70;
-    col=col*col*(3.0-2.0*col);
+    // Мягкий контраст (один проход)
     col=col*col*(3.0-2.0*col);
     float lum=dot(col,vec3(0.2126,0.7152,0.0722));
     col=mix(col*vec3(0.78,0.85,1.0),col*vec3(1.0,0.97,0.90),clamp(lum*2.0,0.0,1.0));
     float grey=dot(col,vec3(0.299,0.587,0.114));
     col=mix(vec3(grey),col,0.85);
+    // Единственная gamma encode
     col=pow(max(col,vec3(0)),vec3(1.0/2.2));
     float dist=length(uv-0.5);col*=1.0-dist*dist*0.75;
     if(hp01<.30){float p=sin(time*2.5)*.5+.5;float inten=(0.30-hp01)/.30*.50*(0.5+0.5*p);col=mix(col,vec3(col.r*0.5,0.0,0.0),inten*smoothstep(.20,.50,dist));}
@@ -182,7 +185,9 @@ float4 PSMain(V2P i):SV_Target{
     lit+=pow(max(dot(normalize(L+float3(0,0,1)),N),0),32)*.15*(1-shadow);
     lit=sat3(lit,1.2);lit=ACES(lit*.8);
     float fogT=saturate((i.fd-fogStart)/(fogEnd-fogStart));fogT=fogT*fogT*fogT;
-    lit=lerp(lit,fogColor,fogT);lit=pow(max(lit,0),1.0/2.2);return float4(lit,1);
+    lit=lerp(lit,fogColor,fogT);
+    // Линейный HDR — gamma encode делает только POST шейдер
+    return float4(lit,1);
 })";
 static const char* HLSL_GUN = R"(
 cbuffer PF:register(b0){matrix view,projection;};
@@ -207,7 +212,9 @@ float4 PSMain(V2P i):SV_Target{
     float rim=pow(1-max(dot(N,float3(0,0,1)),0),3)*.15;
     float sp=pow(max(dot(normalize(normalize(float3(.3,.8,.5))+float3(0,0,1)),N),0),64)*.4;
     float3 lit=alb*(.18+d1*.55+d2+rim)+sp*.6+float3(1,.85,.5)*flash*.3;
-    lit=ACES(lit);lit=pow(max(lit,0),1.0/2.2);return float4(lit,1);
+    lit=ACES(lit);
+    // Линейный HDR — gamma encode делает POST шейдер
+    return float4(lit,1);
 })";
 static const char* HLSL_POST = R"(
 cbuffer CB:register(b0){float2 resolution;float time;float hp01;};
@@ -224,16 +231,15 @@ float4 PSMain(V2P i):SV_Target{
     float3 sharp=col*5-screen.Sample(sLin,uv+float2(-1,0)*px).rgb-screen.Sample(sLin,uv+float2(1,0)*px).rgb
                      -screen.Sample(sLin,uv+float2(0,1)*px).rgb-screen.Sample(sLin,uv+float2(0,-1)*px).rgb;
     col=lerp(col,sharp,0.18);
-    // HL2: dark + hard contrast
-    col*=0.70;
+    // Мягкий контраст (один проход вместо двух)
     col=col*col*(3.0-2.0*col);
-    col=col*col*(3.0-2.0*col);
-    // Cold shadows
+    // Cold shadows — как в OpenGL
     float lum=dot(col,float3(0.2126,0.7152,0.0722));
     col=lerp(col*float3(0.78,0.85,1.0),col*float3(1.0,0.97,0.90),saturate(lum*2.0));
     // Slight desaturate
     float grey=dot(col,float3(0.299,0.587,0.114));
     col=lerp((float3)grey,col,0.85);
+    // Единственная gamma encode во всём пайплайне
     col=pow(max(col,0),1.0/2.2);
     float dist=length(uv-0.5);col*=1.0-dist*dist*0.75;
     if(hp01<.30){float p2=sin(time*2.5)*.5+.5;float inten=(0.30-hp01)/.30*.50*(0.5+0.5*p2);col=lerp(col,float3(col.r*0.5,0,0),inten*smoothstep(.20,.50,dist));}

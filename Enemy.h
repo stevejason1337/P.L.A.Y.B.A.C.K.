@@ -43,6 +43,7 @@ struct SharedEnemyModel
 
     bool load(const std::string& path, const std::string& texDir)
     {
+        if (loaded) return true;  // уже загружено — не грузим повторно
         proto.texLoader = loadTexture;
         if (!proto.load(path, texDir)) return false;
         loaded = true;

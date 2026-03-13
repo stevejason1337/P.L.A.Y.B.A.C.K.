@@ -1,8 +1,10 @@
 #pragma once
+// Enemy.h включён через main.cpp/Input.h — enemyManager глобальный
 #include <glm/glm.hpp>
 #include <vector>
 #include <algorithm>
 #include <limits>
+#include <functional>
 #include "Settings.h"
 #include "AABB.h"
 
@@ -101,6 +103,11 @@ inline void updatePlayer(float dt)
 }
 
 // ─── Выстрел ─────────────────────────────────────────────
+// onHitEnemy(orig, dir, &distOut) — колбэк из main.cpp, вызывает enemyManager.rayHit
+// Это нужно чтобы Player.h не зависел от Enemy.h (порядок include)
+using ShootEnemyFn = std::function<int(const glm::vec3&, const glm::vec3&, float*)>;
+inline ShootEnemyFn gShootEnemyFn; // инициализируется в main.cpp после загрузки
+
 inline void doShoot(const glm::vec3& camPos, const glm::vec3& camFront,
     float fireRate, float recoilKick)
 {
@@ -112,10 +119,19 @@ inline void doShoot(const glm::vec3& camPos, const glm::vec3& camFront,
     flashTimer = 0.1f;
     fireAnimCounter++;
 
-    // Bullet hole
+    // ── Сначала проверяем попадание по врагам ──────────────
+    float enemyDist = 200.f;
+    int hitIdx = -1;
+    if (gShootEnemyFn)
+        hitIdx = gShootEnemyFn(camPos, camFront, &enemyDist);
+
+    // ── Потом пуля в геометрию карты ───────────────────────
     glm::vec3 hitPos;
-    if (shootRay(camPos, camFront, hitPos))
-        bulletHoles.push_back({ hitPos, 5.f });
+    if (shootRay(camPos, camFront, hitPos)) {
+        float wallDist = glm::length(hitPos - camPos);
+        if (hitIdx < 0 || wallDist < enemyDist)
+            bulletHoles.push_back({ hitPos, 5.f });
+    }
 
     // Звук вызывается снаружи (в Input.h mouse_button_callback)
 }

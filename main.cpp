@@ -254,6 +254,10 @@ int main()
     renderer.uploadModels(weaponManager.models);
 
     enemyManager.load();
+    // Подключаем выстрел игрока к enemyManager (обходим circular include)
+    gShootEnemyFn = [](const glm::vec3& o, const glm::vec3& d, float* distOut) -> int {
+        return enemyManager.rayHit(o, d, 200.f, distOut, d);
+        };
     renderer.uploadMeshes(gModelSoldier.proto.meshes);
     renderer.uploadMeshes(gModelZombie.proto.meshes);
     renderer.uploadMeshes(gModelZombie2.proto.meshes);

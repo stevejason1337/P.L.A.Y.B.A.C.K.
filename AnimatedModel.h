@@ -272,6 +272,14 @@ private:
 // ──────────────────────────────────────────────
 inline bool AnimatedModel::load(const std::string& path, const std::string& texDir)
 {
+    // Сбрасываем старое состояние — иначе при повторном вызове
+    // меши и анимации накапливаются (вызывало "двойной зомби")
+    meshes.clear();
+    animIndex.clear();
+    boneMap.clear();
+    boneCount = 0;
+    boneFinal.clear();
+
     scene = importer.ReadFile(path,
         aiProcess_Triangulate | aiProcess_GenNormals |
         aiProcess_LimitBoneWeights | aiProcess_OptimizeMeshes);
