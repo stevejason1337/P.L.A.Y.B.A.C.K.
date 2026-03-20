@@ -162,7 +162,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\123321\Project1\dependencies\lib;C:\vcpkg\installed\x64-windows\debug\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glfw3.lib;opengl32.lib;user32.lib;gdi32.lib;shell32.lib;BulletDynamics_Debug.lib;BulletCollision_Debug.lib;LinearMath_Debug.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;opengl32.lib;user32.lib;gdi32.lib;shell32.lib;BulletDynamics_Debug.lib;BulletCollision_Debug.lib;LinearMath_Debug.lib;glslangd.lib;SPIRVd.lib;glslang-default-resource-limitsd.lib;spirv-cross-cored.lib;spirv-cross-glsld.lib;spirv-cross-hlsld.lib;MachineIndependentd.lib;GenericCodeGend.lib;OSDependentd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Editor|x64'">
@@ -548,6 +548,7 @@
     <ClInclude Include="Renderdebug.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="Settings.h" />
+    <ClInclude Include="ShaderTranspiler.h" />
     <ClInclude Include="Simdmath.h" />
     <ClInclude Include="Soundmanager.h" />
     <ClInclude Include="stb_image.h" />

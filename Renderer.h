@@ -1,6 +1,7 @@
 #pragma once
-// Renderer.h — единый рендерер с поддержкой OpenGL 3.3 и DirectX 11
-// gRenderBackend задаётся в Settings.h до вызова renderer.init()
+// Renderer.h — единый рендерер OpenGL 3.3 + DirectX 11
+// Один набор HLSL шейдеров для обоих API.
+// OpenGL получает GLSL через ShaderTranspiler (HLSL→GLSL конвертер).
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>
@@ -11,6 +12,7 @@
 #include <string>
 #include "Settings.h"
 #include "TAA.h"
+#include "ShaderTranspiler.h"   // HLSL → GLSL конвертер
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #ifdef _WIN32
@@ -24,119 +26,38 @@
 #include "WeaponManager.h"
 
 // ════════════════════════════════════════════════════════════
-//  GLSL ШЕЙДЕРЫ (OpenGL)
+//  GLSL ШЕЙДЕРЫ УДАЛЕНЫ — используем HLSL через ShaderTranspiler
+//  OpenGL вызывает: ShaderTranspiler::vsFromHLSL(HLSL_WORLD)
+//                   ShaderTranspiler::psFromHLSL(HLSL_WORLD)
 // ════════════════════════════════════════════════════════════
-static const char* GLSL_WORLD_VERT = R"(
-#version 330 core
-layout(location=0) in vec3 aPos; layout(location=1) in vec3 aNorm; layout(location=2) in vec2 aUV;
-out vec3 vNorm,vWorldPos; out vec2 vUV; out float vFogDist; out vec4 vLSP;
-uniform mat4 model,view,projection,lightSpaceMatrix; uniform mat3 normalMatrix;
-void main(){
-    vec4 wp=model*vec4(aPos,1); vWorldPos=wp.xyz; vNorm=normalMatrix*aNorm; vUV=aUV;
-    vLSP=lightSpaceMatrix*wp; vec4 vp=view*wp; vFogDist=-vp.z; gl_Position=projection*vp;
-})";
-static const char* GLSL_WORLD_FRAG = R"(
-#version 330 core
-in vec3 vNorm,vWorldPos; in vec2 vUV; in float vFogDist; in vec4 vLSP;
-out vec4 FragColor;
-uniform vec3 lightDir,baseColor,fogColor,camPos; uniform float fogStart,fogEnd;
-uniform bool hasTexture; uniform sampler2D tex,shadowMap;
-vec3 ACES(vec3 x){return clamp((x*(2.51*x+.03))/(x*(2.43*x+.59)+.14),0,1);}
-vec3 sat(vec3 c,float s){float l=dot(c,vec3(.2126,.7152,.0722));return mix(vec3(l),c,s);}
-void main(){
-    vec3 alb=hasTexture?pow(texture(tex,vUV).rgb,vec3(2.2)):baseColor;
-    vec3 N=normalize(vNorm),L=normalize(-lightDir); float NdL=max(dot(N,L),0);
-    vec3 proj=vLSP.xyz/vLSP.w; proj=proj*.5+.5;
-    float shadow=0;
-    if(proj.z<=1&&proj.x>0&&proj.x<1&&proj.y>0&&proj.y<1){
-        float bias=max(.005*(1-NdL),.002); vec2 ts=1.0/vec2(textureSize(shadowMap,0));
-        for(int x=-1;x<=1;x++)for(int y=-1;y<=1;y++)shadow+=proj.z-bias>texture(shadowMap,proj.xy+vec2(x,y)*ts).r?1:0;
-        shadow=shadow/9*.65;
-    }
-    vec3 lit=alb*(vec3(.25,.22,.20)+vec3(1.05,.95,.80)*NdL*.85*(1-shadow)
-                 +vec3(.55,.70,.90)*max(dot(N,vec3(0,1,0)),0)*.25
-                 +vec3(.40,.35,.28)*max(dot(N,vec3(0,-1,0)),0)*.12);
-    lit+=pow(max(dot(normalize(L+vec3(0,0,1)),N),0),32)*.15*(1-shadow);
-    lit=sat(lit,1.2); lit=ACES(lit*.8);
-    float fogT=clamp((vFogDist-fogStart)/(fogEnd-fogStart),0,1); fogT=fogT*fogT*fogT;
-    lit=mix(lit,fogColor,fogT);
-    // Линейный HDR — gamma encode делает только POST шейдер
-    FragColor=vec4(lit,1);
-})";
-static const char* GLSL_GUN_VERT = R"(
-#version 330 core
-layout(location=0) in vec3 aPos; layout(location=1) in vec3 aNorm;
-layout(location=2) in vec2 aUV;  layout(location=3) in vec4 aBoneIDs; layout(location=4) in vec4 aW;
-out vec3 vNorm; out vec2 vUV;
-uniform mat4 model,view,projection; uniform mat3 normalMatrix;
-uniform bool skinned; uniform mat4 bones[100];
-void main(){
-    vec4 pos=vec4(aPos,1); vec3 nor=aNorm;
-    if(skinned){mat4 skin=mat4(0);for(int i=0;i<4;i++){int id=int(aBoneIDs[i]);if(id>=0&&aW[i]>0)skin+=bones[id]*aW[i];}float ws=aW.x+aW.y+aW.z+aW.w;if(ws<.001)skin=mat4(1);pos=skin*pos;nor=mat3(skin)*nor;}
-    vNorm=normalMatrix*nor; vUV=aUV; gl_Position=projection*view*model*pos;
-})";
-static const char* GLSL_GUN_FRAG = R"(
-#version 330 core
-in vec3 vNorm; in vec2 vUV; out vec4 FragColor;
-uniform bool hasTexture; uniform sampler2D tex; uniform vec3 gunColor; uniform float flash;
-vec3 ACES(vec3 x){return clamp((x*(2.51*x+.03))/(x*(2.43*x+.59)+.14),0,1);}
-void main(){
-    vec3 alb=hasTexture?pow(texture(tex,vUV).rgb,vec3(2.2)):gunColor;
-    vec3 N=normalize(vNorm);
-    float d1=max(dot(N,normalize(vec3(.3,.8,.5))),0); float d2=max(dot(N,normalize(vec3(-.5,.3,-.8))),0)*.25;
-    float rim=pow(1-max(dot(N,vec3(0,0,1)),0),3)*.15;
-    float sp=pow(max(dot(normalize(normalize(vec3(.3,.8,.5))+vec3(0,0,1)),N),0),64)*.4;
-    vec3 lit=alb*(.18+d1*.55+d2+rim)+sp*.6+vec3(1,.85,.5)*flash*.3;
-    lit=ACES(lit);
-    // Линейный HDR — gamma encode делает POST
-    FragColor=vec4(lit,1);
-})";
-static const char* GLSL_POST_VERT = R"(
-#version 330 core
-layout(location=0) in vec2 aPos; layout(location=1) in vec2 aUV;
-out vec2 vUV; void main(){vUV=aUV;gl_Position=vec4(aPos,0,1);})";
-static const char* GLSL_POST_FRAG = R"(
-#version 330 core
-in vec2 vUV; out vec4 FragColor;
-uniform sampler2D screenTex; uniform vec2 resolution; uniform float time,hp01;
-void main(){
-    vec2 uv=vUV,px=1.0/resolution;
-    vec3 col=texture(screenTex,uv).rgb;
-    vec3 sharp=col*5-texture(screenTex,uv+vec2(-1,0)*px).rgb-texture(screenTex,uv+vec2(1,0)*px).rgb
-              -texture(screenTex,uv+vec2(0,1)*px).rgb-texture(screenTex,uv+vec2(0,-1)*px).rgb;
-    col=mix(col,sharp,0.18);
-    // Мягкий контраст (один проход)
-    col=col*col*(3.0-2.0*col);
-    float lum=dot(col,vec3(0.2126,0.7152,0.0722));
-    col=mix(col*vec3(0.78,0.85,1.0),col*vec3(1.0,0.97,0.90),clamp(lum*2.0,0.0,1.0));
-    float grey=dot(col,vec3(0.299,0.587,0.114));
-    col=mix(vec3(grey),col,0.85);
-    // Единственная gamma encode
-    col=pow(max(col,vec3(0)),vec3(1.0/2.2));
-    float dist=length(uv-0.5);col*=1.0-dist*dist*0.75;
-    if(hp01<.30){float p=sin(time*2.5)*.5+.5;float inten=(0.30-hp01)/.30*.50*(0.5+0.5*p);col=mix(col,vec3(col.r*0.5,0.0,0.0),inten*smoothstep(.20,.50,dist));}
-    col+=(fract(sin(dot(uv+fract(time),vec2(127.1,311.7)))*43758.5453)-0.5)*0.012;
-    FragColor=vec4(clamp(col,0,1),1);
-})";
-static const char* GLSL_SHADOW_VERT = R"(
-#version 330 core
-layout(location=0) in vec3 aPos; layout(location=3) in vec4 aBI; layout(location=4) in vec4 aW;
-uniform mat4 lightMVP; uniform bool skinned; uniform mat4 bones[100];
-void main(){
-    vec4 pos=vec4(aPos,1);
-    if(skinned){mat4 skin=mat4(0);for(int i=0;i<4;i++){int id=int(aBI[i]);if(id>=0&&aW[i]>0)skin+=bones[id]*aW[i];}float ws=aW.x+aW.y+aW.z+aW.w;if(ws<.001)skin=mat4(1);pos=skin*pos;}
-    gl_Position=lightMVP*pos;
-})";
-static const char* GLSL_SHADOW_FRAG = "#version 330 core\nvoid main(){}";
-static const char* GLSL_DOT_VERT = "#version 330 core\nlayout(location=0)in vec3 aPos;uniform mat4 mvp;void main(){gl_Position=mvp*vec4(aPos,1);}";
-static const char* GLSL_DOT_FRAG = "#version 330 core\nout vec4 FragColor;uniform vec4 color;void main(){FragColor=color;}";
 
+// ── GL shader builder (компилирует GLSL из строки) ──────────
 static GLuint _glBuild(const char* v, const char* f) {
-    auto cc = [](GLenum t, const char* s)->GLuint {GLuint sh = glCreateShader(t); glShaderSource(sh, 1, &s, NULL); glCompileShader(sh); int ok; glGetShaderiv(sh, GL_COMPILE_STATUS, &ok); if (!ok) { char l[512]; glGetShaderInfoLog(sh, 512, NULL, l); printf("[GL]%s\n", l); }return sh; };
+    auto cc = [](GLenum t, const char* s)->GLuint {
+        GLuint sh = glCreateShader(t);
+        glShaderSource(sh, 1, &s, NULL);
+        glCompileShader(sh);
+        int ok; glGetShaderiv(sh, GL_COMPILE_STATUS, &ok);
+        if (!ok) { char l[1024]; glGetShaderInfoLog(sh, 1024, NULL, l); printf("[GL] %s\n", l); }
+        return sh;
+        };
     GLuint vs = cc(GL_VERTEX_SHADER, v), fs = cc(GL_FRAGMENT_SHADER, f);
-    GLuint p = glCreateProgram(); glAttachShader(p, vs); glAttachShader(p, fs); glLinkProgram(p);
-    glDeleteShader(vs); glDeleteShader(fs); return p;
+    GLuint p = glCreateProgram();
+    glAttachShader(p, vs); glAttachShader(p, fs);
+    glLinkProgram(p);
+    int ok; glGetProgramiv(p, GL_LINK_STATUS, &ok);
+    if (!ok) { char l[1024]; glGetProgramInfoLog(p, 1024, NULL, l); printf("[GL Link] %s\n", l); }
+    glDeleteShader(vs); glDeleteShader(fs);
+    return p;
 }
+
+// Сборка GL шейдера из HLSL через транспайлер
+static GLuint _glBuildHLSL(const char* hlsl) {
+    std::string vs = ShaderTranspiler::vsFromHLSL(hlsl);
+    std::string fs = ShaderTranspiler::psFromHLSL(hlsl);
+    return _glBuild(vs.c_str(), fs.c_str());
+}
+
 
 // ════════════════════════════════════════════════════════════
 //  DIRECTX 11 BACKEND (только Windows)
@@ -499,12 +420,15 @@ struct Renderer
     // ── init ─────────────────────────────────────────────────
     void init(void* windowHandle = nullptr)
     {
+        // Инициализируем glslang один раз
+        ShaderTranspiler::init();
+
 #ifdef _WIN32
         if (gRenderBackend == RenderBackend::DX11) {
             if (_dxInit((HWND)windowHandle)) { printf("[Renderer] Backend: DirectX 11\n"); return; }
             printf("[Renderer] DX11 failed, falling back to OpenGL\n");
             gRenderBackend = RenderBackend::OpenGL;
-            saveEngineConfig(); // сохраняем фоллбэк
+            saveEngineConfig();
         }
 #endif
         _initGL();
@@ -864,11 +788,11 @@ private:
     // ════════════════════════════════════════════════════
     void _initGL()
     {
-        worldShader = _glBuild(GLSL_WORLD_VERT, GLSL_WORLD_FRAG);
-        gunShader = _glBuild(GLSL_GUN_VERT, GLSL_GUN_FRAG);
-        dotShader = _glBuild(GLSL_DOT_VERT, GLSL_DOT_FRAG);
-        postShader = _glBuild(GLSL_POST_VERT, GLSL_POST_FRAG);
-        shadowShader = _glBuild(GLSL_SHADOW_VERT, GLSL_SHADOW_FRAG);
+        worldShader = _glBuildHLSL(HLSL_WORLD);
+        gunShader = _glBuildHLSL(HLSL_GUN);
+        dotShader = _glBuildHLSL(HLSL_DOT);
+        postShader = _glBuildHLSL(HLSL_POST);
+        shadowShader = _glBuildHLSL(HLSL_SHADOW);
 
         glGenFramebuffers(1, &shadowFBO); glGenTextures(1, &shadowTex);
         glBindTexture(GL_TEXTURE_2D, shadowTex);
