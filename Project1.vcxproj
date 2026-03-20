@@ -218,6 +218,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Editor|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Modelloader.cpp" />
+    <ClCompile Include="ShaderTranspiler.cpp" />
     <ClCompile Include="Soundmanager.cpp" />
     <ClCompile Include="Textrenderer.cpp" />
   </ItemGroup>

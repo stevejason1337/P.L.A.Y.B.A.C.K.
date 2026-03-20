@@ -51,11 +51,11 @@ static GLuint _glBuild(const char* v, const char* f) {
     return p;
 }
 
-// Сборка GL шейдера из HLSL через транспайлер
+// OpenGL: HLSL строка → GLuint (нативный GLSL из ShaderTranspiler.cpp)
 static GLuint _glBuildHLSL(const char* hlsl) {
-    std::string vs = ShaderTranspiler::vsFromHLSL(hlsl);
-    std::string fs = ShaderTranspiler::psFromHLSL(hlsl);
-    return _glBuild(vs.c_str(), fs.c_str());
+    GLuint prog = ShaderTranspiler::buildProgram(hlsl);
+    if (!prog) printf("[Renderer] _glBuildHLSL FAILED\n");
+    return prog;
 }
 
 
@@ -422,6 +422,7 @@ struct Renderer
     {
         // Инициализируем glslang один раз
         ShaderTranspiler::init();
+        printf("[Renderer] GL: %s\n", glGetString(GL_VERSION));
 
 #ifdef _WIN32
         if (gRenderBackend == RenderBackend::DX11) {
