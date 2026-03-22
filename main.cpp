@@ -260,6 +260,7 @@ int main()
     renderer.uploadMeshes(gModelSoldier.proto.meshes);
     renderer.uploadMeshes(gModelZombie.proto.meshes);
     renderer.uploadMeshes(gModelZombie2.proto.meshes);
+    renderer.uploadMeshes(gModelPigDemon.proto.meshes);
     // Load enemy spawns from map file (only if no enemies already present)
     {
         std::ifstream mf("maps/level.map");
@@ -292,8 +293,9 @@ int main()
             if (enemyManager.enemies.empty()) {
                 for (auto& [t, p] : uniqueSpawns) {
                     if (t == "zombie")       enemyManager.spawnZombie(p);
-                    else if (t == "zombie2") enemyManager.spawnZombie2(p);
-                    else if (t == "soldier") enemyManager.spawn(p);
+                    else if (t == "zombie2")   enemyManager.spawnZombie2(p);
+                    else if (t == "soldier")   enemyManager.spawn(p);
+                    else if (t == "pig_demon") enemyManager.spawnPigDemon(p);
                     std::cout << "[MAP] Spawned " << t << " at " << p.x << "," << p.y << "," << p.z << "\n";
                 }
             }

@@ -107,6 +107,7 @@ struct Console
             print("--- Enemies ---", CON_YELLOW);
             print("  spawn [N]           - spawn N soldiers", CON_CYAN);
             print("  zombie [N]          - spawn N zombies", CON_CYAN);
+            print("  pig_demon [N]       - spawn N pig demons", CON_CYAN);
             print("  killall             - kill all enemies", CON_CYAN);
             print("  enemies             - show enemy count", CON_CYAN);
             print("--- Graphics ---", CON_YELLOW);
@@ -201,6 +202,18 @@ struct Console
             enemyManager.spawnZombie2Group(player.pos + fwd * 5.f, n, n > 1 ? 4.f : 0.f);
             print("Spawned " + std::to_string(n) + " zombie2(s).", CON_GREEN);
         }
+        else if (name == "pig_demon" || name == "pig" || name == "demon") {
+            int n = 1; ss >> n; n = glm::clamp(n, 1, 10);
+            glm::vec3 fwd = glm::normalize(glm::vec3(camFront.x, 0, camFront.z));
+            glm::vec3 spawnPos = player.pos + fwd * 6.f;
+            if (n == 1) {
+                enemyManager.spawnPigDemon(spawnPos);
+            }
+            else {
+                enemyManager.spawnPigDemonGroup(spawnPos, n, n > 3 ? 5.f : 3.f);
+            }
+            print("Spawned " + std::to_string(n) + " pig demon(s). Watch out!", CON_RED);
+        }
         else if (name == "nocull") {
             enemyManager.debugNoCull = !enemyManager.debugNoCull;
             print(enemyManager.debugNoCull ? "Culling OFF" : "Culling ON", CON_GREEN);
@@ -286,7 +299,7 @@ struct Console
         static const std::vector<std::string> cmds = {
             "help","noclip","god","kill","give ammo","give weapon",
             "setpos","timescale","fps","pos","hud","wireframe",
-            "spawn","zombie","zombie2","killall","enemies","nocull",
+            "spawn","zombie","zombie2","pig_demon","killall","enemies","nocull",
             "zscale","zspeed","clear","quit","gfx_api","gfx_switch"
         };
         std::vector<std::string> matches;

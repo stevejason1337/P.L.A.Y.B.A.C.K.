@@ -62,15 +62,31 @@ private:
         for (auto& kv : proto.animIndex)
             std::cout << "[ENEMY]   '" << kv.first << "'\n";
 
-        IDLE = _find({ "rifle aiming idle","aiming idle","Idle","idle","mixamo.com" });
-        WALK = _find({ "walking","walk forward","Walking","mixamo.com" });
-        WALK_BACK = _find({ "walking backwards","Walk Back","walk back" });
-        STRAFE_L = _find({ "strafe left","Strafe Left" });
-        STRAFE_R = _find({ "strafe right","Strafe Right" });
-        SHOOT = _find({ "firing rifle","Firing Rifle","shoot","fire","Shoot" });
-        RELOAD = _find({ "reloading","Reloading","reload" });
-        HIT = _find({ "hit reaction","Hit Reaction","hit","getting hit" });
-        DEATH = _find({ "dying","Dying","death","Death","die","falling back death","Dead","dead" });
+        // Mixamo / UE5 ThirdPerson / custom names
+        IDLE = _find({ "rifle aiming idle","aiming idle","Idle","idle",
+                            "ThirdPersonIdle","MF_Idle","Stand_Idle","mixamo.com" });
+        WALK = _find({ "walking","walk forward","Walking",
+                            "ThirdPersonWalk","MF_Walk_Fwd","Walk_Fwd","mixamo.com" });
+        WALK_BACK = _find({ "walking backwards","Walk Back","walk back",
+                            "Walk_Bwd","MF_Walk_Bwd" });
+        STRAFE_L = _find({ "strafe left","Strafe Left",
+                            "Walk_Lt","MF_Walk_Lt" });
+        STRAFE_R = _find({ "strafe right","Strafe Right",
+                            "Walk_Rt","MF_Walk_Rt" });
+        // Для ближнего боя — ищем удар
+        SHOOT = _find({ "firing rifle","Firing Rifle","shoot","fire","Shoot",
+                            "Attack","attack","MeleeAttack","Melee_Attack",
+                            "Attack_01","Punch","punch","Slam","slam",
+                            "ThirdPersonAttack","MF_Attack" });
+        RELOAD = _find({ "reloading","Reloading","reload",
+                            "Attack_02","Swing","swing" });
+        HIT = _find({ "hit reaction","Hit Reaction","hit","getting hit",
+                            "HitReact","Hit_React_Front","Hit_React","MF_Hit",
+                            "ThirdPersonHit" });
+        DEATH = _find({ "dying","Dying","death","Death","die",
+                            "falling back death","Dead","dead",
+                            "Death_Pose","MF_Death","ThirdPersonDeath",
+                            "Death_Forward","Death_Backward" });
 
         if (IDLE.empty() && !proto.animIndex.empty())
             IDLE = proto.animIndex.begin()->first;
@@ -110,9 +126,10 @@ private:
 inline SharedEnemyModel gModelSoldier;
 inline SharedEnemyModel gModelZombie;
 inline SharedEnemyModel gModelZombie2;
+inline SharedEnemyModel gModelPigDemon;
 
 // ─── Тип врага ────────────────────────────────────────────
-enum class EnemyType { SOLDIER, ZOMBIE, ZOMBIE2 };
+enum class EnemyType { SOLDIER, ZOMBIE, ZOMBIE2, PIG_DEMON };
 
 // ─── Состояния ────────────────────────────────────────────
 // ZOMBIE использует только PATROL / APPROACH / MELEE / DEAD
@@ -130,6 +147,7 @@ struct Enemy
     EnemyState state = EnemyState::PATROL;
     bool       removed = false;
     float      meleeTimer = 0.f;   // кулдаун удара зомби
+    int        meleeCombo = 0;    // счётчик комбо (pig demon)
     float      meleeRange = 2.2f;  // дальность удара
     AnimCache     myCache;
     std::string   myCachedAnim;
@@ -177,13 +195,15 @@ struct Enemy
 
     // Возвращает нужную SharedModel по типу
     SharedEnemyModel& sharedModel() {
-        if (type == EnemyType::ZOMBIE2) return gModelZombie2;
-        if (type == EnemyType::ZOMBIE)  return gModelZombie;
+        if (type == EnemyType::ZOMBIE2)   return gModelZombie2;
+        if (type == EnemyType::ZOMBIE)    return gModelZombie;
+        if (type == EnemyType::PIG_DEMON) return gModelPigDemon;
         return gModelSoldier;
     }
     const SharedEnemyModel& sharedModel() const {
-        if (type == EnemyType::ZOMBIE2) return gModelZombie2;
-        if (type == EnemyType::ZOMBIE)  return gModelZombie;
+        if (type == EnemyType::ZOMBIE2)   return gModelZombie2;
+        if (type == EnemyType::ZOMBIE)    return gModelZombie;
+        if (type == EnemyType::PIG_DEMON) return gModelPigDemon;
         return gModelSoldier;
     }
 
@@ -436,8 +456,8 @@ struct Enemy
             else {
                 state = EnemyState::APPROACH;
                 float spd = (type == EnemyType::ZOMBIE2)
-                    ? ENEMY_WALK_SPD * 2.0f  // walker2 бегает
-                    : ENEMY_WALK_SPD * 1.2f; // walker1 ходит
+                    ? ENEMY_WALK_SPD * 2.0f
+                    : ENEMY_WALK_SPD * 1.2f;
                 animSpeed = (type == EnemyType::ZOMBIE2) ? 1.4f : 1.0f;
                 _moveTo(pos + dir * spd * dt);
                 if (dist <= meleeRange && meleeTimer <= 0.f) {
@@ -445,6 +465,36 @@ struct Enemy
                     playerHP -= 12.f;
                     if (playerHP < 0.f) playerHP = 0.f;
                     meleeTimer = 1.5f;
+                }
+            }
+        }
+        else if (type == EnemyType::PIG_DEMON) {
+            // Pig Demon — быстрый ближний боец
+            // Фазы: патруль → бег к игроку → яростная атака (2 удара)
+            if (meleeTimer > 0.f) meleeTimer -= dt;
+            if (dist > ENEMY_DETECT * 1.2f) {
+                _patrol(dt);
+                animSpeed = 0.6f;
+            }
+            else if (dist > meleeRange) {
+                state = EnemyState::APPROACH;
+                // Чем ближе — тем быстрее бежит (charge)
+                float chargeSpd = dist < 8.f
+                    ? ENEMY_WALK_SPD * 3.5f   // спринт
+                    : ENEMY_WALK_SPD * 2.0f;  // бег
+                animSpeed = dist < 8.f ? 1.8f : 1.2f;
+                _moveTo(pos + dir * chargeSpd * dt);
+            }
+            else {
+                // В зоне удара — атакуем
+                state = EnemyState::MELEE;
+                if (meleeTimer <= 0.f) {
+                    // Два удара подряд с небольшим интервалом
+                    float dmg = (meleeCombo == 0) ? 20.f : 15.f;
+                    playerHP -= dmg;
+                    if (playerHP < 0.f) playerHP = 0.f;
+                    meleeCombo = (meleeCombo + 1) % 3; // 3-хитовое комбо
+                    meleeTimer = (meleeCombo == 0) ? 1.8f : 0.6f; // пауза после серии
                 }
             }
         }
@@ -491,12 +541,26 @@ struct Enemy
 
         std::string want;
         if (type == EnemyType::ZOMBIE) {
-            // Зомби — только ходьба и удар
-            if (hitTimer > 0.f)                want = s.HIT;
-            else if (state == EnemyState::MELEE)    want = s.SHOOT; // удар рукой
+            if (hitTimer > 0.f)                     want = s.HIT;
+            else if (state == EnemyState::MELEE)    want = s.SHOOT;
             else if (state == EnemyState::APPROACH ||
                 state == EnemyState::PATROL)   want = s.WALK;
-            else                                     want = s.IDLE;
+            else                                    want = s.IDLE;
+        }
+        else if (type == EnemyType::PIG_DEMON) {
+            if (hitTimer > 0.f)
+                want = s.HIT;
+            else if (state == EnemyState::MELEE) {
+                // Чередуем SHOOT (удар1) и RELOAD (удар2) для комбо
+                want = (meleeCombo % 2 == 0) ? s.SHOOT : s.RELOAD;
+            }
+            else if (state == EnemyState::APPROACH) {
+                // Бег если близко, ходьба если далеко
+                float dist2 = glm::length(glm::vec3(0.f)); // placeholder
+                want = s.WALK; // используем WALK (может быть Run из FBX)
+            }
+            else
+                want = s.IDLE;
         }
         else {
             if (hitTimer > 0.f)              want = s.HIT;
@@ -606,9 +670,14 @@ struct EnemyManager
     // Зомби 1
     std::string zombiePath = "models/characters/walker/walker.fbx";
     std::string zombieTexDir = "models/characters/walker/textures";
-    // Зомби 2 (walker2 - с текстурами)
+    // Зомби 2
     std::string zombie2Path = "models/characters/walker2/walker2.fbx.fbx";
     std::string zombie2TexDir = "models/characters/walker2/textures";
+    // Pig Demon
+    std::string pigDemonPath = "models/characters/pig_demon/source/pig_demon.fbx";
+    std::string pigDemonTexDir = "models/characters/pig_demon/source/textures";
+    // Внешний FBX с анимациями (UE5 ThirdPerson / Mixamo пак)
+    std::string pigDemonAnimFbx = "models/animations/source/3rdpersonanim.fbx";
 
     void load()
     {
@@ -638,6 +707,126 @@ struct EnemyManager
             if (!gModelZombie2.load(zombie2Path, zombie2TexDir))
                 std::cerr << "[ENEMY] Failed to load zombie2\n";
         }
+
+        // ── Pig Demon ─────────────────────────────────────────
+        if (!pigDemonPath.empty()) {
+            if (!gModelPigDemon.load(pigDemonPath, pigDemonTexDir)) {
+                std::cerr << "[ENEMY] Failed to load pig_demon\n";
+            }
+            else {
+                // Грузим анимации из отдельного FBX
+                // AnimatedModel::loadExtraAnimations() подключает анимации
+                // из другого файла к существующей модели
+                gModelPigDemon.loaded = true; // форсируем, loadExtraAnim не меняет флаг
+
+                // Назначаем текстуру вручную — в FBX зашит абсолютный путь
+                // поэтому автопоиск не работает, пробуем все варианты имён
+                {
+                    auto& meshes = gModelPigDemon.proto.meshes;
+                    const std::string& td = pigDemonTexDir;
+                    for (auto& m : meshes) {
+                        if (m.texID == 0) {
+                            // Пробуем все возможные варианты имени файла
+                            const char* names[] = {
+                                "PigDemon DIFF.jpg", "PigDemon_DIFF.jpg",
+                                "PigDemonDIFF.jpg",  "PigDemon DIFF.png",
+                                "PigDemon_DIFF.png", "pigdemon_diff.jpg",
+                                "Diffuse.jpg",       "diffuse.jpg",
+                                "BaseColor.jpg",     "albedo.jpg",
+                                nullptr
+                            };
+                            for (int ni = 0; names[ni]; ni++) {
+                                unsigned int tid = loadTexture(td + "/" + names[ni]);
+                                if (tid) { m.texID = tid; printf("[ENEMY] Pig demon tex: %s\n", names[ni]); break; }
+                            }
+                        }
+                    }
+                }
+
+                if (!pigDemonAnimFbx.empty()) {
+                    printf("[ENEMY] Loading pig_demon animations from: %s\n",
+                        pigDemonAnimFbx.c_str());
+                    // loadExtraAnim грузит ВСЕ анимации из FBX и добавляет
+                    // их в animIndex модели — _autoDetect уже ищет по ним
+                    gModelPigDemon.proto.loadExtraAnim(pigDemonAnimFbx);
+
+                    // Выводим все найденные анимации для отладки
+                    printf("[ENEMY] Pig Demon animations after loading extra FBX:\n");
+                    for (auto& kv : gModelPigDemon.proto.animIndex)
+                        printf("[ENEMY]   '%s'\n", kv.first.c_str());
+
+                    // Перезапускаем авто-детект — теперь доступны анимации из FBX
+                    // Но _autoDetect приватный, поэтому делаем вручную через _find
+                    auto& s = gModelPigDemon;
+                    auto _findAnim = [&](std::initializer_list<const char*> keys) -> std::string {
+                        for (auto k : keys)
+                            if (gModelPigDemon.proto.hasAnim(k)) return k;
+                        for (auto k : keys) {
+                            std::string lo(k);
+                            for (auto& c : lo) c = (char)tolower((unsigned char)c);
+                            for (auto& kv : gModelPigDemon.proto.animIndex) {
+                                std::string klo = kv.first;
+                                for (auto& c : klo) c = (char)tolower((unsigned char)c);
+                                if (klo.find(lo) != std::string::npos) return kv.first;
+                            }
+                        }
+                        return "";
+                        };
+
+                    // Ходьба / бег
+                    if (s.WALK.empty())
+                        s.WALK = _findAnim({ "Walk_Fwd","MF_Walk_Fwd","ThirdPersonWalk",
+                                            "walking","Walk","Run","run","ThirdPersonRun" });
+                    // Бег (будет использован как charge)
+                    std::string runAnim = _findAnim({ "Run_Fwd","MF_Run_Fwd","ThirdPersonRun",
+                                                     "Sprint","sprint","Run","run" });
+                    if (!runAnim.empty()) s.WALK = runAnim; // pig demon бегает, не ходит
+
+                    // Атака — Fist_Fight или High_Kick из UE4 пака
+                    if (s.SHOOT.empty())
+                        s.SHOOT = _findAnim({ "Fist_Fight","Fist Fight","High_Kick","High Kick",
+                                             "Attack","attack","Punch","punch","Slam","slam",
+                                             "Melee","melee","Strike","strike","Combat_Idle",
+                                             "ThirdPersonAttack","MF_Attack","Attack_01" });
+                    // Второй удар для комбо
+                    if (s.RELOAD.empty())
+                        s.RELOAD = _findAnim({ "High_Kick","High Kick","Fist_Fight","Fist Fight",
+                                              "Attack_02","Sprint","sprint" });
+                    if (s.RELOAD.empty()) s.RELOAD = s.SHOOT;
+
+                    // Idle — Combat_Idle или обычный Idle из UE4 пака
+                    if (s.IDLE.empty())
+                        s.IDLE = _findAnim({ "Combat_Idle","Combat Idle","Idle","idle",
+                                            "ThirdPersonIdle","MF_Idle","Stand" });
+
+                    // Смерть — Knock_Out
+                    if (s.DEATH.empty())
+                        s.DEATH = _findAnim({ "Knock_Out","Knock Out","KnockOut",
+                                             "Death","death","Dying","dying","Dead",
+                                             "ThirdPersonDeath","MF_Death" });
+                    // Хит — Damaged
+                    if (s.HIT.empty())
+                        s.HIT = _findAnim({ "Damaged","damaged","Hit_React","HitReact",
+                                           "hit reaction","Hit","hit","Getting Hit",
+                                           "ThirdPersonHit","MF_Hit" });
+
+                    // Фолбэки
+                    if (s.IDLE.empty() && !gModelPigDemon.proto.animIndex.empty())
+                        s.IDLE = gModelPigDemon.proto.animIndex.begin()->first;
+                    if (s.WALK.empty())   s.WALK = s.IDLE;
+                    if (s.SHOOT.empty())  s.SHOOT = s.IDLE;
+                    if (s.RELOAD.empty()) s.RELOAD = s.SHOOT;
+                    if (s.DEATH.empty())  s.DEATH = s.IDLE;
+                    if (s.HIT.empty())    s.HIT = s.IDLE;
+
+                    printf("[ENEMY] Pig Demon IDLE  = '%s'\n", s.IDLE.c_str());
+                    printf("[ENEMY] Pig Demon WALK  = '%s'\n", s.WALK.c_str());
+                    printf("[ENEMY] Pig Demon SHOOT = '%s'\n", s.SHOOT.c_str());
+                    printf("[ENEMY] Pig Demon DEATH = '%s'\n", s.DEATH.c_str());
+                    printf("[ENEMY] Pig Demon HIT   = '%s'\n", s.HIT.c_str());
+                }
+            }
+        }
     }
 
     // Спавн солдата
@@ -657,12 +846,32 @@ struct EnemyManager
         _spawnEnemy(p, EnemyType::ZOMBIE2);
     }
 
+    void spawnPigDemon(glm::vec3 p)
+    {
+        _spawnEnemy(p, EnemyType::PIG_DEMON);
+    }
+
+    void spawnPigDemonGroup(glm::vec3 center, int count, float radius = 5.f)
+    {
+        for (int i = 0; i < count; i++) {
+            float a = (float)i / count * 6.2831f;
+            spawnPigDemon(center + glm::vec3(cosf(a) * radius, 0.f, sinf(a) * radius));
+        }
+    }
+
     void _spawnEnemy(glm::vec3 p, EnemyType t)
     {
         auto& sm = (t == EnemyType::ZOMBIE2) ? gModelZombie2 :
-            (t == EnemyType::ZOMBIE) ? gModelZombie : gModelSoldier;
-        if (!sm.loaded) {
-            std::cerr << "[ENEMY] Model not loaded!\n";
+            (t == EnemyType::ZOMBIE) ? gModelZombie :
+            (t == EnemyType::PIG_DEMON) ? gModelPigDemon : gModelSoldier;
+        // Проверяем и loaded и meshes — loadExtraAnim может вызываться после load()
+        if (!sm.loaded && sm.proto.meshes.empty()) {
+            std::cerr << "[ENEMY] Model not loaded: " << (int)t << "\n";
+            return;
+        }
+        // Для pig demon: loaded может быть true но meshes всё ещё грузятся
+        if (t == EnemyType::PIG_DEMON && sm.proto.meshes.empty()) {
+            std::cerr << "[ENEMY] Pig demon meshes empty!\n";
             return;
         }
         float gy = getGroundY(p, 200.f);
@@ -689,14 +898,22 @@ struct EnemyManager
         else if (t == EnemyType::ZOMBIE2) {
             e.hp = 150.f;
             e.meleeRange = 2.0f;
-            e.scale = 0.01f; // walker2 тоже Mixamo — сантиметры
+            e.scale = 0.01f;
+        }
+        else if (t == EnemyType::PIG_DEMON) {
+            e.hp = 350.f;     // толстый — много HP
+            e.meleeRange = 2.5f;      // длинные руки
+            e.scale = 0.01f;     // FBX в сантиметрах
+            e.animSpeed = 1.0f;
         }
         e.init();
         enemies.push_back(std::move(e));
         // Форсируем первый updateAnim чтобы boneFinal сразу заполнился
         enemies.back().updateAnim(0.016f);
         std::cout << "[ENEMY] Spawned "
-            << (t == EnemyType::ZOMBIE2 ? "zombie2" : t == EnemyType::ZOMBIE ? "zombie" : "soldier")
+            << (t == EnemyType::PIG_DEMON ? "pig_demon" :
+                t == EnemyType::ZOMBIE2 ? "zombie2" :
+                t == EnemyType::ZOMBIE ? "zombie" : "soldier")
             << " at (" << p.x << "," << p.y << "," << p.z << ")\n";
     }
 
