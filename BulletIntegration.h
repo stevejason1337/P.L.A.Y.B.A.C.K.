@@ -1,10 +1,12 @@
 #pragma once
-// ═══════════════════════════════════════════════════════════════
-//  BulletIntegration.h  — без ragdoll constraints (без крашей)
+// ================================================================
+// BulletIntegration.h — Bullet Physics: капсулы врагов + ragdoll.
 //
-//  Ragdoll = 5 независимых шаров без джоинтов.
-//  Визуально похоже, но никогда не крашится.
-// ═══════════════════════════════════════════════════════════════
+// ИСПРАВЛЕНО:
+//  - Убран #include "Physics.h" (не существует отдельно, всё в AABB.h)
+//  - Включён только AABB.h для colTris и базовых типов
+//  - Нет дублирования с Enemy.h — BloodFX подключается один раз
+// ================================================================
 
 #include <btBulletDynamicsCommon.h>
 #include <BulletCollision/CollisionShapes/btCapsuleShape.h>
@@ -15,14 +17,18 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <vector>
 #include <unordered_map>
+#include <algorithm>
+#include <cstdio>
 
 #include "BloodFX.h"
-#include "AABB.h"
+#include "AABB.h"   // colTris — геометрия карты для столкновений
 
+// ── Конвертеры ────────────────────────────────────────────────
 inline btVector3 glm2bt(const glm::vec3& v) { return { v.x, v.y, v.z }; }
 inline glm::vec3 bt2glm(const btVector3& v) { return { v.x(), v.y(), v.z() }; }
 
-// ── Простой ragdoll: 5 шаров, без джоинтов ────────────────────
+// ── Простой ragdoll: 5 независимых шаров без джоинтов ─────────
+// (без constraints = никогда не крашится)
 struct SimpleRagdoll {
     static const int COUNT = 5;
     btRigidBody* bodies[COUNT] = {};
@@ -44,12 +50,12 @@ struct EnemyBulletBody {
     btRigidBody* capsule = nullptr;
     SimpleRagdoll ragdoll;
     bool          isRagdoll = false;
-
-    glm::vec3 hitOffset = {};
-    float     hitOffTimer = 0.f;
+    glm::vec3     hitOffset = {};
+    float         hitOffTimer = 0.f;
 
     void addHitReaction(const glm::vec3& dir, float force) {
-        hitOffset = dir * force; hitOffTimer = 0.14f;
+        hitOffset = dir * force;
+        hitOffTimer = 0.14f;
     }
     void updateHitReaction(float dt) {
         if (hitOffTimer > 0.f) {
@@ -65,7 +71,6 @@ struct EnemyBulletBody {
 
 // ══════════════════════════════════════════════════════════════
 struct BulletWorld {
-
     btDefaultCollisionConfiguration* config = nullptr;
     btCollisionDispatcher* dispatch = nullptr;
     btBroadphaseInterface* broad = nullptr;
@@ -107,7 +112,7 @@ struct BulletWorld {
         printf("[BULLET] Map: %zu tris\n", colTris.size());
     }
 
-    int addEnemy(const glm::vec3& pos, float rotY,
+    int addEnemy(const glm::vec3& pos, float /*rotY*/,
         float height = 1.8f, float radius = 0.3f, float mass = 70.f)
     {
         int id = nextId++;
@@ -120,7 +125,8 @@ struct BulletWorld {
         btVector3 inertia(0, 0, 0);
         shape->calculateLocalInertia(mass, inertia);
         btRigidBody::btRigidBodyConstructionInfo ci(mass, ms, shape, inertia);
-        ci.m_friction = 0.8f; ci.m_restitution = 0.05f;
+        ci.m_friction = 0.8f;
+        ci.m_restitution = 0.05f;
 
         EnemyBulletBody eb;
         eb.capsule = new btRigidBody(ci);
@@ -137,12 +143,10 @@ struct BulletWorld {
         auto it = bodies.find(bulletId);
         if (it == bodies.end()) return;
         auto& eb = it->second;
-
         float reactForce = std::min(damage * 0.0015f, 0.15f);
         eb.addHitReaction(shootDir, reactForce);
-
         if (!eb.isRagdoll && eb.capsule) {
-            float impForce = std::min(damage * 0.12f, 8.f);
+            float     impForce = std::min(damage * 0.12f, 8.f);
             glm::vec3 imp = shootDir * impForce + glm::vec3(0, impForce * 0.2f, 0);
             btVector3 rel = glm2bt(hitPos) - eb.capsule->getWorldTransform().getOrigin();
             eb.capsule->activate(true);
@@ -151,29 +155,28 @@ struct BulletWorld {
     }
 
     void activateRagdoll(int bulletId, const glm::vec3& enemyPos,
-        float enemyRotY, const glm::vec3& shootDir, float damage)
+        float /*enemyRotY*/, const glm::vec3& shootDir, float damage)
     {
         auto it = bodies.find(bulletId);
         if (it == bodies.end()) return;
         auto& eb = it->second;
 
-        // Удаляем капсулу
+        // Убираем живую капсулу
         if (eb.capsule) {
             world->removeRigidBody(eb.capsule);
             delete eb.capsule->getMotionState();
             delete eb.capsule;
             eb.capsule = nullptr;
         }
-
         eb.isRagdoll = true;
 
-        // 5 позиций костей относительно pos
+        // 5 точек костей (нижние → голова, руки)
         glm::vec3 offsets[SimpleRagdoll::COUNT] = {
-            {0,    0.90f, 0},
-            {0,    1.28f, 0},
-            {0,    1.72f, 0},
-            {-0.28f, 1.25f, 0},
-            { 0.28f, 1.25f, 0},
+            { 0,     0.90f, 0 },
+            { 0,     1.28f, 0 },
+            { 0,     1.72f, 0 },
+            {-0.28f, 1.25f, 0 },
+            { 0.28f, 1.25f, 0 },
         };
         float masses[SimpleRagdoll::COUNT] = { 20.f, 18.f, 5.f, 4.f, 4.f };
         float radii[SimpleRagdoll::COUNT] = { 0.16f, 0.14f, 0.11f, 0.07f, 0.07f };
@@ -182,15 +185,14 @@ struct BulletWorld {
         for (int i = 0; i < SimpleRagdoll::COUNT; i++) {
             btSphereShape* sh = new btSphereShape(radii[i]);
             shapes.push_back(sh);
-
             glm::vec3 bpos = enemyPos + offsets[i];
             btTransform t2; t2.setIdentity(); t2.setOrigin(glm2bt(bpos));
             btDefaultMotionState* ms = new btDefaultMotionState(t2);
             btVector3 inertia(0, 0, 0);
             sh->calculateLocalInertia(masses[i], inertia);
             btRigidBody::btRigidBodyConstructionInfo ci(masses[i], ms, sh, inertia);
-            ci.m_friction = 0.6f; ci.m_restitution = 0.2f;
-
+            ci.m_friction = 0.6f;
+            ci.m_restitution = 0.2f;
             eb.ragdoll.bodies[i] = new btRigidBody(ci);
             eb.ragdoll.bodies[i]->setActivationState(DISABLE_DEACTIVATION);
             world->addRigidBody(eb.ragdoll.bodies[i]);
@@ -201,7 +203,6 @@ struct BulletWorld {
             imp.y += 2.f + ((rand() % 100) / 100.f) * 2.f;
             eb.ragdoll.bodies[i]->applyCentralImpulse(glm2bt(imp));
         }
-
         eb.ragdoll.active = true;
         eb.ragdoll.syncFromBullet();
         bloodFX.spawnDeath(enemyPos, shootDir);
@@ -218,8 +219,7 @@ struct BulletWorld {
 
     glm::vec3 getHitOffset(int bulletId) const {
         auto it = bodies.find(bulletId);
-        if (it == bodies.end()) return {};
-        return it->second.getHitOffset();
+        return it != bodies.end() ? it->second.getHitOffset() : glm::vec3(0.f);
     }
 
     bool isRagdoll(int bulletId) const {
@@ -227,12 +227,10 @@ struct BulletWorld {
         return it != bodies.end() && it->second.isRagdoll;
     }
 
-    // ── Удаление врага — без constraints, никогда не крашится ──
     void removeEnemy(int bulletId) {
         auto it = bodies.find(bulletId);
         if (it == bodies.end()) return;
         auto& eb = it->second;
-
         if (eb.isRagdoll) {
             for (int i = 0; i < SimpleRagdoll::COUNT; i++) {
                 if (eb.ragdoll.bodies[i]) {
@@ -249,7 +247,6 @@ struct BulletWorld {
             delete eb.capsule;
             eb.capsule = nullptr;
         }
-
         bodies.erase(it);
     }
 
@@ -272,7 +269,6 @@ struct BulletWorld {
             }
         }
         bodies.clear();
-
         if (mapBody) {
             world->removeRigidBody(mapBody);
             delete mapBody->getMotionState();
@@ -281,7 +277,6 @@ struct BulletWorld {
         if (mapMesh) delete mapMesh;
         for (auto* s : shapes) delete s;
         shapes.clear();
-
         delete world; delete solver; delete broad; delete dispatch; delete config;
         world = nullptr;
         printf("[BULLET] Shutdown\n");

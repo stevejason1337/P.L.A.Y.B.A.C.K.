@@ -1,20 +1,27 @@
 #pragma once
 // ================================================================
-//  RenderCommon.h — типи і константи спільні для GL і DX11
-//  Не включай сюди нічого DX11/GL специфічного!
+// Rendercommon.h — типы и константы общие для GL и DX11.
+// Не включай сюда ничего DX11/GL специфичного!
+//
+// ИСПРАВЛЕНО: убран "enum class RenderAPI { OpenGL, DX11 }" —
+// он конфликтовал с классом RenderAPI из Renderapi.h.
+// Вместо него используй RenderBackend из Settings.h.
 // ================================================================
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include "Settings.h"   // RenderBackend, SCR_W, SCR_H
 
-// ── Lighting parameters (однакові для GLSL і HLSL) ────────────
-// Щоб змінити освітлення — міняй тільки тут, обидва API підхоплять
-inline constexpr glm::vec3 LIGHT_DIR = { 0.4f, -1.0f,  0.3f };
+// ── Lighting parameters (одинаковые для GLSL и HLSL) ──────────
+// Единственный источник истины для всего освещения.
+// Renderapi.h / Renderer.h читают эти константы — НЕ дублируют!
+inline constexpr glm::vec3 LIGHT_DIR = { 0.4f, -1.0f, 0.3f };
 inline constexpr glm::vec3 FOG_COLOR = { 0.68f, 0.65f, 0.60f };
 inline constexpr float     FOG_START = 15.f;
 inline constexpr float     FOG_END = 60.f;
 inline constexpr glm::vec3 MAP_BASE_COLOR = { 0.75f, 0.72f, 0.65f };
 
-// Lighting multipliers (ambient/diffuse/sky/ground/specular)
+// ── Lighting multipliers ────────────────────────────────────────
 inline constexpr glm::vec3 LIGHT_AMBIENT = { 0.30f, 0.28f, 0.25f };
 inline constexpr glm::vec3 LIGHT_DIFFUSE = { 1.05f, 0.95f, 0.80f };
 inline constexpr float     LIGHT_DIFF_STR = 0.85f;
@@ -30,6 +37,3 @@ inline constexpr float     LIGHT_ACES_EXP = 0.8f;
 inline constexpr int SCR_W = 1280;
 inline constexpr int SCR_H = 720;
 inline constexpr int SHADOW_RES = 2048;
-
-// ── API enum ───────────────────────────────────────────────────
-enum class RenderAPI { OpenGL, DX11 };

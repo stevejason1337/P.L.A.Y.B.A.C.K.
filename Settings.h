@@ -1,4 +1,9 @@
 #pragma once
+// ================================================================
+// Settings.h — единственное место для всех глобальных констант.
+// Правка: убран конфликт enum RenderAPI (теперь RenderBackend).
+// Все остальные файлы используют RenderBackend из этого хедера.
+// ================================================================
 
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
@@ -18,10 +23,8 @@ inline constexpr float PITCH_LIM = 75.f;
 inline constexpr float MOUSE_SENS = 0.1f;
 
 // ── Map ───────────────────────────────────────────────────────
-inline constexpr float MAP_SCALE = 0.05f;
-inline constexpr float MAP_ROT_X = -90.0f;
-// const char* без inline = отдельная копия в каждой единице трансляции
-// С inline constexpr — одна копия на всю программу (C++17)
+inline constexpr float       MAP_SCALE = 0.05f;
+inline constexpr float       MAP_ROT_X = -90.0f;
 inline constexpr const char* MAP_FILE = "models/maps/awp_lego/awp_lego.fbx";
 inline constexpr const char* MAP_TEX_DIR = "models/maps/awp_lego/textures";
 
@@ -39,12 +42,12 @@ inline constexpr float GUN_OFFSET_RIGHT = 0.1f;
 inline constexpr float GUN_OFFSET_UP = -0.25f;
 inline constexpr float GUN_OFFSET_FWD = 0.0f;
 
-// ── Recoil / defaults ─────────────────────────────────────────
-inline constexpr float RECOIL_KICK = 0.04f;
-inline constexpr float GUN_SCALE = 0.01f;
+// ── Weapon ────────────────────────────────────────────────────
+inline constexpr float       RECOIL_KICK = 0.04f;
+inline constexpr float       GUN_SCALE = 0.01f;
 inline constexpr const char* GUN_FILE = "models/pistol/glock/glock.fbx";
 inline constexpr const char* GUN_TEX_DIR = "models/pistol/glock/textures";
-inline constexpr float FIRE_RATE = 0.15f;
+inline constexpr float       FIRE_RATE = 0.15f;
 
 // ── Animations ────────────────────────────────────────────────
 inline constexpr const char* ANIM_IDLE = "Armature|FPS_Pistol_Idle";
@@ -55,10 +58,12 @@ inline constexpr const char* ANIM_RELOAD_EASY = "Armature|FPS_Pistol_Reload_easy
 inline constexpr const char* ANIM_RELOAD_FULL = "Armature|FPS_Pistol_Reload_full";
 inline constexpr const char* ANIM_WALK = "Armature|FPS_Pistol_Walk";
 
-// ── Graphics API ─────────────────────────────────────────────
+// ── Graphics API ──────────────────────────────────────────────
+// ИСПРАВЛЕНО: было "enum class RenderAPI" — конфликт с классом RenderAPI из Renderapi.h
+// Теперь называется RenderBackend. Все файлы должны использовать это имя.
 enum class RenderBackend { OpenGL, DX11 };
-
 inline RenderBackend gRenderBackend = RenderBackend::OpenGL;
+
 inline constexpr const char* ENGINE_CFG = "engine.cfg";
 
 inline void loadEngineConfig()
