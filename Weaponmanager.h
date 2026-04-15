@@ -102,12 +102,9 @@ inline std::vector<WeaponDef> weaponDefs = {
     //   rotY / rotX              — поворот модели (180 = стандарт, все остальные так же)
     //   scale                    — размер (0.01 = как у остальных)
     {
-        "models/pistol/source/shootgun.fbx",
-        "models/pistol/source/textures",
-        0.01f,                  // scale — совпадает с Glock и AK
-        6,                      // maxAmmo: 6 патронов
-        0.75f,                  // fireRate: помповый, медленный
-        0.12f,                  // recoilKick: сильная отдача
+        "models/pistol/43/source/43.fbx",
+        "models/pistol/43/textures",
+        0.01f, 12, 0.15f, 0.04f,                  // recoilKick: сильная отдача
         "Rig|M4_Idle",          // animIdle
         "Rig|M4_Fire",          // animFire
         "Rig|M4_Fire",          // animFire001
@@ -117,9 +114,9 @@ inline std::vector<WeaponDef> weaponDefs = {
         "Rig|M4_Walk",          // animWalk
         180.f, 0.f,             // rotY, rotX — стандарт как у всех
         2,                      // slot 2 = дробовики (клавиша 3)
-        0.f, 0.f, 0.f,          // posRight, posUp, posFwd — поправки позиции
-        8,                      // pellets: 8 шаров за выстрел
-        4.f                     // spreadDeg: конус 4°
+        0.f, 0.f, 2.f,          // posRight, posUp, posFwd — поправки позиции
+        1,                      // pellets: 8 шаров за выстрел
+        0.f                     // spreadDeg: конус 4°
     },
 };
 

@@ -206,6 +206,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\123321\Project1;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
+    <ClCompile Include="Game\main.cpp" />
     <ClCompile Include="glad.c" />
     <ClCompile Include="imgui.cpp" />
     <ClCompile Include="imgui_draw.cpp" />
@@ -217,14 +218,12 @@
     <ClCompile Include="main.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Editor|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Modelloader.cpp" />
     <ClCompile Include="ShaderTranspiler.cpp" />
     <ClCompile Include="Soundmanager.cpp" />
     <ClCompile Include="Textrenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AABB.h" />
-    <ClInclude Include="AnimatedModel.h" />
     <ClInclude Include="BloodFX.h" />
     <ClInclude Include="BulletIntegration.h" />
     <ClInclude Include="Console.h" />
@@ -522,6 +521,22 @@
     <ClInclude Include="dependencies\include\glm\vector_relational.hpp" />
     <ClInclude Include="dependencies\include\KHR\khrplatform.h" />
     <ClInclude Include="Enemy.h" />
+    <ClInclude Include="Engine\Component.h" />
+    <ClInclude Include="Engine\Core.h" />
+    <ClInclude Include="Engine\GameObject.h" />
+    <ClInclude Include="Engine\Player\AnimatedModel.h" />
+    <ClInclude Include="Engine\Player\AudioManager.h" />
+    <ClInclude Include="Engine\Player\InputSystem.h" />
+    <ClInclude Include="Engine\Player\MeshRenderer.h" />
+    <ClInclude Include="Engine\Player\ModelLoader.h" />
+    <ClInclude Include="Engine\Player\Physics.h" />
+    <ClInclude Include="Engine\Renderer.h" />
+    <ClInclude Include="Engine\Scene.h" />
+    <ClInclude Include="Game\EnemyController.h" />
+    <ClInclude Include="Game\GameScene.h" />
+    <ClInclude Include="Game\HudComponent.h" />
+    <ClInclude Include="Game\PlayerController.h" />
+    <ClInclude Include="Game\WeaponComponent.h" />
     <ClInclude Include="GPUSkinning.h" />
     <ClInclude Include="Hud.h" />
     <ClInclude Include="imconfig.h" />
@@ -539,8 +554,6 @@
     <ClInclude Include="MainMenu.h" />
     <ClInclude Include="Mapeditor.h" />
     <ClInclude Include="miniaudio.h" />
-    <ClInclude Include="Modelloader.h" />
-    <ClInclude Include="Physics.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="Renderapi dx11.h" />
     <ClInclude Include="Renderapi gl.h" />
