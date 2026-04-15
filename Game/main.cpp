@@ -1,30 +1,38 @@
-// ============================================================
-//  Game/main.cpp  —  ИГРА, трогаешь здесь
-//
-//  Точка входа. 10 строк. Больше никогда не трогаешь.
-//  Вся логика — в GameScene.h и компонентах.
-//
-//  Новая сущность в игре? → создай MyComponent.h в /Game/
-//  Баг в рендере/физике? → смотри Engine/
-// ============================================================
+#include "../Engine/Core/Window.h"
+#include "../Engine/Renderer/DX11Core.h"
+#include "../Engine/Renderer/Mesh.h"
+#include "../Engine/Framework/Camera.h"
 
-#include "../Engine/Core.h"
-#include "GameScene.h"
+int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int) {
+    // 1. Создаем движок
+    Window window(1280, 720, L"P.L.A.Y.B.A.C.K. Final Arch");
+    DX11Core gfx(window.GetHWND());
+    Camera playerCamera;
 
-int main() {
-    EngineConfig cfg;
-    cfg.title      = "P.L.A.Y.B.A.C.K.";
-    cfg.width      = 1280;
-    cfg.height     = 720;
-    cfg.vsync      = true;
-    cfg.msaa       = 4;
-    cfg.fullscreen = false;
+    // 2. Загружаем твои ресурсы (Тут твои модельки и освещение)
+    // Shader shader(gfx.GetDevice(), L"Shaders/Default.hlsl");
+    // Mesh playerWeapon(gfx.GetDevice(), loadModelData("Models/gun.obj"));
 
-    Engine engine;
-    if (!engine.init(cfg)) return -1;
+    // 3. Главный цикл
+    while (window.ProcessMessages()) {
+        float dt = 0.016f; // В идеале использовать класс Timer
 
-    GameScene game;
-    engine.run(&game);   // движок вызовет onStart → loop → onShutdown
+        // --- ЛОГИКА ИГРЫ ---
+        // Тут твое движение:
+        // if(Input::IsKeyDown('W')) playerCamera.MoveForward(dt);
 
+        // --- РЕНДЕР ---
+        gfx.BeginFrame(0.1f, 0.1f, 0.15f); // Очистка экрана
+
+        // Устанавливаем матрицы освещения и камеру
+        // shader.SetCamera(playerCamera.GetViewMatrix(), playerCamera.GetProjectionMatrix(1.77f));
+        // shader.Bind(gfx.GetContext());
+        // playerWeapon.Bind(gfx.GetContext());
+
+        // Рисуем!
+        // gfx.GetContext()->Draw(playerWeapon.GetVertexCount(), 0);
+
+        gfx.EndFrame();
+    }
     return 0;
 }

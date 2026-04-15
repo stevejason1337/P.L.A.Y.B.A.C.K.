@@ -206,6 +206,8 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\123321\Project1;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
+    <ClCompile Include="Engine\Source\Renderer.cpp" />
+    <ClCompile Include="Engine\Source\Window.cpp" />
     <ClCompile Include="Game\main.cpp" />
     <ClCompile Include="glad.c" />
     <ClCompile Include="imgui.cpp" />
@@ -523,7 +525,10 @@
     <ClInclude Include="Enemy.h" />
     <ClInclude Include="Engine\Component.h" />
     <ClInclude Include="Engine\Core.h" />
+    <ClInclude Include="Engine\Framework\Camera.h" />
     <ClInclude Include="Engine\GameObject.h" />
+    <ClInclude Include="Engine\Include\Renderer.h" />
+    <ClInclude Include="Engine\Include\Window.h" />
     <ClInclude Include="Engine\Player\AnimatedModel.h" />
     <ClInclude Include="Engine\Player\AudioManager.h" />
     <ClInclude Include="Engine\Player\InputSystem.h" />
@@ -531,6 +536,7 @@
     <ClInclude Include="Engine\Player\ModelLoader.h" />
     <ClInclude Include="Engine\Player\Physics.h" />
     <ClInclude Include="Engine\Renderer.h" />
+    <ClInclude Include="Engine\Renderer\Mesh.h" />
     <ClInclude Include="Engine\Scene.h" />
     <ClInclude Include="Game\EnemyController.h" />
     <ClInclude Include="Game\GameScene.h" />
