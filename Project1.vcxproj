@@ -210,22 +210,15 @@
     <ClCompile Include="dependencies\imgui\imgui_widgets.cpp" />
     <ClCompile Include="dependencies\include\glm\detail\glm.cpp" />
     <ClCompile Include="dependencies\include\glm\glm.cppm" />
-    <ClCompile Include="Editor main.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\123321\Project1;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-    </ClCompile>
+    <ClCompile Include="Engine\Core\Soundmanager.cpp" />
+    <ClCompile Include="Engine\Render\Textrenderer.cpp" />
     <ClCompile Include="Engine\Source\Renderer.cpp" />
     <ClCompile Include="Engine\Source\Window.cpp" />
+    <ClCompile Include="Game\editor\Editor main.cpp" />
     <ClCompile Include="Game\main.cpp" />
     <ClCompile Include="ShaderTranspiler.cpp" />
-    <ClCompile Include="Soundmanager.cpp" />
-    <ClCompile Include="Textrenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AABB.h" />
-    <ClInclude Include="BloodFX.h" />
-    <ClInclude Include="BulletIntegration.h" />
-    <ClInclude Include="Console.h" />
     <ClInclude Include="dependencies\imgui\imconfig.h" />
     <ClInclude Include="dependencies\imgui\imgui.h" />
     <ClInclude Include="dependencies\imgui\imgui_impl_dx11.h" />
@@ -532,13 +525,23 @@
     <ClInclude Include="dependencies\miniaudio\miniaudio.h" />
     <ClInclude Include="dependencies\stb\stb_image.h" />
     <ClInclude Include="dependencies\stb\stb_truetype.h" />
-    <ClInclude Include="Enemy.h" />
+    <ClInclude Include="Engine\Animations\AnimatedModel.h" />
+    <ClInclude Include="Engine\Animations\ModelLoader.h" />
     <ClInclude Include="Engine\Component.h" />
     <ClInclude Include="Engine\Core.h" />
+    <ClInclude Include="Engine\Core\Settings.h" />
+    <ClInclude Include="Engine\Core\Simdmath.h" />
+    <ClInclude Include="Engine\Core\Soundmanager.h" />
+    <ClInclude Include="Engine\Core\Threadpool.h" />
     <ClInclude Include="Engine\Framework\Camera.h" />
     <ClInclude Include="Engine\GameObject.h" />
     <ClInclude Include="Engine\Include\Renderer.h" />
     <ClInclude Include="Engine\Include\Window.h" />
+    <ClInclude Include="Engine\physics\AABB.h" />
+    <ClInclude Include="Engine\physics\BulletIntegration.h" />
+    <ClInclude Include="Engine\physics\ImpactPhysics.h" />
+    <ClInclude Include="Engine\physics\Physics.h" />
+    <ClInclude Include="Engine\physics\Triangle.h" />
     <ClInclude Include="Engine\Player\AnimatedModel.h" />
     <ClInclude Include="Engine\Player\AudioManager.h" />
     <ClInclude Include="Engine\Player\InputSystem.h" />
@@ -547,34 +550,31 @@
     <ClInclude Include="Engine\Player\Physics.h" />
     <ClInclude Include="Engine\Renderer.h" />
     <ClInclude Include="Engine\Renderer\Mesh.h" />
+    <ClInclude Include="Engine\Render\GPUSkinning.h" />
+    <ClInclude Include="Engine\Render\Renderapi dx11.h" />
+    <ClInclude Include="Engine\Render\Renderapi gl.h" />
+    <ClInclude Include="Engine\Render\Renderapi.h" />
+    <ClInclude Include="Engine\Render\Rendercommon.h" />
+    <ClInclude Include="Engine\Render\Renderdebug.h" />
+    <ClInclude Include="Engine\Render\Renderer.h" />
+    <ClInclude Include="Engine\Render\TAA.h" />
+    <ClInclude Include="Engine\Render\Textrenderer.h" />
     <ClInclude Include="Engine\Scene.h" />
+    <ClInclude Include="Game\editor\Mapeditor.h" />
+    <ClInclude Include="Game\effects\BloodFX.h" />
     <ClInclude Include="Game\EnemyController.h" />
+    <ClInclude Include="Game\entities\Enemy.h" />
+    <ClInclude Include="Game\entities\Player.h" />
     <ClInclude Include="Game\GameScene.h" />
     <ClInclude Include="Game\HudComponent.h" />
+    <ClInclude Include="Game\input\Input.h" />
     <ClInclude Include="Game\PlayerController.h" />
+    <ClInclude Include="Game\ui\Console.h" />
+    <ClInclude Include="Game\ui\Hud.h" />
+    <ClInclude Include="Game\ui\MainMenu.h" />
     <ClInclude Include="Game\WeaponComponent.h" />
-    <ClInclude Include="GPUSkinning.h" />
-    <ClInclude Include="Hud.h" />
-    <ClInclude Include="ImpactPhysics.h" />
-    <ClInclude Include="Input.h" />
-    <ClInclude Include="MainMenu.h" />
-    <ClInclude Include="Mapeditor.h" />
-    <ClInclude Include="Player.h" />
-    <ClInclude Include="Renderapi dx11.h" />
-    <ClInclude Include="Renderapi gl.h" />
-    <ClInclude Include="Renderapi.h" />
-    <ClInclude Include="Rendercommon.h" />
-    <ClInclude Include="Renderdebug.h" />
-    <ClInclude Include="Renderer.h" />
-    <ClInclude Include="Settings.h" />
+    <ClInclude Include="Game\weapons\Weaponmanager.h" />
     <ClInclude Include="ShaderTranspiler.h" />
-    <ClInclude Include="Simdmath.h" />
-    <ClInclude Include="Soundmanager.h" />
-    <ClInclude Include="TAA.h" />
-    <ClInclude Include="Textrenderer.h" />
-    <ClInclude Include="Threadpool.h" />
-    <ClInclude Include="Triangle.h" />
-    <ClInclude Include="Weaponmanager.h" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="dependencies\lib\glfw3.lib" />
