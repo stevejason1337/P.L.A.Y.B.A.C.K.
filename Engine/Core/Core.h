@@ -1,171 +1,148 @@
 #pragma once
 // ============================================================
-//  Engine/Core.h  —  ДВИЖОК, не трогаешь
-//  Главный класс движка. Владеет окном, сценой, системами.
-//  Игра наследует GameBase и переопределяет onStart/onUpdate.
+//  Engine/Core/Core.h
 // ============================================================
 
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include <windows.h>
 #include <iostream>
 #include <string>
+#include <chrono>
 
-#include "Scene.h"
-#include "Render/Renderer.h"
-#include "InputSystem.h"
-#include "Physics.h"
-#include "AudioManager.h"
+#include "../Render/Renderer.h"
 
-// ── Конфиг движка ──────────────────────────────────────────
-struct EngineConfig {
-    std::string title      = "P.L.A.Y.B.A.C.K.";
-    int         width      = 1280;
-    int         height     = 720;
-    bool        vsync      = true;
-    bool        fullscreen = false;
-    int         msaa       = 4;
-};
-
-// ── Базовый класс игры ─────────────────────────────────────
-// GameScene наследует от этого
-class GameBase {
+// ─────────────────────────────────────────────────────────────
+//  IScene  —  интерфейс для GameScene
+// ─────────────────────────────────────────────────────────────
+class IScene {
 public:
-    Scene* scene = nullptr;
-
-    virtual ~GameBase() = default;
-
-    // Создать все объекты сцены — вызывается один раз
-    virtual void onStart()          = 0;
-
-    // Игровая логика поверх компонентов — каждый кадр
-    virtual void onUpdate(float dt) {}
-
-    // ImGui / HUD — после основного рендера
-    virtual void onRenderUI()       {}
-
-    // Очистка — вызывается при закрытии
-    virtual void onShutdown()       {}
+    virtual ~IScene() = default;
+    virtual bool onInit(Renderer& renderer) = 0;
+    virtual void onUpdate(float dt) = 0;
+    virtual void onRender(Renderer& renderer, float dt) = 0;
+    virtual void onShutdown() = 0;
 };
 
-// ── Движок ─────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+//  EngineConfig
+// ─────────────────────────────────────────────────────────────
+struct EngineConfig {
+    std::string title = "Game";
+    int         width = 1280;
+    int         height = 720;
+    bool        vsync = true;
+    bool        fullscreen = false;
+    int         msaa = 1;
+};
+
+// ─────────────────────────────────────────────────────────────
+//  Engine
+// ─────────────────────────────────────────────────────────────
 class Engine {
 public:
-    Scene scene;
+    Engine() = default;
+    ~Engine() { shutdown(); }
 
-    // ── Инициализация ─────────────────────────────────────
-    bool init(const EngineConfig& cfg = {}) {
-        config = cfg;
+    bool init(const EngineConfig& cfg) {
+        m_cfg = cfg;
 
-        // GLFW
-        if (!glfwInit()) {
-            std::cerr << "[Engine] glfwInit failed\n";
+        HINSTANCE hInst = GetModuleHandle(nullptr);
+
+        WNDCLASSEX wc{};
+        wc.cbSize = sizeof(wc);
+        wc.style = CS_HREDRAW | CS_VREDRAW;
+        wc.lpfnWndProc = _WndProc;
+        wc.hInstance = hInst;
+        wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
+        wc.lpszClassName = L"PLAYBACKWindowClass";
+        if (!RegisterClassEx(&wc)) return false;
+
+        RECT rc{ 0, 0, cfg.width, cfg.height };
+        AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
+
+        std::wstring title(cfg.title.begin(), cfg.title.end());
+        m_hWnd = CreateWindowEx(0, L"PLAYBACKWindowClass",
+            title.c_str(), WS_OVERLAPPEDWINDOW,
+            CW_USEDEFAULT, CW_USEDEFAULT,
+            rc.right - rc.left, rc.bottom - rc.top,
+            nullptr, nullptr, hInst, this);
+
+        if (!m_hWnd) return false;
+
+        ShowWindow(m_hWnd, SW_SHOWDEFAULT);
+        UpdateWindow(m_hWnd);
+
+        if (!m_renderer.Initialize(m_hWnd, cfg.width, cfg.height)) {
+            std::cerr << "[Engine] Renderer init failed!\n";
             return false;
         }
 
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-        if (cfg.msaa > 0)
-            glfwWindowHint(GLFW_SAMPLES, cfg.msaa);
-
-        GLFWmonitor* monitor = cfg.fullscreen ? glfwGetPrimaryMonitor() : nullptr;
-        window = glfwCreateWindow(cfg.width, cfg.height,
-                                  cfg.title.c_str(), monitor, nullptr);
-        if (!window) {
-            std::cerr << "[Engine] Window creation failed\n";
-            glfwTerminate();
-            return false;
-        }
-
-        glfwMakeContextCurrent(window);
-        glfwSwapInterval(cfg.vsync ? 1 : 0);
-
-        // Resize
-        glfwSetFramebufferSizeCallback(window, [](GLFWwindow*, int w, int h) {
-            glViewport(0, 0, w, h);
-        });
-
-        // Подсистемы
-        if (!Renderer::get().init(window)) {
-            std::cerr << "[Engine] Renderer init failed\n";
-            return false;
-        }
-
-        InputSystem::get().init(window);
-
-        if (!PhysicsWorld::get().init()) {
-            std::cerr << "[Engine] Physics init failed\n";
-            return false;
-        }
-
-        if (!AudioManager::get().init()) {
-            std::cerr << "[Engine] Audio init failed\n";
-            return false;
-        }
-
-        if (cfg.msaa > 0)
-            glEnable(GL_MULTISAMPLE);
-
-        std::cout << "[Engine] Initialized — " << cfg.title
-                  << " (" << cfg.width << "x" << cfg.height << ")\n";
+        std::cout << "[Engine] Init OK — " << cfg.width << "x" << cfg.height << "\n";
         return true;
     }
 
-    // ── Главный цикл ──────────────────────────────────────
-    void run(GameBase* game) {
-        if (!game) return;
-
-        game->scene = &scene;
-        game->onStart();
-
-        double lastTime = glfwGetTime();
-
-        while (!glfwWindowShouldClose(window)) {
-            // Delta time
-            double now = glfwGetTime();
-            float  dt  = (float)(now - lastTime);
-            lastTime   = now;
-            // Cap: минимум 20 FPS чтобы не скакало при лаге
-            if (dt > 0.05f) dt = 0.05f;
-
-            // ── Input ──────────────────────────────────────
-            InputSystem::get().poll();
-
-            // ── Physics ────────────────────────────────────
-            PhysicsWorld::get().step(dt);
-
-            // ── Update компонентов сцены ───────────────────
-            scene.update(dt);
-
-            // ── Игровая логика ─────────────────────────────
-            game->onUpdate(dt);
-
-            // ── Render ─────────────────────────────────────
-            Renderer::get().beginFrame();
-            Renderer::get().drawScene(scene);
-            game->onRenderUI();
-            Renderer::get().endFrame();
+    void run(IScene* scene) {
+        if (!scene) return;
+        if (!scene->onInit(m_renderer)) {
+            std::cerr << "[Engine] Scene init failed!\n";
+            return;
         }
 
-        game->onShutdown();
-        _shutdown();
+        using Clock = std::chrono::high_resolution_clock;
+        auto prev = Clock::now();
+        MSG msg{};
+        m_running = true;
+
+        while (m_running) {
+            while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
+                if (msg.message == WM_QUIT) m_running = false;
+                TranslateMessage(&msg);
+                DispatchMessage(&msg);
+            }
+            if (!m_running) break;
+
+            auto  now = Clock::now();
+            float dt = std::chrono::duration<float>(now - prev).count();
+            prev = now;
+            if (dt > 0.1f) dt = 0.1f;
+
+            scene->onUpdate(dt);
+            m_renderer.BeginFrame();
+            scene->onRender(m_renderer, dt);
+            m_renderer.EndFrame();
+        }
+
+        scene->onShutdown();
     }
 
-    GLFWwindow*        getWindow() const { return window; }
-    const EngineConfig& getConfig() const { return config; }
+    Renderer& getRenderer() { return m_renderer; }
+    HWND      getHWnd() { return m_hWnd; }
 
 private:
-    GLFWwindow*  window = nullptr;
-    EngineConfig config;
+    EngineConfig m_cfg;
+    Renderer     m_renderer;
+    HWND         m_hWnd = nullptr;
+    bool         m_running = false;
 
-    void _shutdown() {
-        scene.clear();
-        AudioManager::get().shutdown();
-        PhysicsWorld::get().shutdown();
-        if (window) glfwDestroyWindow(window);
-        glfwTerminate();
-        std::cout << "[Engine] Shutdown complete\n";
+    void shutdown() {
+        if (m_hWnd) { DestroyWindow(m_hWnd); m_hWnd = nullptr; }
+    }
+
+    static LRESULT CALLBACK _WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+        Engine* self = nullptr;
+        if (msg == WM_NCCREATE) {
+            auto* cs = reinterpret_cast<CREATESTRUCT*>(lParam);
+            self = reinterpret_cast<Engine*>(cs->lpCreateParams);
+            SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(self));
+        }
+        else {
+            self = reinterpret_cast<Engine*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
+        }
+        switch (msg) {
+        case WM_DESTROY: PostQuitMessage(0);    return 0;
+        case WM_KEYDOWN:
+            if (wParam == VK_ESCAPE) PostQuitMessage(0);
+            return 0;
+        }
+        return DefWindowProc(hWnd, msg, wParam, lParam);
     }
 };

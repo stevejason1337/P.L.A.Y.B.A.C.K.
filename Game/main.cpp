@@ -1,30 +1,26 @@
 // ============================================================
-//  Game/main.cpp  —  ИГРА — точка входа
-//  Создаёт движок, передаёт ему GameScene и запускает.
-//  Больше ничего здесь не делай — логика в GameScene.h
+//  Game/main.cpp  —  точка входа
 // ============================================================
 
-#include "../Engine/Core.h"
+#include "../Engine/Core/Core.h"
 #include "GameScene.h"
 
-int main() {
+int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     Engine engine;
 
     EngineConfig cfg;
-    cfg.title      = "P.L.A.Y.B.A.C.K.";
-    cfg.width      = 1280;
-    cfg.height     = 720;
-    cfg.vsync      = true;
+    cfg.title = "P.L.A.Y.B.A.C.K.";
+    cfg.width = 1280;
+    cfg.height = 720;
+    cfg.vsync = true;
     cfg.fullscreen = false;
-    cfg.msaa       = 4;
 
     if (!engine.init(cfg)) {
-        std::cerr << "[Main] Engine init failed!\n";
+        MessageBoxA(nullptr, "Engine init failed!", "Error", MB_OK | MB_ICONERROR);
         return -1;
     }
 
     GameScene game;
     engine.run(&game);
-
     return 0;
 }
