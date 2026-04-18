@@ -106,6 +106,9 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <TargetName>Editor</TargetName>
   </PropertyGroup>
+  <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <VcpkgUseStatic>true</VcpkgUseStatic>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -154,7 +157,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\123321\Project1\dependencies\include;C:\123321\Project1;C:\vcpkg\installed\x64-windows-static\include\bullet;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\123321\Project1\dependencies\glad;C:\123321\Project1\Engine\Animations;C:\vcpkg\installed\x64-windows-static\include\bullet;C:\123321\Project1\Engine;C:\123321\Project1\dependencies\imgui;C:\123321\Project1\dependencies\include;C:\123321\Project1\dependencies\lib;C:\123321\Project1\dependencies\miniaudio;C:\123321\Project1\dependencies\stb;C:\123321\Project1\Engine\Core;C:\123321\Project1\Engine\Framework;C:\123321\Project1\Engine\Include;C:\123321\Project1\Engine\physics;C:\123321\Project1\Engine\Player;C:\123321\Project1\Engine\Render;C:\123321\Project1\Engine\Source;C:\123321\Project1\Engine\Shaders;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
@@ -211,12 +214,13 @@
     <ClCompile Include="dependencies\include\glm\detail\glm.cpp" />
     <ClCompile Include="dependencies\include\glm\glm.cppm" />
     <ClCompile Include="Engine\Core\Soundmanager.cpp" />
+    <ClCompile Include="Engine\Render\Renderer.cpp" />
     <ClCompile Include="Engine\Render\Textrenderer.cpp" />
+    <ClCompile Include="Engine\Shaders\ShaderTranspiler.cpp" />
     <ClCompile Include="Engine\Source\Renderer.cpp" />
     <ClCompile Include="Engine\Source\Window.cpp" />
     <ClCompile Include="Game\editor\Editor main.cpp" />
     <ClCompile Include="Game\main.cpp" />
-    <ClCompile Include="ShaderTranspiler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dependencies\imgui\imconfig.h" />
@@ -535,7 +539,6 @@
     <ClInclude Include="Engine\Core\Threadpool.h" />
     <ClInclude Include="Engine\Framework\Camera.h" />
     <ClInclude Include="Engine\GameObject.h" />
-    <ClInclude Include="Engine\Include\Renderer.h" />
     <ClInclude Include="Engine\Include\Window.h" />
     <ClInclude Include="Engine\physics\AABB.h" />
     <ClInclude Include="Engine\physics\BulletIntegration.h" />
@@ -548,7 +551,6 @@
     <ClInclude Include="Engine\Player\MeshRenderer.h" />
     <ClInclude Include="Engine\Player\ModelLoader.h" />
     <ClInclude Include="Engine\Player\Physics.h" />
-    <ClInclude Include="Engine\Renderer.h" />
     <ClInclude Include="Engine\Renderer\Mesh.h" />
     <ClInclude Include="Engine\Render\GPUSkinning.h" />
     <ClInclude Include="Engine\Render\Renderapi dx11.h" />
@@ -560,6 +562,7 @@
     <ClInclude Include="Engine\Render\TAA.h" />
     <ClInclude Include="Engine\Render\Textrenderer.h" />
     <ClInclude Include="Engine\Scene.h" />
+    <ClInclude Include="Engine\Shaders\ShaderTranspiler.h" />
     <ClInclude Include="Game\editor\Mapeditor.h" />
     <ClInclude Include="Game\effects\BloodFX.h" />
     <ClInclude Include="Game\EnemyController.h" />
@@ -574,7 +577,6 @@
     <ClInclude Include="Game\ui\MainMenu.h" />
     <ClInclude Include="Game\WeaponComponent.h" />
     <ClInclude Include="Game\weapons\Weaponmanager.h" />
-    <ClInclude Include="ShaderTranspiler.h" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="dependencies\lib\glfw3.lib" />

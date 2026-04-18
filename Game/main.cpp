@@ -1,7 +1,6 @@
-#include "../Engine/Core/Window.h"
-#include "../Engine/Renderer/DX11Core.h"
-#include "../Engine/Renderer/Mesh.h"
-#include "../Engine/Framework/Camera.h"
+#include "Window.h"
+#include "DX11Core.h"
+#include "Mesh.h"
 
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int) {
     // 1. Создаем движок
@@ -35,4 +34,4 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int) {
         gfx.EndFrame();
     }
     return 0;
-}
+};
