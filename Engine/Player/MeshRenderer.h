@@ -1,45 +1,49 @@
 #pragma once
-
 // ============================================================
 //  Engine/MeshRenderer.h  —  ДВИЖОК, не трогаешь
-//  Компонент: рисует статическую 3D модель на GameObject.
-//  Добавляется к любому объекту: player->addComponent<MeshRenderer>("models/ak47.obj");
+//  Компонент — рендерит статическую 3D модель.
+//  Добавляй так: obj->addComponent<MeshRenderer>("models/cube.obj");
 // ============================================================
 
 #include "Component.h"
 #include "ModelLoader.h"
+#include "Render/Renderer.h"
 
 #include <glad/glad.h>
-#include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <string>
 
 class MeshRenderer : public Component {
 public:
-    bool  visible      = true;
-    bool  castShadow   = true;
+    Model*      model     = nullptr;
+    bool        castShadow = true;
+    bool        visible    = true;
 
-    explicit MeshRenderer(const std::string& modelPath)
-        : modelPath(modelPath) {}
+    explicit MeshRenderer(const std::string& path)
+        : modelPath(path) {}
 
     void start() override {
         model = ModelLoader::get().load(modelPath);
-        if (!model) {
+        if (!model)
             std::cerr << "[MeshRenderer] Failed to load: " << modelPath << "\n";
-        }
     }
 
-    // Вызывается Renderer'ом (не через update!)
-    void draw(unsigned int shaderID) const {
-        if (!visible || !model || !model->loaded) return;
-        glm::mat4 mat = owner->getModelMatrix();
-        glUniformMatrix4fv(glGetUniformLocation(shaderID, "model"), 1, GL_FALSE, glm::value_ptr(mat));
+    // Вызывается Renderer::drawScene()
+    void draw(unsigned int shader) const {
+        if (!model || !model->loaded || !visible) return;
+
+        glm::mat4 m = owner->getModelMatrix();
+        Renderer::setMat4(shader, "model", m);
+        Renderer::setInt (shader, "hasTexture",
+            model->meshes.empty() ? 0 :
+            model->meshes[0].textures.empty() ? 0 : 1);
+
         for (auto& mesh : model->meshes)
-            mesh.draw(shaderID);
+            mesh.draw(shader);
     }
 
     const std::string& getPath() const { return modelPath; }
 
 private:
     std::string modelPath;
-    Model*      model = nullptr;
 };

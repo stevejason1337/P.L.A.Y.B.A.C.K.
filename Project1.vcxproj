@@ -531,14 +531,15 @@
     <ClInclude Include="dependencies\stb\stb_truetype.h" />
     <ClInclude Include="Engine\Animations\AnimatedModel.h" />
     <ClInclude Include="Engine\Animations\ModelLoader.h" />
-    <ClInclude Include="Engine\Component.h" />
-    <ClInclude Include="Engine\Core.h" />
+    <ClInclude Include="Engine\Core\Component.h" />
+    <ClInclude Include="Engine\Core\Core.h" />
+    <ClInclude Include="Engine\Core\GameObject.h" />
+    <ClInclude Include="Engine\Core\Scene.h" />
     <ClInclude Include="Engine\Core\Settings.h" />
     <ClInclude Include="Engine\Core\Simdmath.h" />
     <ClInclude Include="Engine\Core\Soundmanager.h" />
     <ClInclude Include="Engine\Core\Threadpool.h" />
     <ClInclude Include="Engine\Framework\Camera.h" />
-    <ClInclude Include="Engine\GameObject.h" />
     <ClInclude Include="Engine\Include\Window.h" />
     <ClInclude Include="Engine\physics\AABB.h" />
     <ClInclude Include="Engine\physics\BulletIntegration.h" />
@@ -561,7 +562,6 @@
     <ClInclude Include="Engine\Render\Renderer.h" />
     <ClInclude Include="Engine\Render\TAA.h" />
     <ClInclude Include="Engine\Render\Textrenderer.h" />
-    <ClInclude Include="Engine\Scene.h" />
     <ClInclude Include="Engine\Shaders\ShaderTranspiler.h" />
     <ClInclude Include="Game\editor\Mapeditor.h" />
     <ClInclude Include="Game\effects\BloodFX.h" />

@@ -1,25 +1,31 @@
 // Soundmanager.cpp
-// MINIAUDIO_IMPLEMENTATION — ровно один раз, только здесь
+// ИСПРАВЛЕНО: убран #include "Player.h"
+// sprinting теперь параметр функции playFootstep()
+
+// ВАЖНО: если используешь AudioManager.cpp — убери MINIAUDIO_IMPLEMENTATION отсюда
+// и наоборот. Определение должно быть ровно в ОДНОМ .cpp файле!
+// Если используешь SoundManager — определяй здесь.
+// Если используешь AudioManager — определяй в AudioManager.cpp.
+//
+// По умолчанию оставляем здесь (AudioManager.cpp тогда без define):
 #define MINIAUDIO_IMPLEMENTATION
 #include "miniaudio.h"
 
 #include "Soundmanager.h"
-#include "Player.h"    // для player.sprinting в playFootstep
+// УБРАНО: #include "Player.h"  ← была главная причина ошибок!
 #include <iostream>
 
-// ── Definition of the global instance ────────────────────────
+// ── Глобальный экземпляр ──────────────────────────────────
 SoundManager soundManager;
 
-// ── private helper ────────────────────────────────────────────
-void SoundManager::_play(ma_sound& s)
-{
+// ── Вспомогательная функция ───────────────────────────────
+void SoundManager::_play(ma_sound& s) {
     ma_sound_seek_to_pcm_frame(&s, 0);
     ma_sound_start(&s);
 }
 
-// ── init ──────────────────────────────────────────────────────
-void SoundManager::init()
-{
+// ── init ──────────────────────────────────────────────────
+void SoundManager::init() {
     if (ma_engine_init(NULL, &engine) != MA_SUCCESS) {
         std::cerr << "[SOUND] Failed to init miniaudio!\n";
         return;
@@ -62,9 +68,8 @@ void SoundManager::init()
     std::cout << "[SOUND] Sound System Ready.\n";
 }
 
-// ── shutdown ──────────────────────────────────────────────────
-void SoundManager::shutdown()
-{
+// ── shutdown ──────────────────────────────────────────────
+void SoundManager::shutdown() {
     if (!ready) return;
     for (int w = 0; w < 3; w++) {
         for (int v = 0; v < SND_SHOT_VOICES; v++)
@@ -75,35 +80,36 @@ void SoundManager::shutdown()
     for (int v = 0; v < SND_STEP_VOICES; v++)
         if (stepLoaded) ma_sound_uninit(&stepSound[v]);
     ma_engine_uninit(&engine);
+    ready = false;
 }
 
-// ── playShot ─────────────────────────────────────────────────
-void SoundManager::playShot(int w)
-{
+// ── playShot ─────────────────────────────────────────────
+void SoundManager::playShot(int w) {
     if (!ready || w < 0 || w > 2 || !shotLoaded[w]) return;
     int v = shotVoice[w];
     shotVoice[w] = (v + 1) % SND_SHOT_VOICES;
     _play(shotSounds[w][v]);
 }
 
-// ── playReload ────────────────────────────────────────────────
-void SoundManager::playReload(int w)
-{
+// ── playReload ────────────────────────────────────────────
+void SoundManager::playReload(int w) {
     if (!ready || w < 0 || w > 2 || !reloadLoaded[w]) return;
     _play(reloadSounds[w]);
 }
 
-// ── playEmpty ─────────────────────────────────────────────────
-void SoundManager::playEmpty()
-{
+// ── playEmpty ─────────────────────────────────────────────
+void SoundManager::playEmpty() {
     if (!ready || !emptyLoaded) return;
     _play(emptySound);
 }
 
-// ── playFootstep ──────────────────────────────────────────────
-void SoundManager::playFootstep(float dt, bool moving, bool onGround)
-{
-    if (!moving || !onGround) { stepTimer = 0.05f; return; }
+// ── playFootstep ──────────────────────────────────────────
+// ИСПРАВЛЕНО: sprinting — параметр, а не player.sprinting
+void SoundManager::playFootstep(float dt, bool moving, bool onGround, bool sprinting) {
+    if (!moving || !onGround) {
+        stepTimer = 0.05f;
+        return;
+    }
     stepTimer -= dt;
     if (stepTimer <= 0.f) {
         if (ready && stepLoaded) {
@@ -111,6 +117,7 @@ void SoundManager::playFootstep(float dt, bool moving, bool onGround)
             stepVoice = (stepVoice + 1) % SND_STEP_VOICES;
             _play(stepSound[v]);
         }
-        stepTimer = player.sprinting ? 0.3f : 0.5f;
+        // ИСПРАВЛЕНО: используем параметр sprinting, не player.sprinting
+        stepTimer = sprinting ? 0.3f : 0.5f;
     }
 }

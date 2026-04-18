@@ -1,46 +1,46 @@
 #pragma once
-
 // ============================================================
 //  Game/EnemyController.h  —  ИГРА, трогаешь здесь
-//  Компонент врага. Простая AI: Idle → Chase → Attack.
 // ============================================================
 
+// ИСПРАВЛЕНО: правильные пути к движку
 #include "../Engine/Component.h"
 #include "../Engine/Physics.h"
 #include "../Engine/AudioManager.h"
 #include "../Engine/AnimatedModel.h"
 
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <functional>
+#include <iostream>
 
 enum class EnemyState { Idle, Alert, Chase, Attack, Dead };
 
 struct EnemyStats {
-    float health       = 100.f;
-    float speed        = 3.f;
-    float runSpeed     = 5.5f;
+    float health         = 100.f;
+    float speed          = 3.f;
+    float runSpeed       = 5.5f;
     float detectionRange = 18.f;
     float attackRange    = 2.f;
     float attackDamage   = 15.f;
     float attackCooldown = 1.2f;
 };
 
-// Колбек — игра сама решает что делать при атаке врага
 using EnemyAttackCallback = std::function<void(float damage)>;
 
 class EnemyController : public Component {
 public:
     EnemyStats          stats;
-    EnemyAttackCallback onAttackPlayer;   // установи из GameScene
+    EnemyAttackCallback onAttackPlayer;
+    float               health;
+    EnemyState          state = EnemyState::Idle;
 
-    float health;
-    EnemyState state  = EnemyState::Idle;
-
-    explicit EnemyController(const EnemyStats& s = {}) : stats(s), health(s.health) {}
+    explicit EnemyController(const EnemyStats& s = {})
+        : stats(s), health(s.health) {}
 
     void start() override {
-        rb    = owner->getComponent<RigidBody>();
-        anim  = owner->getComponent<AnimatedModel>();
+        rb   = owner->getComponent<RigidBody>();
+        anim = owner->getComponent<AnimatedModel>();
 
         AudioManager::get().load("enemy_alert",  "sounds/enemy_alert.wav");
         AudioManager::get().load("enemy_attack", "sounds/enemy_attack.wav");
@@ -74,13 +74,13 @@ public:
                     state = EnemyState::Attack;
                     if (anim) anim->play("attack", false);
                 } else {
-                    moveToward(playerTarget->position, stats.runSpeed, dt);
+                    _moveToward(playerTarget->position, stats.runSpeed, dt);
                 }
                 break;
 
             case EnemyState::Attack:
                 if (attackTimer <= 0.f) {
-                    doAttack();
+                    _doAttack();
                     attackTimer = stats.attackCooldown;
                 }
                 if (dist > stats.attackRange + 1.f) {
@@ -98,7 +98,7 @@ public:
     void takeDamage(float dmg) {
         if (state == EnemyState::Dead) return;
         health -= dmg;
-        if (health <= 0.f) die();
+        if (health <= 0.f) _die();
         else if (state == EnemyState::Idle) {
             state = EnemyState::Chase;
             if (anim) anim->play("run");
@@ -108,12 +108,12 @@ public:
     bool isDead() const { return state == EnemyState::Dead; }
 
 private:
-    RigidBody*    rb            = nullptr;
+    RigidBody*     rb           = nullptr;
     AnimatedModel* anim         = nullptr;
-    GameObject*   playerTarget  = nullptr;
-    float         attackTimer   = 0.f;
+    GameObject*    playerTarget = nullptr;
+    float          attackTimer  = 0.f;
 
-    void moveToward(const glm::vec3& target, float speed, float dt) {
+    void _moveToward(const glm::vec3& target, float speed, float dt) {
         glm::vec3 dir = target - owner->position;
         dir.y = 0.f;
         if (glm::length(dir) < 0.1f) return;
@@ -127,22 +127,20 @@ private:
             owner->position += dir * speed * dt;
         }
 
-        // Повернуть к игроку
         float angle = atan2(dir.x, dir.z);
         owner->rotation = glm::quat(glm::vec3(0.f, angle, 0.f));
     }
 
-    void doAttack() {
+    void _doAttack() {
         AudioManager::get().play("enemy_attack");
         if (onAttackPlayer) onAttackPlayer(stats.attackDamage);
     }
 
-    void die() {
+    void _die() {
         state  = EnemyState::Dead;
         health = 0.f;
         AudioManager::get().play("enemy_die");
         if (anim) anim->play("die", false);
         if (rb)   rb->setLinearVelocity(glm::vec3(0.f));
-        // Объект удалится через 3 сек — GameScene следит за этим
     }
 };

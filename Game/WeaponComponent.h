@@ -1,19 +1,20 @@
 #pragma once
-
 // ============================================================
 //  Game/WeaponComponent.h  —  ИГРА, трогаешь здесь
-//  Компонент оружия. Вешается на объект оружия или игрока.
-//  Использует PhysicsWorld::raycast для выстрела.
 // ============================================================
 
+// ИСПРАВЛЕНО: правильные пути к движку
 #include "../Engine/Component.h"
 #include "../Engine/InputSystem.h"
 #include "../Engine/Physics.h"
 #include "../Engine/AudioManager.h"
-#include "../Engine/Renderer.h"
+#include "../Engine/Render/Renderer.h"
 
 #include <string>
 #include <functional>
+#include <vector>
+#include <memory>
+#include <iostream>
 
 // ── Описание оружия ────────────────────────────────────────
 struct WeaponStats {
@@ -21,22 +22,21 @@ struct WeaponStats {
     int         maxAmmo     = 12;
     int         reserveAmmo = 60;
     float       damage      = 25.f;
-    float       fireRate    = 0.15f;    // секунды между выстрелами
+    float       fireRate    = 0.15f;
     float       reloadTime  = 1.5f;
     float       range       = 100.f;
-    bool        isAuto      = false;    // true = держишь кнопку
+    bool        isAuto      = false;
     std::string shootSnd    = "pistol_shoot";
     std::string reloadSnd   = "pistol_reload";
     std::string emptySnd    = "empty_click";
 };
 
-// Колбек — вызывается при попадании (игровой код решает что делать)
 using HitCallback = std::function<void(GameObject* hit, const glm::vec3& point, float damage)>;
 
 class WeaponComponent : public Component {
 public:
     WeaponStats stats;
-    HitCallback onHit;          // установи из PlayerController или GameScene
+    HitCallback onHit;
 
     int   currentAmmo  = 0;
     int   reserveAmmo  = 0;
@@ -46,21 +46,18 @@ public:
     explicit WeaponComponent(const WeaponStats& s = {}) : stats(s) {}
 
     void start() override {
-        currentAmmo  = stats.maxAmmo;
-        reserveAmmo  = stats.reserveAmmo;
-
-        AudioManager::get().load(stats.shootSnd,  "sounds/" + stats.shootSnd  + ".wav");
-        AudioManager::get().load(stats.reloadSnd, "sounds/" + stats.reloadSnd + ".wav");
-        AudioManager::get().load(stats.emptySnd,  "sounds/empty_click.wav");
+        currentAmmo = stats.maxAmmo;
+        reserveAmmo = stats.reserveAmmo;
     }
 
     void update(float dt) override {
         if (!equipped) return;
 
-        fireCooldown  -= dt;
+        fireCooldown   -= dt;
         reloadCooldown -= dt;
 
-        if (reloadCooldown <= 0.f && isReloading) finishReload();
+        if (reloadCooldown <= 0.f && isReloading)
+            _finishReload();
 
         auto& input = InputSystem::get();
         bool shootInput = stats.isAuto
@@ -75,8 +72,7 @@ public:
     }
 
     void tryShoot() {
-        if (isReloading) return;
-        if (fireCooldown > 0.f)  return;
+        if (isReloading || fireCooldown > 0.f) return;
 
         if (currentAmmo <= 0) {
             AudioManager::get().play(stats.emptySnd);
@@ -89,7 +85,7 @@ public:
         AudioManager::get().play(stats.shootSnd);
 
         // Raycast из камеры
-        auto& cam   = Renderer::get().camera;
+        auto& cam    = Renderer::get().camera;
         glm::vec3 from = cam.position;
         glm::vec3 to   = from + cam.front * stats.range;
 
@@ -99,23 +95,23 @@ public:
     }
 
     void startReload() {
+        if (isReloading) return;
         isReloading    = true;
         reloadCooldown = stats.reloadTime;
         AudioManager::get().play(stats.reloadSnd);
     }
 
-    // Сменить оружие
-    void equip()   { equipped = true; }
+    void equip()   { equipped = true;  }
     void unequip() { equipped = false; }
 
-    bool isEmpty()    const { return currentAmmo == 0 && reserveAmmo == 0; }
-    bool needsReload()const { return currentAmmo < stats.maxAmmo && reserveAmmo > 0; }
+    bool isEmpty()     const { return currentAmmo == 0 && reserveAmmo == 0; }
+    bool needsReload() const { return currentAmmo < stats.maxAmmo && reserveAmmo > 0; }
 
 private:
     float fireCooldown   = 0.f;
     float reloadCooldown = 0.f;
 
-    void finishReload() {
+    void _finishReload() {
         int needed = stats.maxAmmo - currentAmmo;
         int take   = glm::min(needed, reserveAmmo);
         currentAmmo += take;
@@ -124,57 +120,60 @@ private:
     }
 };
 
-// ── WeaponManager — держит несколько оружий ────────────────
-// Вешается на игрока как компонент
-#include <vector>
-#include <memory>
-
+// ── WeaponManager ─────────────────────────────────────────
 class WeaponManager : public Component {
 public:
     int currentSlot = 0;
 
-    void start() override {}
-
-    void update(float dt) override {
-        // Переключение слотов по 1,2,3 или колесо мыши
+    void start()           override {}
+    void update(float dt)  override {
         auto& in = InputSystem::get();
         float scroll = in.getScrollDelta();
-        if (scroll > 0.f)  switchSlot(-1);
-        if (scroll < 0.f)  switchSlot(+1);
+        if (scroll > 0.f) _switchSlot(-1);
+        if (scroll < 0.f) _switchSlot(+1);
 
-        // Обновить текущее оружие
+        // Цифровые клавиши
+        if (in.isKeyPressed(Key::Alpha1)) _switchToSlot(0);
+        if (in.isKeyPressed(Key::Alpha2)) _switchToSlot(1);
+        if (in.isKeyPressed(Key::Alpha3)) _switchToSlot(2);
+
         if (currentSlot < (int)weapons.size() && weapons[currentSlot])
             weapons[currentSlot]->update(dt);
     }
 
     WeaponComponent* addWeapon(const WeaponStats& stats) {
-        auto* obj = owner->owner ?
-            owner->owner->getComponent<WeaponComponent>() : nullptr;
-
-        // Создаём компонент оружия прямо здесь как "дочерний" — упрощённо
         weapons.push_back(std::make_unique<WeaponComponent>(stats));
-        auto* w = weapons.back().get();
-        w->owner = owner;
+        auto* w   = weapons.back().get();
+        w->owner  = owner;
         w->start();
         if (weapons.size() == 1) w->equip();
         return w;
     }
 
     WeaponComponent* getCurrent() {
-        if (currentSlot < (int)weapons.size()) return weapons[currentSlot].get();
+        if (currentSlot < (int)weapons.size())
+            return weapons[currentSlot].get();
         return nullptr;
     }
 
-    int  getAmmo()    const { return weapons.empty() ? 0 : weapons[currentSlot]->currentAmmo; }
-    int  getReserve() const { return weapons.empty() ? 0 : weapons[currentSlot]->reserveAmmo; }
+    int getAmmo()    const { return (currentSlot < (int)weapons.size()) ? weapons[currentSlot]->currentAmmo  : 0; }
+    int getReserve() const { return (currentSlot < (int)weapons.size()) ? weapons[currentSlot]->reserveAmmo  : 0; }
 
 private:
     std::vector<std::unique_ptr<WeaponComponent>> weapons;
 
-    void switchSlot(int dir) {
+    void _switchSlot(int dir) {
         if (weapons.empty()) return;
         if (getCurrent()) getCurrent()->unequip();
         currentSlot = (currentSlot + dir + (int)weapons.size()) % (int)weapons.size();
-        getCurrent()->equip();
+        if (getCurrent()) getCurrent()->equip();
+    }
+
+    void _switchToSlot(int slot) {
+        if (slot < 0 || slot >= (int)weapons.size()) return;
+        if (slot == currentSlot) return;
+        if (getCurrent()) getCurrent()->unequip();
+        currentSlot = slot;
+        if (getCurrent()) getCurrent()->equip();
     }
 };
